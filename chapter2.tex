@@ -1,0 +1,278 @@
+\chapter{Thiết kế quan niệm}
+
+\section{Tổng quan mô hình Thực thể kết hợp}
+
+\subsection{Khái niệm}
+Mô hình Thực thể kết hợp (Entity-Relationship Model - ER Model) là một mô hình dữ liệu mức quan niệm (conceptual data model), được Peter Chen giới thiệu năm 1976, dùng để mô tả cấu trúc dữ liệu của một hệ thống thông tin dưới dạng các thực thể, thuộc tính của chúng và các mối kết hợp giữa các thực thể, độc lập với hệ quản trị cơ sở dữ liệu cụ thể sẽ được sử dụng để cài đặt.
+
+Mô hình ER là công cụ chính được sử dụng trong giai đoạn \textbf{Thiết kế quan niệm} (Conceptual Design) của chu kỳ sống một Cơ sở dữ liệu, đóng vai trò cầu nối giữa yêu cầu nghiệp vụ của người dùng (thường được diễn đạt bằng ngôn ngữ tự nhiên) và lược đồ logic sau này sẽ được chuyển đổi sang mô hình quan hệ (relational model) để cài đặt vật lý.
+
+\subsection{Mục đích và vai trò}
+\begin{itemize}
+    \item Cung cấp một phương tiện trực quan, dễ hiểu để giao tiếp giữa người phân tích hệ thống và người dùng nghiệp vụ (không yêu cầu kiến thức kỹ thuật sâu về CSDL).
+    \item Giúp xác định đầy đủ và chính xác các đối tượng dữ liệu cần quản lý cũng như mối liên hệ giữa chúng trước khi đi vào thiết kế logic.
+    \item Làm cơ sở để chuyển đổi (mapping) sang mô hình quan hệ, phục vụ cho việc thiết kế các bảng, khóa và ràng buộc toàn vẹn trong giai đoạn thiết kế logic.
+    \item Hỗ trợ phát hiện sớm các sai sót, thiếu sót hoặc mâu thuẫn trong yêu cầu dữ liệu, giảm chi phí sửa lỗi ở các giai đoạn sau.
+\end{itemize}
+
+\subsection{Các thành phần cơ bản}
+
+\textbf{a) Thực thể (Entity)}
+
+Thực thể là một đối tượng trong thế giới thực có thể phân biệt được với các đối tượng khác, tồn tại độc lập và cần được lưu trữ thông tin. Ví dụ: một sinh viên, một khách hàng, một sản phẩm.
+\begin{itemize}
+    \item \textit{Loại thực thể (Entity type)}: tập hợp các thực thể có cùng cấu trúc thuộc tính, ví dụ: SinhVien, KhachHang.
+    \item \textit{Thể hiện thực thể (Entity instance)}: một đối tượng cụ thể thuộc loại thực thể, ví dụ: sinh viên "Nguyễn Văn A".
+\end{itemize}
+
+\textbf{b) Thuộc tính (Attribute)}
+
+Thuộc tính là đặc điểm hoặc tính chất mô tả cho một thực thể. Các loại thuộc tính gồm:
+\begin{itemize}
+    \item Thuộc tính đơn (Simple) và thuộc tính phức hợp (Composite)
+    \item Thuộc tính đơn trị (Single-valued) và thuộc tính đa trị (Multi-valued)
+    \item Thuộc tính lưu trữ (Stored) và thuộc tính suy diễn được (Derived)
+    \item Thuộc tính khóa (Key attribute): thuộc tính hoặc tập thuộc tính có giá trị duy nhất, dùng để phân biệt các thể hiện của cùng một loại thực thể
+\end{itemize}
+
+\textbf{c) Mối kết hợp (Relationship)}
+
+Mối kết hợp thể hiện sự liên kết có ý nghĩa nghiệp vụ giữa hai hay nhiều thực thể. Ví dụ: mối kết hợp "Đăng ký" giữa SinhVien và MonHoc.
+\begin{itemize}
+    \item \textit{Bậc của mối kết hợp (Degree)}: số lượng thực thể tham gia -- bậc 1 (unary/đệ quy), bậc 2 (binary), bậc 3 (ternary).
+    \item \textit{Bản số (Cardinality ratio)}: quy định số lượng thể hiện tối đa của một thực thể có thể liên kết với thể hiện của thực thể kia -- quan hệ 1-1, 1-n, n-n.
+    \item \textit{Ràng buộc tham gia (Participation constraint)}: bắt buộc (total) hoặc tùy chọn (partial).
+\end{itemize}
+
+\subsection{Ví dụ minh họa}
+Xét hệ thống quản lý đăng ký môn học: thực thể \texttt{SINH\_VIEN} (MSSV, HoTen, NgaySinh) có mối kết hợp \texttt{DANG\_KY} với thực thể \texttt{MON\_HOC} (MaMH, TenMH, SoTinChi), trong đó một sinh viên có thể đăng ký nhiều môn học và một môn học có thể được nhiều sinh viên đăng ký (quan hệ n-n).
+
+\section{Các công cụ mô tả mô hình thực thể kết hợp}
+
+Để biểu diễn mô hình Thực thể kết hợp, có nhiều hệ thống ký hiệu (notation) được sử dụng, mỗi hệ thống có ưu điểm riêng tùy theo mục đích thiết kế.
+
+\subsection{Ký hiệu Chen (Chen's Notation)}
+Do Peter Chen đề xuất năm 1976, là ký hiệu nguyên gốc của mô hình ER:
+\begin{itemize}
+    \item Thực thể (Entity): hình chữ nhật
+    \item Thuộc tính (Attribute): hình elip, nối với thực thể bằng đường thẳng
+    \item Mối kết hợp (Relationship): hình thoi, nối các thực thể liên quan
+    \item Khóa chính: gạch chân tên thuộc tính
+\end{itemize}
+
+\subsection{Ký hiệu Crow's Foot (IE Notation)}
+Phổ biến trong các công cụ thiết kế CSDL thực tế:
+\begin{itemize}
+    \item Thực thể: hình chữ nhật, có thể chia thành các ngăn chứa thuộc tính
+    \item Bản số (cardinality): biểu diễn bằng các ký hiệu "chân quạ" (một, nhiều, không hoặc một, không hoặc nhiều)
+    \item Mối kết hợp: đường thẳng nối trực tiếp giữa hai thực thể, không cần hình thoi riêng
+\end{itemize}
+
+\subsection{Ký hiệu UML (Class Diagram)}
+Sử dụng lớp (class) trong UML để biểu diễn thực thể:
+\begin{itemize}
+    \item Thực thể: hình chữ nhật chia 3 ngăn (tên, thuộc tính, phương thức)
+    \item Bản số: biểu diễn bằng ký hiệu số (0..1, 1, 0..*, 1..*)
+    \item Kế thừa/chuyên biệt hóa: mũi tên tam giác rỗng
+\end{itemize}
+
+\subsection{So sánh}
+\begin{table}[h]
+\centering
+\caption{So sánh các hệ thống ký hiệu ER}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Ký hiệu} & \textbf{Ưu điểm} & \textbf{Nhược điểm} \\
+\hline
+Chen & Trực quan, dễ hiểu cho người mới & Chiếm nhiều diện tích khi vẽ \\
+Crow's Foot & Gọn, phổ biến trong công cụ thực tế & Cần làm quen với ký hiệu chân quạ \\
+UML & Thống nhất với thiết kế hướng đối tượng & Phức tạp hơn với mô hình dữ liệu thuần \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Phương pháp luận thiết kế mô hình Thực thể kết hợp}
+
+Quá trình xây dựng một lược đồ ER hoàn chỉnh từ yêu cầu nghiệp vụ thường được thực hiện theo các bước có hệ thống sau đây.
+
+\subsection{Bước 1: Xác định các thực thể}
+Rà soát tài liệu đặc tả yêu cầu, tìm các danh từ chính đại diện cho đối tượng cần quản lý dữ liệu độc lập. Ví dụ: trong hệ thống quản lý đăng ký môn học, các danh từ như "sinh viên", "môn học", "giảng viên" là ứng viên thực thể.
+
+\subsection{Bước 2: Xác định thuộc tính cho mỗi thực thể}
+Với mỗi loại thực thể, liệt kê các đặc điểm cần lưu trữ. Xác định thuộc tính khóa (khóa chính) giúp phân biệt duy nhất các thể hiện.
+
+\subsection{Bước 3: Xác định mối kết hợp giữa các thực thể}
+Tìm các động từ hoặc cụm động từ thể hiện hành động liên kết giữa hai hay nhiều thực thể, ví dụ: sinh viên \textit{đăng ký} môn học, giảng viên \textit{giảng dạy} môn học.
+
+\subsection{Bước 4: Xác định bản số và ràng buộc tham gia}
+Với mỗi mối kết hợp, xác định:
+\begin{itemize}
+    \item Bản số (1-1, 1-n, n-n) dựa trên quy tắc nghiệp vụ thực tế
+    \item Ràng buộc tham gia bắt buộc hay tùy chọn của từng thực thể trong mối kết hợp
+\end{itemize}
+
+\subsection{Bước 5: Xác định thực thể yếu (nếu có)}
+Nếu một thực thể không có đủ thuộc tính để tạo khóa riêng và phụ thuộc sự tồn tại vào một thực thể khác, đây là thực thể yếu, cần xác định thực thể chủ và mối kết hợp định danh tương ứng.
+
+\subsection{Bước 6: Rà soát và tinh chỉnh lược đồ}
+Kiểm tra lại toàn bộ lược đồ với người dùng nghiệp vụ để phát hiện thiếu sót, dư thừa hoặc mâu thuẫn, trước khi chuyển sang giai đoạn chuyển đổi sang mô hình quan hệ.
+
+\subsection{Ví dụ áp dụng}
+Với hệ thống quản lý đăng ký môn học đã nêu, quy trình áp dụng cụ thể như sau:
+\begin{enumerate}
+    \item Thực thể: \texttt{SINH\_VIEN}, \texttt{MON\_HOC}, \texttt{GIANG\_VIEN}
+    \item Thuộc tính khóa: MSSV (SinhVien), MaMH (MonHoc), MaGV (GiangVien)
+    \item Mối kết hợp: \texttt{DANG\_KY} (SinhVien -- MonHoc), \texttt{GIANG\_DAY} (GiangVien -- MonHoc)
+    \item Bản số: \texttt{DANG\_KY} là n-n; \texttt{GIANG\_DAY} là 1-n
+    \item Ràng buộc tham gia: SinhVien tham gia tùy chọn vào DANG\_KY; MonHoc tham gia bắt buộc vào GIANG\_DAY
+\end{enumerate}
+
+\section{Bảng số các mối kết hợp}
+
+\subsection{Khái niệm bản số}
+Bản số (cardinality ratio) mô tả số lượng thể hiện tối đa và tối thiểu của một thực thể có thể tham gia vào một mối kết hợp với thực thể khác. Bản số được biểu diễn dưới dạng cặp giá trị $(min, max)$, gọi là \textbf{ràng buộc bản số} (cardinality constraint).
+
+\subsection{Các loại bản số cơ bản}
+\begin{itemize}
+    \item \textbf{Một-một (1:1)}: mỗi thể hiện của thực thể A liên kết với tối đa một thể hiện của thực thể B, và ngược lại. Ví dụ: một NHAN\_VIEN quản lý một PHONG\_BAN, một PHONG\_BAN có một trưởng phòng.
+    \item \textbf{Một-nhiều (1:N)}: một thể hiện của thực thể A có thể liên kết với nhiều thể hiện của thực thể B, nhưng mỗi thể hiện của B chỉ liên kết với một thể hiện của A. Ví dụ: một PHONG\_BAN có nhiều NHAN\_VIEN, mỗi NHAN\_VIEN thuộc một PHONG\_BAN.
+    \item \textbf{Nhiều-nhiều (N:M)}: mỗi thể hiện của A có thể liên kết với nhiều thể hiện của B và ngược lại. Ví dụ: SINH\_VIEN đăng ký nhiều MON\_HOC, mỗi MON\_HOC có nhiều SINH\_VIEN đăng ký.
+\end{itemize}
+
+\subsection{Bảng tổng hợp bản số}
+\begin{table}[h]
+\centering
+\caption{Bảng số các mối kết hợp}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Loại bản số} & \textbf{Ký hiệu Crow's Foot} & \textbf{Ví dụ} \\
+\hline
+1:1 & một vạch -- một vạch & NhanVien -- PhongBan (trưởng phòng) \\
+1:N & một vạch -- chân quạ & PhongBan -- NhanVien \\
+N:M & chân quạ -- chân quạ & SinhVien -- MonHoc \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Chuyển đổi Thực thể sang mô hình quan hệ}
+
+\subsection{Quy tắc chuyển đổi thực thể mạnh}
+Mỗi loại thực thể mạnh (regular entity) trong lược đồ ER được chuyển thành một quan hệ (bảng) riêng biệt trong mô hình quan hệ:
+\begin{enumerate}
+    \item Tạo một quan hệ $R$ cùng tên với loại thực thể.
+    \item Mỗi thuộc tính đơn của thực thể trở thành một cột (attribute) của $R$.
+    \item Thuộc tính khóa của thực thể trở thành khóa chính (primary key) của $R$.
+\end{enumerate}
+
+\subsection{Xử lý các loại thuộc tính đặc biệt}
+\begin{itemize}
+    \item \textbf{Thuộc tính phức hợp (Composite)}: chỉ lấy các thành phần đơn giản (simple component) làm cột riêng, bỏ qua thuộc tính phức hợp gốc.
+    \item \textbf{Thuộc tính đa trị (Multi-valued)}: tạo một quan hệ riêng chứa khóa chính của thực thể gốc cùng với thuộc tính đa trị, khóa chính của quan hệ mới là tổ hợp của cả hai cột.
+    \item \textbf{Thuộc tính suy diễn (Derived)}: thường không lưu trữ trực tiếp trong CSDL, được tính toán khi cần thông qua truy vấn hoặc view.
+\end{itemize}
+
+\subsection{Ví dụ}
+Thực thể \texttt{SINH\_VIEN(MSSV, HoTen, NgaySinh, SoDienThoai[đa trị])} được chuyển thành:
+\begin{itemize}
+    \item Quan hệ \texttt{SINH\_VIEN(\underline{MSSV}, HoTen, NgaySinh)}
+    \item Quan hệ \texttt{SDT\_SINHVIEN(\underline{MSSV, SoDienThoai})}
+\end{itemize}
+
+\section{Chuyển đổi Mối kết hợp sang mô hình quan hệ}
+
+\subsection{Chuyển đổi mối kết hợp 1:1}
+Có hai cách tiếp cận:
+\begin{itemize}
+    \item \textbf{Gộp khóa ngoại}: thêm khóa chính của một thực thể làm khóa ngoại (foreign key) vào quan hệ của thực thể còn lại. Nên chọn thực thể có ràng buộc tham gia bắt buộc (total participation) để nhận khóa ngoại nhằm tránh giá trị NULL.
+    \item \textbf{Gộp thành một quan hệ}: nếu cả hai thực thể đều tham gia bắt buộc, có thể gộp thành một quan hệ duy nhất.
+\end{itemize}
+
+\subsection{Chuyển đổi mối kết hợp 1:N}
+Khóa chính của thực thể phía "1" được thêm làm khóa ngoại vào quan hệ của thực thể phía "N". Các thuộc tính riêng của mối kết hợp (nếu có) cũng được thêm vào quan hệ phía "N".
+
+Ví dụ: mối kết hợp \texttt{GIANG\_DAY} giữa GIANG\_VIEN (1) và MON\_HOC (N) $\Rightarrow$ thêm cột \texttt{MaGV} làm khóa ngoại vào quan hệ \texttt{MON\_HOC}.
+
+\subsection{Chuyển đổi mối kết hợp N:M}
+Tạo một quan hệ mới đại diện cho mối kết hợp:
+\begin{enumerate}
+    \item Khóa chính của quan hệ mới là tổ hợp khóa chính của cả hai thực thể tham gia (composite key).
+    \item Thêm các thuộc tính riêng của mối kết hợp (nếu có) vào quan hệ mới.
+\end{enumerate}
+
+Ví dụ: mối kết hợp \texttt{DANG\_KY} giữa SINH\_VIEN và MON\_HOC $\Rightarrow$ tạo quan hệ \texttt{DANG\_KY(\underline{MSSV, MaMH}, DiemSo, HocKy)}.
+
+\section{Thực thể yếu và Mối kết hợp của thực thể yếu}
+
+\subsection{Khái niệm thực thể yếu}
+Thực thể yếu (weak entity) là loại thực thể không có đủ thuộc tính để tự tạo thành khóa chính duy nhất, và sự tồn tại của nó phụ thuộc vào một thực thể khác gọi là \textbf{thực thể chủ} (owner/identifying entity).
+
+\subsection{Đặc điểm}
+\begin{itemize}
+    \item Có \textbf{khóa bộ phận} (partial key/discriminator): thuộc tính chỉ phân biệt được các thể hiện của thực thể yếu trong phạm vi cùng một thực thể chủ.
+    \item Tham gia bắt buộc (total participation) vào \textbf{mối kết hợp định danh} (identifying relationship) với thực thể chủ.
+    \item Ví dụ: thực thể \texttt{THANH\_VIEN\_GIA\_DINH} (khóa bộ phận: TenTV) phụ thuộc vào thực thể chủ \texttt{NHAN\_VIEN}, vì mỗi thành viên gia đình chỉ có ý nghĩa khi gắn với một nhân viên cụ thể.
+\end{itemize}
+
+\subsection{Ký hiệu trong lược đồ ER}
+Thực thể yếu thường được vẽ bằng hình chữ nhật viền đôi, mối kết hợp định danh được vẽ bằng hình thoi viền đôi, khóa bộ phận được gạch chân bằng nét đứt.
+
+\section{Chuyển đổi thực thể yếu sang mô hình quan hệ}
+
+\subsection{Quy tắc chuyển đổi}
+\begin{enumerate}
+    \item Tạo một quan hệ cho thực thể yếu, bao gồm tất cả thuộc tính đơn của nó.
+    \item Thêm khóa chính của thực thể chủ vào quan hệ này, đóng vai trò khóa ngoại.
+    \item Khóa chính của quan hệ mới là tổ hợp giữa khóa ngoại (từ thực thể chủ) và khóa bộ phận của thực thể yếu.
+\end{enumerate}
+
+\subsection{Ví dụ}
+Thực thể yếu \texttt{THANH\_VIEN\_GIA\_DINH(TenTV, NgaySinh)} phụ thuộc vào \texttt{NHAN\_VIEN(\underline{MaNV}, ...)} được chuyển thành:
+$$\texttt{THANH\_VIEN\_GIA\_DINH(\underline{MaNV, TenTV}, NgaySinh)}$$
+trong đó \texttt{MaNV} là khóa ngoại tham chiếu đến \texttt{NHAN\_VIEN}.
+
+\section{Mô hình thực thể kết hợp nâng cao}
+
+\subsection{Sự cần thiết của mô hình ER mở rộng (EER)}
+Mô hình ER cơ bản chưa đủ khả năng biểu diễn các cấu trúc dữ liệu phức tạp thường gặp trong thực tế, như quan hệ phân cấp giữa các loại thực thể có đặc điểm chung và riêng. Mô hình ER mở rộng (Enhanced ER - EER) bổ sung các khái niệm: tổng quát hóa, chuyên biệt hóa, và phân loại (categorization).
+
+\subsection{Các khái niệm bổ sung trong EER}
+\begin{itemize}
+    \item \textbf{Superclass/Subclass}: một thực thể cha (superclass) có thể có nhiều thực thể con (subclass) kế thừa toàn bộ thuộc tính của cha, đồng thời có thêm thuộc tính riêng.
+    \item \textbf{Kế thừa thuộc tính (Attribute inheritance)}: mọi thể hiện của subclass đều là thể hiện của superclass và mang đầy đủ thuộc tính, mối kết hợp của superclass.
+\end{itemize}
+
+\section{Tổng quát hóa và chuyên biệt hóa}
+
+\subsection{Chuyên biệt hóa (Specialization)}
+Là quá trình phân chia một thực thể (superclass) thành các thực thể con (subclass) dựa trên đặc điểm riêng biệt. Ví dụ: thực thể \texttt{NHAN\_VIEN} được chuyên biệt hóa thành \texttt{NHAN\_VIEN\_KY\_THUAT} và \texttt{NHAN\_VIEN\_KINH\_DOANH}.
+
+\subsection{Tổng quát hóa (Generalization)}
+Là quá trình ngược lại: từ các thực thể có thuộc tính chung, trừu tượng hóa thành một thực thể cha chung. Ví dụ: từ \texttt{XE\_MAY} và \texttt{O\_TO} có chung thuộc tính (BienSo, MauSac) $\Rightarrow$ tổng quát hóa thành \texttt{PHUONG\_TIEN}.
+
+\subsection{Ràng buộc trong chuyên biệt hóa}
+\begin{itemize}
+    \item \textbf{Disjoint (loại trừ) / Overlapping (chồng lấp)}: một thể hiện của superclass có thể thuộc về đúng một subclass (disjoint, ký hiệu $d$) hoặc nhiều subclass cùng lúc (overlapping, ký hiệu $o$).
+    \item \textbf{Total (bắt buộc) / Partial (tùy chọn)}: mọi thể hiện của superclass bắt buộc phải thuộc về ít nhất một subclass (total) hoặc không nhất thiết (partial).
+\end{itemize}
+
+\section{Chuyển đổi mô hình EER sang mô hình quan hệ}
+
+\subsection{Phương án 1: Một quan hệ cho superclass, một quan hệ cho mỗi subclass}
+\begin{itemize}
+    \item Quan hệ superclass chứa tất cả thuộc tính chung và khóa chính.
+    \item Mỗi quan hệ subclass chứa khóa chính (trùng với superclass, đóng vai trò vừa khóa chính vừa khóa ngoại) và các thuộc tính riêng.
+\end{itemize}
+Phù hợp với ràng buộc partial, vì không phải mọi thể hiện superclass đều cần xuất hiện ở bảng subclass.
+
+\subsection{Phương án 2: Một quan hệ cho mỗi subclass (không có quan hệ superclass)}
+Mỗi subclass có một quan hệ riêng chứa toàn bộ thuộc tính kế thừa từ superclass cộng với thuộc tính riêng. Chỉ áp dụng được khi ràng buộc là total và disjoint.
+
+\subsection{Phương án 3: Một quan hệ duy nhất chứa tất cả (single relation with type attribute)}
+Gộp superclass và toàn bộ subclass vào một quan hệ, thêm một thuộc tính phân loại (type/discriminator) để xác định thể hiện thuộc subclass nào. Phù hợp khi số lượng thuộc tính riêng của các subclass không quá nhiều, tránh nhiều giá trị NULL.
+
+\subsection{Ví dụ minh họa}
+Với superclass \texttt{NHAN\_VIEN(MaNV, HoTen)} chuyên biệt hóa disjoint, total thành \texttt{KY\_THUAT(ChungChi)} và \texttt{KINH\_DOANH(KhuVuc)}, áp dụng Phương án 2:
+\begin{itemize}
+    \item \texttt{NHAN\_VIEN\_KY\_THUAT(\underline{MaNV}, HoTen, ChungChi)}
+    \item \texttt{NHAN\_VIEN\_KINH\_DOANH(\underline{MaNV}, HoTen, KhuVuc)}
+\end{itemize}
