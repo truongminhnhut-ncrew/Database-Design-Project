@@ -1,0 +1,211 @@
+\documentclass{article}
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setmainlanguage{vietnamese}
+\setmainfont{Noto Serif}
+% Required for inserting images
+\chapter{Thiết kế Logic}
+
+\section{Dẫn nhập và định nghĩa}
+
+Thiết kế Logic là giai đoạn chuyển đổi mô hình quan niệm (lược đồ ER) thành lược đồ quan hệ (relational schema), đồng thời áp dụng các thuật toán chuẩn hóa nhằm loại bỏ dư thừa dữ liệu và các bất thường cập nhật (update anomalies).
+
+\subsection{Khái niệm cơ bản}
+\begin{itemize}
+    \item \textbf{Lược đồ quan hệ (Relation schema)}: $R(A_1, A_2, \ldots, A_n)$, trong đó $R$ là tên quan hệ, $A_1, \ldots, A_n$ là tập thuộc tính.
+    \item \textbf{Bộ (Tuple)}: một dòng dữ liệu cụ thể trong quan hệ.
+    \item \textbf{Miền giá trị (Domain)}: tập các giá trị hợp lệ mà một thuộc tính có thể nhận.
+\end{itemize}
+
+\subsection{Các bất thường dữ liệu (Anomalies)}
+Khi thiết kế lược đồ chưa tốt (chưa chuẩn hóa), dữ liệu có thể gặp ba loại bất thường:
+\begin{itemize}
+    \item \textbf{Bất thường chèn (Insertion anomaly)}: không thể thêm dữ liệu mới nếu thiếu thông tin liên quan.
+    \item \textbf{Bất thường xóa (Deletion anomaly)}: xóa một bộ có thể vô tình làm mất thông tin khác không liên quan.
+    \item \textbf{Bất thường sửa (Update anomaly)}: phải sửa dữ liệu lặp lại ở nhiều nơi, dễ gây mâu thuẫn.
+\end{itemize}
+
+\section{Tính chất phụ thuộc hàm}
+
+\subsection{Định nghĩa}
+Cho lược đồ quan hệ $R$ với tập thuộc tính $U$, và $X, Y \subseteq U$. Ta nói $X$ \textbf{xác định hàm} $Y$ (ký hiệu $X \rightarrow Y$) nếu với mọi hai bộ $t_1, t_2$ trong $R$, nếu $t_1[X] = t_2[X]$ thì $t_1[Y] = t_2[Y]$.
+
+Ý nghĩa: giá trị của $X$ xác định duy nhất giá trị của $Y$.
+
+\subsection{Ví dụ}
+Trong quan hệ \texttt{SINH\_VIEN(MSSV, HoTen, NgaySinh, Lop)}, ta có phụ thuộc hàm:
+$$\text{MSSV} \rightarrow \text{HoTen, NgaySinh, Lop}$$
+vì mỗi mã số sinh viên xác định duy nhất họ tên, ngày sinh và lớp tương ứng.
+
+\subsection{Phụ thuộc hàm đầy đủ và phụ thuộc bộ phận}
+\begin{itemize}
+    \item \textbf{Phụ thuộc hàm đầy đủ (Full functional dependency)}: $X \rightarrow Y$ là phụ thuộc đầy đủ nếu không tồn tại $X' \subset X$ sao cho $X' \rightarrow Y$.
+    \item \textbf{Phụ thuộc bộ phận (Partial dependency)}: tồn tại $X' \subset X$ với $X' \rightarrow Y$, tức $Y$ chỉ phụ thuộc vào một phần của khóa.
+\end{itemize}
+
+\subsection{Phụ thuộc bắc cầu}
+$X \rightarrow Z$ là phụ thuộc bắc cầu (transitive dependency) nếu tồn tại $Y$ sao cho $X \rightarrow Y$, $Y \rightarrow Z$, và $Y \not\rightarrow X$ (Y không xác định X).
+
+\section{Hệ luật dẫn Armstrong}
+
+Hệ tiên đề Armstrong (1974) là tập luật suy diễn dùng để tìm tất cả phụ thuộc hàm được suy ra từ một tập phụ thuộc hàm cho trước $F$.
+
+\subsection{Các luật cơ bản}
+Cho $X, Y, Z, W \subseteq U$:
+\begin{itemize}
+    \item \textbf{Luật phản xạ (Reflexivity)}: nếu $Y \subseteq X$ thì $X \rightarrow Y$.
+    \item \textbf{Luật tăng trưởng (Augmentation)}: nếu $X \rightarrow Y$ thì $XZ \rightarrow YZ$.
+    \item \textbf{Luật bắc cầu (Transitivity)}: nếu $X \rightarrow Y$ và $Y \rightarrow Z$ thì $X \rightarrow Z$.
+\end{itemize}
+
+\subsection{Các luật suy diễn (dẫn xuất từ luật cơ bản)}
+\begin{itemize}
+    \item \textbf{Luật hợp (Union)}: nếu $X \rightarrow Y$ và $X \rightarrow Z$ thì $X \rightarrow YZ$.
+    \item \textbf{Luật phân rã (Decomposition)}: nếu $X \rightarrow YZ$ thì $X \rightarrow Y$ và $X \rightarrow Z$.
+    \item \textbf{Luật tựa bắc cầu (Pseudo-transitivity)}: nếu $X \rightarrow Y$ và $YW \rightarrow Z$ thì $XW \rightarrow Z$.
+\end{itemize}
+
+\subsection{Tính đúng đắn và đầy đủ}
+Hệ luật dẫn Armstrong được chứng minh là \textbf{đúng đắn} (sound -- mọi phụ thuộc suy ra đều đúng trên thực tế dữ liệu) và \textbf{đầy đủ} (complete -- mọi phụ thuộc đúng đều có thể suy ra bằng các luật này).
+
+\section{Bao đóng}
+
+\subsection{Bao đóng của tập thuộc tính}
+Bao đóng của tập thuộc tính $X$ đối với tập phụ thuộc hàm $F$, ký hiệu $X^+$, là tập tất cả thuộc tính $A$ sao cho $X \rightarrow A$ được suy diễn từ $F$ bằng hệ luật Armstrong.
+
+\subsection{Thuật toán tính bao đóng}
+\begin{enumerate}
+    \item Khởi tạo $X^+ = X$.
+    \item Lặp: với mỗi phụ thuộc hàm $Y \rightarrow Z$ trong $F$, nếu $Y \subseteq X^+$ thì thêm $Z$ vào $X^+$.
+    \item Lặp lại bước 2 cho đến khi $X^+$ không thay đổi thêm được nữa.
+\end{enumerate}
+
+\subsection{Ứng dụng của bao đóng}
+\begin{itemize}
+    \item Kiểm tra xem một phụ thuộc hàm $X \rightarrow Y$ có được suy ra từ $F$ hay không: chỉ cần kiểm tra $Y \subseteq X^+$.
+    \item Xác định khóa của lược đồ quan hệ.
+    \item Tính phủ tối thiểu của tập phụ thuộc hàm.
+\end{itemize}
+
+\section{Phủ và tương đương}
+
+\subsection{Định nghĩa}
+Hai tập phụ thuộc hàm $F$ và $G$ được gọi là \textbf{tương đương} (ký hiệu $F \equiv G$) nếu $F^+ = G^+$, tức mọi phụ thuộc hàm suy ra được từ $F$ cũng suy ra được từ $G$ và ngược lại.
+
+Khi đó, $G$ được gọi là một \textbf{phủ} (cover) của $F$.
+
+\subsection{Kiểm tra tính tương đương}
+Để kiểm tra $F \equiv G$:
+\begin{enumerate}
+    \item Kiểm tra $F \Rightarrow G$: với mỗi phụ thuộc hàm $X \rightarrow Y$ trong $G$, kiểm tra $Y \subseteq X^+_F$ (bao đóng của $X$ tính theo $F$).
+    \item Kiểm tra $G \Rightarrow F$: tương tự, đảo vai trò $F$ và $G$.
+    \item Nếu cả hai chiều đều đúng, $F \equiv G$.
+\end{enumerate}
+
+\section{Xác định khóa dựa trên phụ thuộc hàm}
+
+\subsection{Định nghĩa khóa}
+$K \subseteq U$ là một \textbf{khóa} (candidate key) của lược đồ quan hệ $R$ nếu:
+\begin{enumerate}
+    \item $K^+ = U$ (K xác định hàm toàn bộ tập thuộc tính)
+    \item Không tồn tại $K' \subset K$ sao cho $K'^+ = U$ (tính tối tiểu)
+\end{enumerate}
+
+\subsection{Thuật toán tìm một khóa}
+\begin{enumerate}
+    \item Khởi tạo $K = U$ (tập toàn bộ thuộc tính).
+    \item Với mỗi thuộc tính $A \in K$: tính $(K - A)^+$. Nếu $(K - A)^+ = U$, loại $A$ khỏi $K$.
+    \item Lặp lại cho đến khi không thể loại thêm thuộc tính nào mà vẫn giữ $K^+ = U$.
+\end{enumerate}
+
+\subsection{Thuộc tính khóa và thuộc tính không khóa}
+\begin{itemize}
+    \item \textbf{Thuộc tính khóa (Prime attribute)}: thuộc tính xuất hiện trong ít nhất một khóa.
+    \item \textbf{Thuộc tính không khóa (Non-prime attribute)}: thuộc tính không xuất hiện trong bất kỳ khóa nào.
+\end{itemize}
+
+\section{Phủ tối thiểu}
+
+Phủ tối thiểu (minimal cover / canonical cover) $F_c$ của tập phụ thuộc hàm $F$ là một phủ tương đương với $F$ thỏa các tính chất:
+\begin{itemize}
+    \item Vế phải của mỗi phụ thuộc hàm chỉ chứa một thuộc tính đơn.
+    \item Không có phụ thuộc hàm nào dư thừa (có thể loại bỏ mà vẫn giữ nguyên bao đóng).
+    \item Không có thuộc tính dư thừa ở vế trái của bất kỳ phụ thuộc hàm nào.
+\end{itemize}
+
+\subsection{Thuật toán tìm phủ tối thiểu}
+\begin{enumerate}
+    \item \textbf{Tách vế phải}: chuyển mọi phụ thuộc hàm $X \rightarrow Y_1Y_2\ldots Y_n$ thành các phụ thuộc hàm đơn $X \rightarrow Y_1$, $X \rightarrow Y_2$, \ldots
+    \item \textbf{Loại bỏ thuộc tính dư thừa ở vế trái}: với mỗi phụ thuộc hàm $X \rightarrow A$ có $|X| > 1$, kiểm tra từng thuộc tính $B \in X$: nếu $(X - B)^+$ vẫn chứa $A$ (tính theo $F$), loại $B$ khỏi $X$.
+    \item \textbf{Loại bỏ phụ thuộc hàm dư thừa}: với mỗi phụ thuộc hàm $X \rightarrow A$, kiểm tra nếu $A \in X^+$ tính theo $F - \{X \rightarrow A\}$, thì loại bỏ phụ thuộc hàm này khỏi $F$.
+\end{enumerate}
+
+\section{Định nghĩa và các Dạng chuẩn}
+
+\subsection{Dạng chuẩn 1 (1NF)}
+Một lược đồ quan hệ đạt 1NF nếu mọi thuộc tính đều chứa giá trị nguyên tố (atomic), không chứa tập giá trị hay giá trị phức hợp.
+
+\subsection{Dạng chuẩn 2 (2NF)}
+Lược đồ đạt 2NF nếu đạt 1NF và mọi thuộc tính không khóa đều phụ thuộc hàm \textbf{đầy đủ} vào khóa chính (không có phụ thuộc bộ phận).
+
+\subsection{Dạng chuẩn 3 (3NF)}
+Lược đồ đạt 3NF nếu đạt 2NF và không tồn tại phụ thuộc bắc cầu của thuộc tính không khóa vào khóa chính.
+
+\subsection{Dạng chuẩn Boyce-Codd (BCNF)}
+Lược đồ đạt BCNF nếu với mọi phụ thuộc hàm $X \rightarrow Y$ không tầm thường trong $F$, $X$ đều là một siêu khóa (superkey) của lược đồ.
+
+BCNF chặt chẽ hơn 3NF: mọi lược đồ đạt BCNF đều đạt 3NF, nhưng điều ngược lại không luôn đúng.
+
+\subsection{Bảng so sánh các dạng chuẩn}
+\begin{table}[h]
+\centering
+\caption{So sánh điều kiện các dạng chuẩn}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Dạng chuẩn} & \textbf{Điều kiện chính} \\
+\hline
+1NF & Thuộc tính nguyên tố \\
+2NF & 1NF + không phụ thuộc bộ phận vào khóa \\
+3NF & 2NF + không phụ thuộc bắc cầu \\
+BCNF & Mọi vế trái của phụ thuộc hàm đều là siêu khóa \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Phân rã lược đồ Cơ sở dữ liệu}
+
+\subsection{Khái niệm phân rã}
+Phân rã (decomposition) lược đồ $R(U)$ thành các lược đồ con $R_1(U_1), R_2(U_2), \ldots, R_n(U_n)$ sao cho $U = U_1 \cup U_2 \cup \ldots \cup U_n$.
+
+\subsection{Tính chất cần đảm bảo}
+\begin{itemize}
+    \item \textbf{Bảo toàn thông tin (Lossless-join decomposition)}: kết nối lại các lược đồ con phải cho ra đúng dữ liệu gốc, không sinh ra bộ giả (spurious tuples).
+    \item \textbf{Bảo toàn phụ thuộc hàm (Dependency preservation)}: hợp các phụ thuộc hàm trên từng lược đồ con phải tương đương với tập phụ thuộc hàm gốc $F$.
+\end{itemize}
+
+\section{Đánh giá chất lượng phân rã}
+
+\subsection{Kiểm tra tính bảo toàn thông tin}
+Với phân rã thành 2 lược đồ $R_1, R_2$: phân rã là bảo toàn thông tin nếu và chỉ nếu:
+$$R_1 \cap R_2 \rightarrow R_1 \quad \text{hoặc} \quad R_1 \cap R_2 \rightarrow R_2$$
+
+\subsection{Kiểm tra tính bảo toàn phụ thuộc hàm}
+Kiểm tra xem $(\bigcup F_i)^+ = F^+$, trong đó $F_i$ là các phụ thuộc hàm được chiếu lên từng lược đồ con $R_i$.
+
+\section{Thuật toán tổng hợp}
+
+Thuật toán tổng hợp (Bernstein Synthesis Algorithm) xây dựng trực tiếp một lược đồ đạt 3NF, vừa bảo toàn thông tin vừa bảo toàn phụ thuộc hàm, từ phủ tối thiểu $F_c$.
+
+\subsection{Các bước thực hiện}
+\begin{enumerate}
+    \item Tìm phủ tối thiểu $F_c$ của $F$.
+    \item Nhóm các phụ thuộc hàm trong $F_c$ có cùng vế trái thành một lược đồ con: với mỗi nhóm $X \rightarrow A_1, X \rightarrow A_2, \ldots$, tạo lược đồ $R_i(X, A_1, A_2, \ldots)$.
+    \item Nếu không có lược đồ con nào chứa khóa của $R$ gốc, thêm một lược đồ mới chỉ gồm khóa đó để đảm bảo tính bảo toàn thông tin.
+    \item Loại bỏ các lược đồ con bị bao hàm bởi lược đồ con khác (dư thừa).
+\end{enumerate}
+
+\subsection{Đánh giá thuật toán tổng hợp}
+\begin{itemize}
+    \item \textbf{Ưu điểm}: đảm bảo cả tính bảo toàn thông tin và bảo toàn phụ thuộc hàm, đạt tối thiểu 3NF.
+    \item \textbf{Hạn chế}: không đảm bảo đạt BCNF trong mọi trường hợp; đôi khi sinh ra nhiều lược đồ con hơn cần thiết nếu phủ tối thiểu chưa được tối ưu.
+\end{itemize}
