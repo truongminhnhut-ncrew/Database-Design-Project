@@ -1,0 +1,194 @@
+\documentclass{article}
+\usepackage{fontspec} 
+\usepackage{polyglossia}
+\setmainlanguage{vietnamese}
+\setmainfont{Times New Roman}
+% Required for inserting images
+ \begin{document} Mô hình Thực thể - Kết hợp (Entity-Relationship Model - ER) do Peter Chen đề xuất năm 1976, là công cụ biểu diễn trừu tượng cấu trúc dữ liệu ở mức quan niệm (Conceptual Level).\footnote{Thiết kế quan niệm tách câu hỏi ``nghiệp vụ cần lưu gì'' khỏi câu hỏi ``cài đặt bằng bảng nào''; nhờ đó mô hình không phụ thuộc vào một hệ quản trị cơ sở dữ liệu (DBMS) cụ thể.} Chương này trình bày các thành phần cốt lõi của mô hình ER, phương pháp luận thiết kế theo quy trình sáu bước, thuật toán ánh xạ sang lược đồ quan hệ, cách xử lý thực thể yếu và mô hình EER (Extended ER), sau đó áp dụng toàn bộ phương pháp luận vào một tình huống thực tế: dự án \textit{FamilyConnect}.
+ 
+\section{Tổng quan mô hình Thực thể - Kết hợp}\label{s:tongquan}
+ 
+\subsection{Ba khái niệm cốt lõi}
+ 
+Mô hình ER được xây dựng dựa trên ba khái niệm cơ bản: thực thể, thuộc tính và mối kết hợp.
+ 
+\begin{itemize}
+	\item \textbf{Thực thể (Entity)}\index{thuc the}: lớp đối tượng có vòng đời riêng, cần được lưu trữ lâu dài trong hệ thống (ví dụ: SINH\_VIEN, MON\_HOC). Một khái niệm được xem là thực thể khi nó có nhiều thể hiện cụ thể, có thuộc tính mô tả riêng, cần tra cứu/cập nhật/thống kê độc lập, hoặc tham gia nhiều mối kết hợp.
+	\item \textbf{Thuộc tính (Attribute)}\index{thuoc tinh}: dữ liệu mô tả cho thực thể hoặc mối kết hợp, gồm bốn loại: đơn (một giá trị nguyên tử, ví dụ \texttt{maSach}), phức hợp (tách được thành phần con, ví dụ \texttt{diaChi} gồm \texttt{soNha}, \texttt{quan}, \texttt{thanhPho}), đa trị (một thể hiện có nhiều giá trị, ví dụ số điện thoại), và dẫn xuất (tính được từ dữ liệu khác, ví dụ \texttt{tuoi} tính từ \texttt{ngaySinh}).
+	\item \textbf{Mối kết hợp (Relationship)}\index{moi ket hop}: liên hệ nghiệp vụ giữa các thực thể, thường được nhận diện qua động từ hoặc cụm động từ trong yêu cầu (ví dụ: độc giả \emph{lập} phiếu mượn, nhân viên \emph{tham gia} dự án). Bậc của mối kết hợp cho biết số thực thể tham gia: bậc một (tự liên kết, ví dụ nhân viên quản lý nhân viên), bậc hai (phổ biến nhất), và bậc ba (ba thực thể cùng tham gia một sự kiện nghiệp vụ, không nên tách thành các mối kết hợp bậc hai vì sẽ làm mất nghĩa nghiệp vụ).
+\end{itemize}
+ 
+\paragraph{Bản số (Cardinality Ratio)} Ba dạng phổ biến: 1--1 (một thực thể A liên kết tối đa với một thực thể B và ngược lại); 1--N (một A liên kết với nhiều B, nhưng một B chỉ liên kết tối đa với một A); N--M (hai phía đều có thể liên kết với nhiều thực thể phía kia). Bản số đầy đủ được biểu diễn dưới dạng khoảng \emph{tối thiểu..tối đa} (ví dụ \texttt{0..*}), trong đó tối thiểu là~1 nghĩa là tham gia \textbf{bắt buộc} (Total participation) và tối thiểu là~0 nghĩa là tham gia \textbf{tùy chọn} (Partial participation).
+ 
+\paragraph{Khóa định danh} Mục tiêu của khóa là phân biệt chắc chắn từng thể hiện của một thực thể. Khóa nên được chọn dựa trên tính ổn định nghiệp vụ (ngắn, ít đổi) chứ không chỉ vì có sẵn trên biểu mẫu — ví dụ \texttt{maSach} (khóa thay thế, ổn định) thường được ưu tiên hơn \texttt{ISBN} (khóa tự nhiên, có thể thiếu hoặc đổi theo lần in).
+ 
+\subsection{Ký pháp mô tả mô hình ER}\label{ss:kypháp}
+ 
+Hai ký pháp phổ biến để biểu diễn mô hình ER là ký pháp Chen và lớp UML (UML class dùng cho mô hình dữ liệu, không phải mã nguồn hướng đối tượng).
+ 
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Ký hiệu Chen} & \textbf{Ý nghĩa} \\
+\hline
+Hình chữ nhật & Thực thể \\
+Hình thoi & Mối kết hợp \\
+Hình elip & Thuộc tính \\
+Hình đôi (chữ nhật/hình thoi kép) & Thực thể yếu / mối kết hợp nhận dạng \\
+Gạch dưới & Thuộc tính khóa \\
+\hline
+\end{tabular}
+\caption{Ký pháp Chen trong ERD}
+\end{table}
+ 
+Trong ký pháp UML, một lớp (\emph{class}) được đọc như một ứng viên thực thể hoặc bảng dữ liệu; thuộc tính gạch dưới là thuộc tính định danh, dấu \texttt{/} phía trước tên là thuộc tính dẫn xuất, và bản số được ghi ở hai đầu liên kết theo dạng \texttt{min..max} (ví dụ \texttt{1}, \texttt{0..1}, \texttt{0..*}, \texttt{1..*}). Khi mối kết hợp N--M có thuộc tính riêng, UML biểu diễn bằng một \emph{association class} gắn với đường liên kết — đây chính là thực thể kết hợp (associative entity) sẽ trở thành bảng trung gian khi ánh xạ sang lược đồ quan hệ.
+ 
+\section{Phương pháp luận thiết kế mô hình ER}\label{s:phuongphapluan}
+ 
+Việc thiết kế mô hình ER từ một mô tả nghiệp vụ tuân theo quy trình sáu bước lặp, đầu vào là mô tả nghiệp vụ/biểu mẫu/báo cáo/quy tắc, đầu ra là một ERD hoặc UML quan niệm đã được kiểm chứng:
+ 
+\begin{enumerate}
+	\item Khoanh phạm vi dữ liệu.
+	\item Lập từ điển nghiệp vụ.
+	\item Chọn ứng viên thực thể và mối kết hợp.
+	\item Gắn thuộc tính và xác định khóa.
+	\item Xác định bản số và mức tham gia.
+	\item Kiểm chứng bằng dữ liệu mẫu.
+\end{enumerate}
+ 
+\paragraph{Bước 1: Khoanh phạm vi} Trước khi vẽ mô hình, cần xác định hệ thống lưu trữ phần nào của thế giới thực và bỏ qua phần nào — hỏi hệ thống phục vụ quy trình gì, dữ liệu nào cần lưu lâu dài, và dữ liệu nào chỉ là kết quả tính toán/báo cáo. Nguyên tắc là tránh đưa mọi thứ nhìn thấy trên biểu mẫu vào ERD.
+ 
+\paragraph{Bước 2: Lập từ điển nghiệp vụ} Từ điển nghiệp vụ thống nhất cách gọi tên, tránh một khái niệm bị đặt nhiều tên khác nhau trong cùng một mô hình (ví dụ phân biệt rõ ``đầu sách'' và ``bản sách vật lý cụ thể'' nếu hệ thống cần quản lý theo từng cuốn).
+ 
+\paragraph{Bước 3: Chọn ứng viên thực thể và mối kết hợp} Gạch chân danh từ quan trọng trong yêu cầu để tìm ứng viên thực thể — chọn những khái niệm có vòng đời độc lập và cần lưu lâu dài; đồng thời gạch chân động từ để tìm mối kết hợp. Với mỗi danh từ, cần tự hỏi: đây là thực thể độc lập, thuộc tính phức hợp, hay thuộc tính dẫn xuất? (ví dụ \texttt{DiaChi} có thể là thuộc tính phức hợp hoặc thực thể riêng tùy bài toán; \texttt{Tuoi} luôn là thuộc tính dẫn xuất vì tính được từ \texttt{NgaySinh}).
+ 
+\paragraph{Bước 4: Gắn thuộc tính và xác định khóa} Liệt kê thuộc tính cho từng thực thể, đồng thời kiểm tra mối kết hợp N--M có thuộc tính riêng hay không — một thuộc tính chỉ có nghĩa trong ngữ cảnh liên kết giữa hai thực thể (ví dụ \texttt{DiemThi} trong mối kết hợp SINH\_VIEN--MON\_HOC) là thuộc tính của mối kết hợp, không thuộc riêng thực thể nào. Sau đó chọn khóa định danh cho từng thực thể.
+ 
+\paragraph{Bước 5: Xác định bản số và mức tham gia} Với mỗi mối kết hợp, đặt bốn câu hỏi: một A liên kết tối đa với bao nhiêu B? một B liên kết tối đa với bao nhiêu A? A có bắt buộc phải có B không? B có bắt buộc phải có A không? Hai câu đầu xác định bản số tối đa (1 hay N), hai câu sau xác định mức tham gia tối thiểu (0 hay 1).
+ 
+\paragraph{Bước 6: Kiểm chứng bằng dữ liệu mẫu} Sau khi vẽ ERD, thử tạo vài dòng dữ liệu mẫu và các tình huống biên để kiểm tra mô hình có bao quát được thực tế hay không — ví dụ: thêm một thực thể chưa có liên kết nào, thêm một thực thể có nhiều liên kết cùng loại, hoặc thử xóa một thực thể và xem các thực thể liên quan xử lý ra sao. Bước này cũng là lúc phát hiện thực thể yếu (xem Mục~\ref{s:thucTheYeu}) và nhu cầu mở rộng sang EER (xem Mục~\ref{s:eer}) để tinh chế mô hình.
+ 
+\section{Ánh xạ mô hình ER sang lược đồ quan hệ}\label{s:anhxa}
+ 
+Sau khi có một ERD/UML quan niệm đã kiểm chứng, mô hình được ánh xạ sang lược đồ quan hệ theo trình tự: chuyển từng thực thể mạnh thành một quan hệ; xử lý thuộc tính phức hợp, đa trị, dẫn xuất; xử lý các mối kết hợp 1--1, 1--N, N--M; xử lý thực thể yếu và EER (nếu có); và cuối cùng ghi rõ khóa chính, khóa ngoại, ràng buộc \texttt{NOT NULL}/\texttt{UNIQUE}.
+ 
+\subsection{Chuyển thực thể và thuộc tính}
+ 
+Mỗi thực thể mạnh trở thành một quan hệ cùng tên; thuộc tính đơn trở thành cột; khóa của thực thể trở thành khóa chính (ví dụ \texttt{Sach(maSach, tenSach, namXuatBan)}). Thuộc tính phức hợp nên được tách thành các cột con khi các thành phần cần tìm kiếm hoặc lọc độc lập; thuộc tính đa trị không được nhét nhiều giá trị vào một cột mà phải tách thành một quan hệ riêng (ví dụ \texttt{DienThoaiDocGia(maDG, soDienThoai)}); thuộc tính dẫn xuất thường \textbf{không} được lưu nếu có thể tính chính xác từ thuộc tính gốc, để tránh dữ liệu mâu thuẫn khi thời gian thay đổi.
+ 
+\subsection{Chuyển các mối kết hợp}
+ 
+\begin{itemize}
+	\item \textbf{1--1}: có thể đặt khóa ngoại ở một trong hai phía; nên chọn phía tham gia bắt buộc hoặc phía ít giá trị rỗng hơn, và dùng ràng buộc \texttt{UNIQUE} để bảo đảm tính một-một. Nếu cả hai phía luôn bắt buộc và luôn đi cùng nhau, có thể cân nhắc gộp thành một bảng — nhưng không gộp nếu hai thực thể có vòng đời hoặc yêu cầu bảo mật khác nhau.
+	\item \textbf{1--N}: đưa khóa chính của phía~1 sang quan hệ ở phía~N làm khóa ngoại (ví dụ thêm \texttt{maPB} vào \texttt{NhanVien} vì một phòng ban có nhiều nhân viên).
+	\item \textbf{N--M}: luôn cần một quan hệ trung gian, chứa khóa của cả hai thực thể làm khóa ngoại; khóa chính của quan hệ trung gian thường là tổ hợp hai khóa ngoại đó. Khi mối kết hợp N--M có nhiều thuộc tính riêng hoặc có vòng đời nghiệp vụ độc lập (ví dụ \texttt{ChiTietPhieuMuon} chứa \texttt{ngayTra}, \texttt{tienPhat}), nó được xem là một \emph{thực thể kết hợp} — vừa là cầu nối vừa chứa dữ liệu nghiệp vụ, và có thể có khóa thay thế riêng nếu khóa ghép quá dài.
+	\item \textbf{Mối kết hợp đệ quy} (bậc một, một thực thể liên kết với chính nó, ví dụ nhân viên quản lý nhân viên): thêm khóa ngoại tự tham chiếu nếu mỗi thể hiện có tối đa một liên kết theo một vai trò (ví dụ \texttt{NhanVien(maNV, hoTen, maQuanLy FK)} với \texttt{maQuanLy} tham chiếu chính \texttt{NhanVien(maNV)}); cần đặt tên vai trò rõ ràng để tránh nhầm lẫn.
+	\item \textbf{Mối kết hợp bậc ba}: tạo một quan hệ trung gian chứa ba khóa ngoại; không nên tách thành ba mối kết hợp bậc hai riêng lẻ vì sẽ làm mất thông tin nghiệp vụ.
+\end{itemize}
+ 
+\paragraph{Quy ước đặt tên} Tên quan hệ và thuộc tính nên nhất quán một phong cách (ví dụ luôn dùng \texttt{NhanVien} hoặc luôn dùng \texttt{nhan\_vien}); khóa ngoại nên giữ tên của khóa được tham chiếu; bảng trung gian nên được đặt tên theo ý nghĩa mối kết hợp (ví dụ \texttt{ThamGia}, \texttt{ChiTietMuon}) thay vì tên kỹ thuật chung chung.
+ 
+\paragraph{Lỗi thường gặp} Phần lớn lỗi thiết kế logic xuất phát từ việc bỏ qua thông tin bản số ở ERD: quên tạo bảng trung gian cho N--M, đặt khóa ngoại sai phía trong 1--N, lưu thuộc tính đa trị trong một cột chuỗi, hoặc không dùng \texttt{UNIQUE} cho 1--1 khiến dữ liệu thực tế trở thành 1--N ngoài ý muốn.
+ 
+\section{Thực thể yếu (Weak Entity)}\label{s:thucTheYeu}
+ 
+Thực thể yếu là thực thể không có đủ thuộc tính để định danh độc lập; nó chỉ có ý nghĩa khi gắn với một \emph{thực thể chủ} thông qua một \emph{mối kết hợp nhận dạng} (ví dụ: người phụ thuộc chỉ có ý nghĩa khi gắn với một nhân viên cụ thể). Thực thể yếu thường có vòng đời phụ thuộc — khi thực thể chủ bị xóa, thực thể yếu thường bị xóa theo. Lưu ý: không phải mọi mối kết hợp 1--N đều tạo ra thực thể yếu.
+ 
+Thuộc tính định danh nội bộ của thực thể yếu được gọi là \emph{khóa cục bộ} (partial key): nó chỉ phân biệt được các thực thể yếu \textbf{trong phạm vi cùng một thực thể chủ} (ví dụ tên người phụ thuộc \texttt{tenPT} có thể trùng giữa hai nhân viên khác nhau, nên khóa cục bộ không đủ để định danh toàn cục).
+ 
+Quy tắc ánh xạ thực thể yếu sang quan hệ gồm bốn bước: tạo một quan hệ cho thực thể yếu; đưa khóa của thực thể chủ vào làm khóa ngoại; ghép khóa của thực thể chủ với khóa cục bộ để tạo thành khóa chính (khóa ghép); và ghi rõ chính sách xóa/cập nhật theo vòng đời phụ thuộc (thường là \texttt{ON DELETE CASCADE}). Ví dụ: \texttt{PhuThuoc(maNV FK, tenPT, quanHe)} với khóa chính là cặp \texttt{(maNV, tenPT)}.
+ 
+\section{Mở rộng mô hình EER: Tổng quát hóa và Chuyên biệt hóa}\label{s:eer}
+ 
+EER (Extended/Enhanced ER) mở rộng ER bằng các khái niệm mô tả phân cấp kiểu đối tượng, hữu ích khi các thực thể con trong cùng một nhóm có hành vi nghiệp vụ khác nhau đáng kể.
+ 
+\begin{itemize}
+	\item \textbf{Chuyên biệt hóa (Specialization)}: tách một thực thể tổng quát thành các thực thể con cụ thể hơn, mỗi thực thể con kế thừa khóa và thuộc tính chung của thực thể cha, đồng thời có thể có thuộc tính riêng (ví dụ \texttt{NhanVien} tách thành \texttt{NVCoHuu} và \texttt{NVHopDong}).
+	\item \textbf{Tổng quát hóa (Generalization)}: đi theo chiều ngược lại — gom phần chung của nhiều thực thể thành một thực thể cha, giúp giảm lặp và tạo điểm tham chiếu chung (ví dụ \texttt{SinhVien} và \texttt{GiangVien} cùng được gom thành \texttt{DocGia}).
+\end{itemize}
+ 
+Trong UML, quan hệ kế thừa được vẽ bằng tam giác rỗng trỏ về lớp cha, kèm hai loại ràng buộc: \emph{rời nhau/chồng lấp} (\texttt{\{disjoint\}} — một thể hiện cha thuộc tối đa một lớp con, ví dụ nhân viên cơ hữu \emph{hoặc} hợp đồng; \texttt{\{overlap\}} — một thể hiện có thể thuộc nhiều lớp con cùng lúc); và \emph{toàn phần/từng phần} (\texttt{\{complete\}} — mọi thể hiện cha bắt buộc thuộc một lớp con nào đó; \texttt{\{incomplete\}} — có thể có thể hiện cha chưa được phân loại).
+ 
+Có hai chiến lược phổ biến khi chuyển EER sang lược đồ quan hệ:
+ 
+\begin{enumerate}
+	\item \textbf{Cha và con riêng biệt}: tạo một quan hệ cho lớp cha và một quan hệ cho mỗi lớp con; khóa của lớp con đồng thời là khóa ngoại tham chiếu về lớp cha (ví dụ \texttt{DocGia(maDG PK, hoTen)}; \texttt{SinhVien(maDG PK/FK, maLop)}; \texttt{GiangVien(maDG PK/FK, hocVi)}).
+	\item \textbf{Gộp một bảng}: gộp lớp cha và tất cả lớp con vào một quan hệ duy nhất, thêm một thuộc tính phân loại (ví dụ \texttt{NhanVien(maNV, hoTen, loaiNV, heSoLuong, ngayHetHan)}). Cách này đơn giản hơn nhưng dễ sinh nhiều giá trị rỗng nếu các lớp con có nhiều thuộc tính riêng biệt không liên quan đến nhau.
+\end{enumerate}
+ 
+\section{Áp dụng phương pháp luận: Nghiên cứu tình huống FamilyConnect}\label{s:casestudy}
+ 
+Phần này áp dụng quy trình sáu bước ở Mục~\ref{s:phuongphapluan} vào đề xuất dự án \textit{FamilyConnect: Nền tảng Cộng đồng Gia đình số tích hợp Trí tuệ nhân tạo} — một nền tảng kết hợp quản lý gia phả, giao tiếp gia đình, quản lý sự kiện, chia sẻ kiến thức và các dịch vụ hỗ trợ bởi AI.
+ 
+\subsection{Bước 1--2: Khoanh phạm vi và xác định ứng viên thực thể}
+ 
+Dựa trên các nhóm yêu cầu chức năng của FamilyConnect (Người dùng \& Bảo mật; Quản lý Gia đình \& Gia phả; Cộng đồng; Sự kiện; Danh bạ Gia đình; Di sản Gia đình), các danh từ nghiệp vụ chính được gạch chân và chuyển thành ứng viên thực thể như sau:
+ 
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|p{9cm}|}
+\hline
+\textbf{Thực thể} & \textbf{Nguồn gốc từ yêu cầu chức năng} \\
+\hline
+NGUOI\_DUNG & Đăng ký/xác thực người dùng, RBAC, quản lý hồ sơ người dùng \\
+GIA\_DINH & Quản lý gia đình \\
+CHI\_NHANH & Quản lý chi/nhánh/phái trong dòng họ \\
+THANH\_VIEN & Quản lý thành viên, hồ sơ nghề nghiệp/học vấn, danh bạ \\
+BAI\_DANG & Tạo và quản lý bài đăng, chia sẻ tin tức/hình ảnh \\
+BINH\_LUAN & Bình luận và tương tác trên bài đăng (thực thể yếu) \\
+SU\_KIEN & Tạo sự kiện gia đình, nhắc nhở sự kiện \\
+TAI\_LIEU\_DI\_SAN & Tài liệu lịch sử, câu chuyện gia đình, lưu trữ số \\
+\hline
+\end{tabular}
+\caption{Ứng viên thực thể rút ra từ đề cương FamilyConnect}
+\end{table}
+ 
+Cần phân biệt rõ \texttt{NGUOI\_DUNG} (tài khoản đăng nhập hệ thống) và \texttt{THANH\_VIEN} (hồ sơ trong cây gia phả) — hai khái niệm này không đồng nhất, vì yêu cầu ``xác minh thành viên gia đình'' cho thấy một thành viên có thể chưa có tài khoản đăng nhập (ví dụ tổ tiên đã mất, hoặc trẻ nhỏ), trong khi một tài khoản người dùng chỉ nên gắn với đúng một thành viên sau khi xác minh.
+ 
+\subsection{Bước 3--4: Xác định mối kết hợp, gắn thuộc tính và khóa}
+ 
+\begin{itemize}
+	\item \texttt{NGUOI\_DUNG} \emph{Xác minh} \texttt{THANH\_VIEN} — mối kết hợp 1--1, tham gia tùy chọn ở cả hai phía (\texttt{0..1}): một tài khoản xác minh tối đa một hồ sơ thành viên, một thành viên có thể chưa từng có tài khoản liên kết.
+	\item \texttt{GIA\_DINH} \emph{Gồm} \texttt{CHI\_NHANH} — mối kết hợp 1--N: một gia đình có nhiều chi/nhánh, mỗi chi/nhánh thuộc đúng một gia đình.
+	\item \texttt{CHI\_NHANH} \emph{Có} \texttt{THANH\_VIEN} — mối kết hợp 1--N.
+	\item \texttt{THANH\_VIEN} \emph{Là cha/mẹ của} \texttt{THANH\_VIEN} — mối kết hợp \textbf{đệ quy} bậc một, bản số 1--N theo mỗi vai trò (cha, mẹ), dùng để dựng cây gia phả và hỗ trợ truy vấn/trực quan hóa mối quan hệ.
+	\item \texttt{THANH\_VIEN} \emph{Kết hôn với} \texttt{THANH\_VIEN} — mối kết hợp đệ quy N--M (một người có thể có nhiều cuộc hôn nhân theo thời gian), có thuộc tính riêng \texttt{ngayCuoi}, \texttt{trangThai} — đây là một \emph{thực thể kết hợp} (\texttt{HON\_NHAN}) vì mang dữ liệu nghiệp vụ riêng, không thuộc về một thành viên cụ thể nào.
+	\item \texttt{THANH\_VIEN} \emph{Đăng} \texttt{BAI\_DANG} — 1--N.
+	\item \texttt{BAI\_DANG} \emph{Có} \texttt{BINH\_LUAN} — mối kết hợp nhận dạng 1--N: \texttt{BINH\_LUAN} là \textbf{thực thể yếu}, chỉ có ý nghĩa khi gắn với một bài đăng cụ thể, khóa cục bộ là thời điểm bình luận hoặc số thứ tự.
+	\item \texttt{THANH\_VIEN} \emph{Tham dự} \texttt{SU\_KIEN} — mối kết hợp N--M có thuộc tính riêng \texttt{trangThaiRSVP}, trở thành thực thể kết hợp \texttt{THAM\_DU}.
+	\item \texttt{THANH\_VIEN} \emph{Lưu} \texttt{TAI\_LIEU\_DI\_SAN} — 1--N, với thuộc tính phân loại \texttt{loaiTaiLieu} (tài liệu lịch sử / câu chuyện / hình ảnh) — đây là điểm có thể cân nhắc chuyên biệt hóa (xem Mục~\ref{ss:eer-familyconnect}).
+\end{itemize}
+ 
+Về thuộc tính, mỗi thực thể mang các nhóm thuộc tính tương ứng với yêu cầu chức năng: \texttt{THANH\_VIEN} có thuộc tính đơn (\texttt{hoTen}, \texttt{ngaySinh}), thuộc tính dẫn xuất (\texttt{/tuoi} tính từ \texttt{ngaySinh}), và thuộc tính đa trị (nhiều số điện thoại liên hệ trong danh bạ, cần tách thành quan hệ riêng theo quy tắc ở Mục~\ref{s:anhxa}). Khóa định danh của các thực thể chính là các mã thay thế ổn định: \texttt{maND} (NGUOI\_DUNG), \texttt{maTV} (THANH\_VIEN), \texttt{maGD} (GIA\_DINH), \texttt{maSK} (SU\_KIEN), \texttt{maBD} (BAI\_DANG).
+ 
+\subsection{Bước 5: Bản số và mức tham gia — tổng hợp}
+ 
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Mối kết hợp} & \textbf{Bản số} & \textbf{Mức tham gia} \\
+\hline
+NGUOI\_DUNG -- THANH\_VIEN & 1--1 & Tùy chọn cả hai phía \\
+GIA\_DINH -- CHI\_NHANH & 1--N & Bắt buộc phía CHI\_NHANH \\
+THANH\_VIEN -- THANH\_VIEN (cha/mẹ--con) & 1--N & Tùy chọn (đệ quy) \\
+THANH\_VIEN -- THANH\_VIEN (qua HON\_NHAN) & N--M & Tùy chọn \\
+THANH\_VIEN -- BAI\_DANG & 1--N & Bắt buộc phía BAI\_DANG \\
+BAI\_DANG -- BINH\_LUAN & 1--N & Bắt buộc phía BINH\_LUAN (yếu) \\
+THANH\_VIEN -- SU\_KIEN (qua THAM\_DU) & N--M & Tùy chọn \\
+\hline
+\end{tabular}
+\caption{Tổng hợp bản số và mức tham gia của các mối kết hợp chính}
+\end{table}
+ 
+\subsection{Bước 6: Tinh chế mô hình — vai trò của EER}\label{ss:eer-familyconnect}
+ 
+Khi tinh chế mô hình bằng dữ liệu mẫu (ví dụ: thêm một thành viên chưa có tài khoản, một cuộc hôn nhân đã kết thúc, một sự kiện chưa ai xác nhận tham dự), hai điểm cần cân nhắc mở rộng sang EER (Mục~\ref{s:eer}):
+ 
+\begin{itemize}
+	\item \texttt{TAI\_LIEU\_DI\_SAN} có thể được \textbf{chuyên biệt hóa} thành \texttt{TAI\_LIEU\_LICH\_SU}, \texttt{CAU\_CHUYEN\_GIA\_DINH}, \texttt{HINH\_ANH} nếu mỗi loại có thuộc tính hoặc quy trình xử lý riêng biệt đủ khác nhau (ràng buộc \texttt{\{overlap, incomplete\}}, vì một tài liệu có thể vừa là câu chuyện vừa kèm hình ảnh, và không phải mọi mục lưu trữ đều cần phân loại ngay).
+	\item Vai trò người dùng trong RBAC (thành viên thường / quản trị viên) nên được mô hình hóa bằng một mối kết hợp N--M \texttt{NGUOI\_DUNG} -- \texttt{VAI\_TRO} thay vì tổng quát hóa/chuyên biệt hóa, vì một người dùng có thể đồng thời giữ nhiều vai trò và vai trò có thể thay đổi theo thời gian — đây là ví dụ cho thấy không phải mọi phân loại nghiệp vụ đều nên trở thành lớp con EER.
+\end{itemize}
+ 
+Kết quả cuối cùng của quy trình sáu bước là một ERD/UML quan niệm cho FamilyConnect đã được kiểm chứng, sẵn sàng để ánh xạ sang lược đồ quan hệ theo thuật toán ở Mục~\ref{s:anhxa}, làm nền tảng cho các bước chuẩn hóa cơ sở dữ liệu ở chương tiếp theo.
