@@ -1,0 +1,58 @@
+\chapter{Thiết kế mức Vật lý}
+\label{chap:vat_ly}
+
+\section{Tổng quan Thiết kế Vật lý}
+Thiết kế mức vật lý là giai đoạn hiện thực hóa lược đồ quan hệ đã được chuẩn hóa ở mức logic lên một Hệ Quản trị Cơ sở Dữ liệu (DBMS) cụ thể. Hệ quản trị được lựa chọn cho dự án FamilyConnect là \textbf{PostgreSQL}.
+
+\section{Kiểu dữ liệu và Ràng buộc toàn vẹn}
+Các bảng trong hệ thống được định nghĩa với kiểu dữ liệu tối ưu và các ràng buộc toàn vẹn:
+\begin{itemize}
+    \item Khóa chính (\texttt{PRIMARY KEY}) sử dụng kiểu số nguyên tăng tự động (\texttt{BIGSERIAL}) hoặc mã định danh duy nhất (\texttt{UUID}).
+    \item Khóa ngoại (\texttt{FOREIGN KEY}) với chính sách toàn vẹn tham chiếu phù hợp (\texttt{ON DELETE CASCADE}, \texttt{ON DELETE SET NULL}).
+    \item Ràng buộc \texttt{NOT NULL} và \texttt{CHECK} đảm bảo tính hợp lệ của miền giá trị.
+\end{itemize}
+
+\section{Lược đồ Cơ sở Dữ liệu SQL (DDL)}
+
+Dưới đây là một phần mã nguồn DDL khởi tạo các bảng nòng cốt cho FamilyConnect:
+
+\begin{lstlisting}[language=SQL, caption={Khai báo các bảng người dùng và gia đình trong PostgreSQL}]
+-- Bang Nguoi Dung (Users)
+CREATE TABLE users (
+    user_id BIGSERIAL PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(20) DEFAULT 'MEMBER',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Bang Gia Dinh (Family)
+CREATE TABLE families (
+    family_id BIGSERIAL PRIMARY KEY,
+    family_name VARCHAR(150) NOT NULL,
+    origin_location VARCHAR(255),
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Bang Thanh Vien trong cay gia pha (Members)
+CREATE TABLE family_members (
+    member_id BIGSERIAL PRIMARY KEY,
+    family_id BIGINT NOT NULL REFERENCES families(family_id) ON DELETE CASCADE,
+    user_id BIGINT REFERENCES users(user_id) ON DELETE SET NULL,
+    full_name VARCHAR(100) NOT NULL,
+    gender VARCHAR(10),
+    birth_date DATE,
+    death_date DATE,
+    father_id BIGINT REFERENCES family_members(member_id),
+    mother_id BIGINT REFERENCES family_members(member_id)
+);
+\end{lstlisting}
+
+\section{Chiến lược Chỉ mục (Indexing) và Tối ưu hóa truy vấn}
+Để đáp ứng các yêu cầu truy vấn nhanh và hiển thị cây gia phả nhiều tầng:
+\begin{itemize}
+    \item Đánh chỉ mục \textbf{B-Tree} trên các cột khóa ngoại (\texttt{family\_id}, \texttt{father\_id}, \texttt{mother\_id}, \texttt{user\_id}) để tăng tốc các phép nối (\texttt{JOIN}).
+    \item Đánh chỉ mục \textbf{GIN / GiST} trên các cột văn bản hỗ trợ tìm kiếm toàn văn (Full-text search) và tìm kiếm ngữ nghĩa di sản gia đình.
+\end{itemize}
