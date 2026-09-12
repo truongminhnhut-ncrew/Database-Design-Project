@@ -1,0 +1,407 @@
+\documentclass[12pt,a4paper,oneside]{report}
+
+% ==============================================================================
+% GÓI VÀ CẤU HÌNH NGÔN NGỮ, FONT CHỮ
+% ==============================================================================
+\usepackage{iftex}
+\ifXeTeX
+  \usepackage{fontspec}
+  \usepackage{polyglossia}
+  \setmainlanguage{vietnamese}
+  \setmainfont{Times New Roman}
+\else\ifLuaTeX
+  \usepackage{fontspec}
+  \usepackage{polyglossia}
+  \setmainlanguage{vietnamese}
+  \setmainfont{Times New Roman}
+\else
+  \usepackage[T5,T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage[vietnamese]{babel}
+  \usepackage{times}
+\fi\fi
+
+% ==============================================================================
+% ĐỊNH DẠNG TRANG & CĂN LỀ
+% ==============================================================================
+\usepackage{geometry}
+\geometry{
+    a4paper,
+    top=25mm,
+    bottom=25mm,
+    left=30mm,
+    right=20mm,
+    headheight=15pt
+}
+\usepackage{setspace}
+\onehalfspacing % Giãn dòng 1.5
+
+% ==============================================================================
+% GÓI ĐỒ HỌA, TOÁN HỌC, BẢNG BIỂU & MÃ NGUỒN
+% ==============================================================================
+\usepackage{amsmath, amssymb, amsfonts}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{colortbl}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage[normalem]{ulem}
+\usepackage{tikz}
+\usetikzlibrary{
+    positioning,
+    shapes.geometric,
+    shapes.misc,
+    shapes.multipart,
+    arrows.meta,
+    calc,
+    fit,
+    backgrounds,
+    shadows.blur,
+    shadows
+}
+
+% Cấu hình Caption chuyên nghiệp
+\captionsetup{
+    font=small,
+    labelfont={bf, color=navy},
+    textfont=it,
+    justification=centering,
+    skip=8pt
+}
+
+% ==============================================================================
+% MÀU SẮC & CẤU HÌNH TIKZ / BẢNG BIỂU
+% ==============================================================================
+\definecolor{navy}{RGB}{15,35,65}
+\definecolor{darkblue}{RGB}{20,45,85}
+\definecolor{blue}{RGB}{30,90,200}
+\definecolor{softblue}{RGB}{238,244,255}
+\definecolor{verylight}{RGB}{248,250,253}
+\definecolor{graytext}{RGB}{70,80,95}
+\definecolor{bordergray}{RGB}{195,208,225}
+\definecolor{green}{RGB}{16,150,75}
+\definecolor{lightgreen}{RGB}{235,250,240}
+\definecolor{amber}{RGB}{215,115,10}
+\definecolor{lightamber}{RGB}{254,248,235}
+\definecolor{purple}{RGB}{120,50,180}
+\definecolor{lightpurple}{RGB}{248,240,255}
+\definecolor{tableheader}{RGB}{25,50,90}
+\definecolor{tablerowalt}{RGB}{245,248,253}
+
+% Định nghĩa bảng màu học thuật cho ERD
+\definecolor{erdnavy}{RGB}{24, 43, 73}
+\definecolor{erdheader}{RGB}{238, 244, 250}
+\definecolor{erdline}{RGB}{70, 80, 95}
+\definecolor{pkcolor}{RGB}{185, 30, 30}
+\definecolor{fkcolor}{RGB}{30, 100, 175}
+
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\arraybackslash}p{#1}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{Z}{>{\centering\arraybackslash}X}
+
+\tikzset{
+    erd entity/.style={
+        rectangle split,
+        rectangle split parts=2,
+        rectangle split part fill={erdheader, white},
+        rounded corners=2pt,
+        draw=erdnavy,
+        line width=0.8pt,
+        font=\footnotesize\sffamily,
+        text width=3.8cm,
+        inner sep=4pt,
+        rectangle split part align={center, left}
+    },
+    erd rel/.style={
+        draw=erdline,
+        line width=0.75pt,
+        -{Latex[length=2.2mm]}
+    },
+    erd card/.style={
+        font=\scriptsize\bfseries\sffamily,
+        text=erdnavy,
+        fill=white,
+        inner sep=1.5pt
+    },
+    entity/.style={
+        rectangle,
+        rounded corners=4pt,
+        minimum width=3.2cm,
+        minimum height=1.05cm,
+        draw=navy,
+        line width=1.3pt,
+        fill=softblue,
+        align=center,
+        font=\bfseries\small,
+        text=navy,
+        drop shadow={opacity=0.15, shadow xshift=1pt, shadow yshift=-1.5pt}
+    },
+    weakentity/.style={
+        rectangle,
+        rounded corners=4pt,
+        minimum width=3.2cm,
+        minimum height=1.05cm,
+        double,
+        double distance=1.5pt,
+        draw=navy,
+        line width=1pt,
+        fill=softblue,
+        align=center,
+        font=\bfseries\small,
+        text=navy,
+        drop shadow={opacity=0.15, shadow xshift=1pt, shadow yshift=-1.5pt}
+    },
+    relation/.style={
+        diamond,
+        aspect=2,
+        minimum width=2.2cm,
+        minimum height=1.1cm,
+        draw=blue,
+        line width=1.1pt,
+        fill=white,
+        align=center,
+        font=\scriptsize\bfseries,
+        text=navy,
+        drop shadow={opacity=0.12, shadow xshift=1pt, shadow yshift=-1pt}
+    },
+    weakrelation/.style={
+        diamond,
+        aspect=2,
+        minimum width=2.2cm,
+        minimum height=1.1cm,
+        double,
+        double distance=1.2pt,
+        draw=blue,
+        line width=0.9pt,
+        fill=white,
+        align=center,
+        font=\scriptsize\bfseries,
+        text=navy,
+        drop shadow={opacity=0.12, shadow xshift=1pt, shadow yshift=-1pt}
+    },
+    attribute/.style={
+        ellipse,
+        draw=graytext,
+        line width=0.9pt,
+        fill=white,
+        align=center,
+        font=\scriptsize,
+        text=navy,
+        inner sep=3pt
+    },
+    pkattribute/.style={
+        rectangle,
+        rounded corners=3pt,
+        draw=green,
+        line width=1pt,
+        fill=lightgreen,
+        align=center,
+        font=\scriptsize\bfseries,
+        text=green!60!black,
+        inner sep=4pt
+    },
+    connector/.style={
+        -{Latex[length=2.2mm, width=1.6mm]},
+        line width=1pt,
+        draw=graytext!90
+    },
+    lineconnector/.style={
+        line width=1pt,
+        draw=graytext!90
+    },
+    cardinality/.style={
+        font=\scriptsize\bfseries,
+        fill=white,
+        draw=bordergray,
+        rounded corners=2pt,
+        inner sep=2pt,
+        text=blue!80!black
+    },
+    groupbox/.style={
+        rectangle,
+        rounded corners=8pt,
+        draw=bordergray,
+        line width=0.8pt,
+        fill=verylight,
+        inner sep=10pt
+    }
+}
+
+% Định dạng khối mã nguồn (SQL, Python, v.v.)
+\lstset{
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue}\bfseries,
+    stringstyle=\color{red!70!black},
+    commentstyle=\color{green!50!black}\itshape,
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    stepnumber=1,
+    numbersep=8pt,
+    backgroundcolor=\color{gray!5},
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    frame=single,
+    rulecolor=\color{gray!30},
+    tabsize=2,
+    captionpos=b,
+    breaklines=true,
+    breakatwhitespace=false
+}
+
+% ==============================================================================
+% HEADER & FOOTER
+% ==============================================================================
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\slshape Đồ án Thiết kế Cơ sở Dữ liệu}
+\fancyhead[R]{\small\slshape Đề tài: FamilyConnect}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+% Áp dụng plain style cho trang đầu chương
+\fancypagestyle{plain}{
+  \fancyhf{}
+  \fancyfoot[C]{\thepage}
+  \renewcommand{\headrulewidth}{0pt}
+  \renewcommand{\footrulewidth}{0pt}
+}
+
+% ==============================================================================
+% TIÊU ĐỀ CHƯƠNG & MỤC
+% ==============================================================================
+\usepackage{titlesec}
+\titleformat{\chapter}[hang]
+  {\normalfont\LARGE\bfseries}{\chaptertitlename\ \thechapter:}{0.8em}{}
+\titlespacing*{\chapter}{0pt}{-20pt}{20pt}
+
+% ==============================================================================
+% HYPERREF (LIÊN KẾT & MỤC LỤC TƯƠNG TÁC)
+% ==============================================================================
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    filecolor=blue,
+    citecolor=blue,
+    urlcolor=blue,
+    pdftitle={Đồ án Thiết kế Cơ sở Dữ liệu - FamilyConnect},
+    pdfauthor={Nhóm sinh viên},
+    pdfsubject={Database Design Project},
+    pdfkeywords={Database, ERD, Relational Model, Normalization, SQL}
+}
+
+% ==============================================================================
+% BẮT ĐẦU TÀI LIỆU
+% ==============================================================================
+\begin{document}
+
+% ------------------------------------------------------------------------------
+% TRANG BÌA
+% ------------------------------------------------------------------------------
+\hypersetup{pageanchor=false}
+\begin{titlepage}
+\begin{center}
+    \large\textbf{TRƯỜNG ĐẠI HỌC GIAO THÔNG VẬN TẢI TP. HỒ CHÍ MINH}\\
+    \textbf{VIỆN ĐÀO TẠO / KHOA CÔNG NGHỆ THÔNG TIN}\\[1.5cm]
+
+    % Logo (nếu có ảnh logo, có thể bỏ comment dòng dưới)
+    % \includegraphics[width=0.25\textwidth]{images/logo_uth.png}\\[1cm]
+    \vspace*{1.5cm}
+
+    \Large\textbf{BÁO CÁO ĐỒ ÁN MÔN HỌC}\\[0.5cm]
+    \Huge\textbf{THIẾT KẾ CƠ SỞ DỮ LIỆU}\\[1.5cm]
+
+    \rule{\linewidth}{1.5pt}\\[0.4cm]
+    \LARGE\textbf{ĐỀ TÀI: FAMILYCONNECT}\\[0.2cm]
+    \large\textbf{Nền tảng Cộng đồng Gia đình số tích hợp Trí tuệ Nhân tạo}\\
+    \rule{\linewidth}{1.5pt}\\[2cm]
+
+    \begin{minipage}[t]{0.45\textwidth}
+        \textbf{Giảng viên hướng dẫn:}\\
+        \indent ThS. / TS. [Tên Giảng Viên]
+    \end{minipage}
+    \begin{minipage}[t]{0.5\textwidth}
+        \textbf{Sinh viên thực hiện:}\\
+        \indent 1. Trương Minh Nhựt\\
+        \indent 2. Phan Thủy Tiên\\
+        \indent 3. Nguyễn Tuấn Kiệt\\
+        \indent 4. Trần Quốc Khánh\\
+        \indent 5. Huỳnh Như
+    \end{minipage}
+
+    \vfill
+    {\large TP. Hồ Chí Minh, Năm 2026}
+\end{center}
+\end{titlepage}
+\hypersetup{pageanchor=true}
+
+% ------------------------------------------------------------------------------
+% MỤC LỤC VÀ DANH MỤC
+% ------------------------------------------------------------------------------
+\pagenumbering{roman}
+\tableofcontents
+\newpage
+\listoffigures
+\newpage
+\listoftables
+\newpage
+
+% ------------------------------------------------------------------------------
+% PHẦN NỘI DUNG CHÍNH (CÁC CHƯƠNG)
+% ------------------------------------------------------------------------------
+\pagenumbering{arabic}
+
+% Giới thiệu đề tài (Không đánh số chương)
+\include{chapters/00_mo_dau}
+
+% Chương 1: Thiết kế Quan niệm (Conceptual Design)
+\include{chapters/chuong1_quan_niem/main}
+
+% Chương 2: Thiết kế Logic (Logical Design)
+\include{chapters/chuong2_logic/main}
+
+% Chương 3: Thiết kế Vật lý (Physical Design)
+\include{chapters/chuong3_vat_ly/main}
+
+% Đánh giá và Kết luận (Không đánh số chương)
+\include{chapters/04_ket_luan}
+
+% ------------------------------------------------------------------------------
+% TÀI LIỆU THAM KHẢO
+% ------------------------------------------------------------------------------
+\begin{thebibliography}{99}
+\bibitem{chen1976}
+Peter Pin-Shan Chen.
+\newblock The Entity-Relationship Model---Toward a Unified View of Data.
+\newblock {\em ACM Transactions on Database Systems (TODS)}, 1(1):9--36, 1976.
+
+\bibitem{armstrong1974}
+William Ward Armstrong.
+\newblock Dependency structures of data base relationships.
+\newblock {\em Information Processing 74}, pages 580--583. North-Holland, 1974.
+
+\bibitem{elmasri2015}
+Ramez Elmasri and Shamkant B. Navathe.
+\newblock {\em Fundamentals of Database Systems}.
+\newblock Pearson, 7th edition, 2015.
+
+\bibitem{silberschatz2019}
+Abraham Silberschatz, Henry F. Korth, and S. Sudarshan.
+\newblock {\em Database System Concepts}.
+\newblock McGraw-Hill, 7th edition, 2019.
+\end{thebibliography}
+
+\end{document}

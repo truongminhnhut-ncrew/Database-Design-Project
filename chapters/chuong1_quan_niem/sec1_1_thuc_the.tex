@@ -1,0 +1,436 @@
+% !TEX root = ../../main.tex
+\section{Xác định các thực thể và tập thuộc tính (Conceptual Design)}
+\label{sec:1_1_thuc_the_thuoc_tinh}
+
+Trong giai đoạn thiết kế quan niệm cho nền tảng \textbf{FamilyConnect}, dựa trên yêu cầu chức năng về quản lý phân quyền, cấu trúc cây gia phả, hoạt động cộng đồng và lưu trữ di sản số, hệ thống được phân rã thành 4 nhóm thực thể chính gồm 15 thực thể nghiệp vụ cốt lõi.
+
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabularx}{\textwidth}{c l X}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Ký hiệu}} & \textcolor{white}{\textbf{Phân loại thuộc tính}} & \textcolor{white}{\textbf{Ý nghĩa và Quy tắc nghiệp vụ}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \textbf{($*$)} & Thuộc tính bắt buộc & Giá trị bắt buộc phải có khi khởi tạo đối tượng (\texttt{Not Null}). \\
+        \textbf{($\circ$)} & Thuộc tính tùy chọn & Giá trị không bắt buộc, có thể bổ sung khi có thông tin (\texttt{Optional}). \\
+        \rowcolor{tablerowalt}
+        \textbf{(Derived)} & Thuộc tính suy diễn & Được tính toán tự động từ thuộc tính khác (ví dụ: \texttt{Tuoi} tính từ \texttt{NgaySinh}). \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Quy ước ký hiệu thuộc tính trong thiết kế quan niệm}
+    \label{tab:attribute_notations}
+\end{table}
+
+% ==============================================================================
+% 1. NHÓM NGƯỜI DÙNG & BẢO MẬT
+% ==============================================================================
+\subsection{Nhóm Thực thể Người dùng \& Bảo mật (User \& Security)}
+Nhóm thực thể này đảm bảo việc xác thực tài khoản, kiểm soát truy cập dựa trên vai trò (Role-Based Access Control -- RBAC) và ghi nhận nhật ký vận hành nhằm bảo đảm an toàn hệ thống.
+
+\subsubsection{Thực thể NGUOI\_DUNG (User)}
+Đại diện cho tài khoản đăng nhập vào hệ thống (thông qua Web hoặc Mobile App). Một tài khoản có thể liên kết với một hồ sơ thành viên trong gia tộc sau khi được xác thực.
+
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabularx}{\textwidth}{l c X p{4.2cm}}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Ký hiệu}} & \textcolor{white}{\textbf{Mô tả ý nghĩa nghiệp vụ}} & \textcolor{white}{\textbf{Ví dụ minh họa}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{MaNguoiDung} & $*$ & Mã định danh duy nhất của người dùng & \texttt{USR\_001}, \texttt{USR\_092} \\
+        \texttt{Email} & $*$ & Địa chỉ thư điện tử dùng để đăng nhập và nhận thông báo & \texttt{tuan.nguyen@gmail.com} \\
+        \rowcolor{tablerowalt}
+        \texttt{SoDienThoai} & $*$ & Số điện thoại đăng ký/xác thực tài khoản & \texttt{0901234567} \\
+        \texttt{MatKhauHash} & $*$ & Mật khẩu đã được mã hóa an toàn & \texttt{\$2a\$12\$e8x9A...} \\
+        \rowcolor{tablerowalt}
+        \texttt{TrangThai} & $*$ & Trạng thái tài khoản người dùng & Đang hoạt động, Chờ duyệt \\
+        \texttt{LanDangNhapCuoi} & $\circ$ & Thời điểm đăng nhập gần nhất vào hệ thống & 2026-09-08 08:30:00 \\
+        \rowcolor{tablerowalt}
+        \texttt{NgayTao} & $*$ & Thời gian khởi tạo tài khoản & 2026-01-15 10:00:00 \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Danh mục thuộc tính thực thể NGUOI\_DUNG (User)}
+    \label{tab:ent_nguoi_dung}
+\end{table}
+
+\subsubsection{Thực thể VAI\_TRO (Role)}
+Xác định nhóm vai trò của người dùng trong hệ thống (ví dụ: Quản trị viên hệ thống -- Super Admin, Trưởng ban liên lạc dòng họ -- Clan Admin, Trưởng chi -- Branch Admin, Thành viên thông thường -- Member).
+
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabularx}{\textwidth}{l c X p{4.2cm}}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Ký hiệu}} & \textcolor{white}{\textbf{Mô tả ý nghĩa nghiệp vụ}} & \textcolor{white}{\textbf{Ví dụ minh họa}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{MaVaiTro} & $*$ & Ký hiệu mã vai trò trong hệ thống & \texttt{ROLE\_CLAN\_ADMIN}, \texttt{ROLE\_MEMBER} \\
+        \texttt{TenVaiTro} & $*$ & Tên hiển thị của vai trò & Trưởng ban liên lạc dòng họ, Thành viên \\
+        \rowcolor{tablerowalt}
+        \texttt{MoTa} & $\circ$ & Giải thích quyền hạn và trách nhiệm của vai trò & Quản trị toàn bộ cây gia phả và duyệt bài viết \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Danh mục thuộc tính thực thể VAI\_TRO (Role)}
+    \label{tab:ent_vai_tro}
+\end{table}
+
+\subsubsection{Thực thể QUYEN (Permission)}
+Quy định chi tiết các hành động nghiệp vụ cụ thể được phép thực thi trên hệ thống (ví dụ: \texttt{genealogy.edit}, \texttt{post.approve}, \texttt{event.create}, \texttt{heritage.delete}).
+
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabularx}{\textwidth}{l c X p{4.2cm}}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Ký hiệu}} & \textcolor{white}{\textbf{Mô tả ý nghĩa nghiệp vụ}} & \textcolor{white}{\textbf{Ví dụ minh họa}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{MaQuyen} & $*$ & Ký hiệu mã quyền duy nhất & \texttt{genealogy.edit}, \texttt{post.approve} \\
+        \texttt{TenQuyen} & $*$ & Tên hành động hoặc quyền hạn chi tiết & Chỉnh sửa cây phả hệ, Duyệt bài viết \\
+        \rowcolor{tablerowalt}
+        \texttt{NhomChucNang} & $*$ & Phân hệ chức năng áp dụng & Gia phả, Bài viết, Sự kiện, Di sản \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Danh mục thuộc tính thực thể QUYEN (Permission)}
+    \label{tab:ent_quyen}
+\end{table}
+
+\subsubsection{Thực thể NHAT\_KY\_HE\_THONG (Audit Log)}
+Lưu lại lịch sử các thao tác nhạy cảm (thêm/sửa/xóa phả hệ, phân quyền, duyệt bài viết) để phục vụ kiểm toán, đối soát và khôi phục khi có sự cố.
+
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabularx}{\textwidth}{l c X p{4.2cm}}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Ký hiệu}} & \textcolor{white}{\textbf{Mô tả ý nghĩa nghiệp vụ}} & \textcolor{white}{\textbf{Ví dụ minh họa}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{MaNhatKy} & $*$ & Mã bản ghi nhật ký vận hành & \texttt{LOG\_100293} \\
+        \texttt{ThoiDiem} & $*$ & Thời gian thao tác diễn ra & 2026-09-08 09:15:20 \\
+        \rowcolor{tablerowalt}
+        \texttt{HanhDong} & $*$ & Thao tác được thực hiện & \texttt{CREATE}, \texttt{UPDATE}, \texttt{DELETE} \\
+        \texttt{DoiTuongTacDong} & $*$ & Tên đối tượng hoặc thực thể bị tác động & \texttt{THANH\_VIEN}, \texttt{BAI\_VIET} \\
+        \rowcolor{tablerowalt}
+        \texttt{DuLieuCu} & $\circ$ & Trạng thái dữ liệu trước khi thay đổi & \texttt{\{"TinhTrang": "Còn sống"\}} \\
+        \texttt{DuLieuMoi} & $\circ$ & Trạng thái dữ liệu sau khi cập nhật & \texttt{\{"TinhTrang": "Đã mất"\}} \\
+        \rowcolor{tablerowalt}
+        \texttt{DiaChiIP} & $\circ$ & Địa chỉ mạng của người dùng thao tác & \texttt{192.168.1.50} \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Danh mục thuộc tính thực thể NHAT\_KY\_HE\_THONG (Audit Log)}
+    \label{tab:ent_nhat_ky}
+\end{table}
+
+% ==============================================================================
+% 2. NHÓM GIA TỘC & GIA PHẢ
+% ==============================================================================
+\subsection{Nhóm Thực thể Gia tộc \& Gia phả (Family \& Genealogy)}
+Đây là nhóm thực thể cốt lõi biểu diễn cây phả hệ, thứ bậc, hồ sơ cá nhân và thông tin nghề nghiệp/học vấn của các thế hệ trong dòng họ.
+
+\subsubsection{Thực thể DONG\_HO (Family / Clan)}
+Lưu trữ thông tin khái quát về một đại dòng họ hoặc tổ chức gia tộc lớn.
+
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabularx}{\textwidth}{l c X p{4.2cm}}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Ký hiệu}} & \textcolor{white}{\textbf{Mô tả ý nghĩa nghiệp vụ}} & \textcolor{white}{\textbf{Ví dụ minh họa}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{MaDongHo} & $*$ & Mã định danh dòng họ & \texttt{CLAN\_NGUYEN\_CANH} \\
+        \texttt{TenDongHo} & $*$ & Tên dòng họ đại gia tộc & "Họ Nguyễn Cảnh", "Họ Trần Đại Tôn" \\
+        \rowcolor{tablerowalt}
+        \texttt{ThuyTo} & $\circ$ & Tên cụ Thủy tổ / Khởi tổ của dòng họ & Cụ Nguyễn Cảnh Chân \\
+        \texttt{QueQuan} & $*$ & Quê gốc / Nơi phát tích của dòng họ & Làng Đô Lương, Nghệ An \\
+        \rowcolor{tablerowalt}
+        \texttt{NhaThoTo} & $\circ$ & Địa chỉ hoặc tọa độ từ đường chính & Xã Tràng Sơn, Huyện Đô Lương \\
+        \texttt{NgayGioTo} & $\circ$ & Ngày giỗ tổ hàng năm (Âm lịch) & Ngày 15 tháng Giêng \\
+        \rowcolor{tablerowalt}
+        \texttt{LichSuHinhThanh} & $\circ$ & Tóm tắt lịch sử hình thành và phát triển & Khởi phát từ thế kỷ XV, trải qua 18 đời \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Danh mục thuộc tính thực thể DONG\_HO (Family / Clan)}
+    \label{tab:ent_dong_ho}
+\end{table}
+
+\subsubsection{Thực thể CHI\_TOC (Branch)}
+Biểu diễn các chi, nhánh, phái được phân tách từ dòng họ chính qua các đời.
+
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabularx}{\textwidth}{l c X p{4.2cm}}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Ký hiệu}} & \textcolor{white}{\textbf{Mô tả ý nghĩa nghiệp vụ}} & \textcolor{white}{\textbf{Ví dụ minh họa}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{MaChiToc} & $*$ & Mã định danh chi/nhánh & \texttt{BRANCH\_01\_TRUONG} \\
+        \texttt{TenChiToc} & $*$ & Tên gọi của chi họ & "Chi Trưởng", "Chi Hai -- Nhánh Cụ Ba" \\
+        \rowcolor{tablerowalt}
+        \texttt{DoiThu} & $*$ & Bắt đầu phân tách từ đời thứ mấy & Đời thứ 5 \\
+        \texttt{DiaBanChinh} & $\circ$ & Địa bàn sinh sống tập trung hiện tại & TP. Hồ Chí Minh, Hà Nội \\
+        \rowcolor{tablerowalt}
+        \texttt{GhiChu} & $\circ$ & Thông tin ghi chú thêm về chi nhánh & Chi di cư vào Nam từ năm 1954 \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Danh mục thuộc tính thực thể CHI\_TOC (Branch)}
+    \label{tab:ent_chi_toc}
+\end{table}
+
+\subsubsection{Thực thể THANH\_VIEN (Member / Profile)}
+Mô tả một cá nhân cụ thể trong phả hệ (dù còn sống hay đã mất, dù đã có tài khoản \texttt{NGUOI\_DUNG} hay chỉ là bản ghi lịch sử được ghi chép lại).
+
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabularx}{\textwidth}{l c X p{4.2cm}}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Ký hiệu}} & \textcolor{white}{\textbf{Mô tả ý nghĩa nghiệp vụ}} & \textcolor{white}{\textbf{Ví dụ minh họa}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{MaThanhVien} & $*$ & Mã định danh thành viên & \texttt{MEM\_001}, \texttt{MEM\_092} \\
+        \texttt{HoVaTen} & $*$ & Họ và tên khai sinh đầy đủ & Nguyễn Cảnh Tuấn \\
+        \rowcolor{tablerowalt}
+        \texttt{TenThuongGoi} & $\circ$ & Tên chữ, biệt hiệu, tên gọi ở nhà & Tự Đức Minh, Bé Bo \\
+        \texttt{GioiTinh} & $*$ & Giới tính của thành viên & Nam, Nữ, Khác \\
+        \rowcolor{tablerowalt}
+        \texttt{NgaySinhDuongLich} & $\circ$ & Ngày sinh theo Dương lịch & 1995-10-20 \\
+        \texttt{NgaySinhAmLich} & $\circ$ & Ngày sinh theo Âm lịch & Ngày 27 tháng 8 năm Ất Hợi \\
+        \rowcolor{tablerowalt}
+        \texttt{TheHe} & $*$ & Đời thứ mấy trong gia phả tính từ cụ Thủy tổ & 12 \\
+        \texttt{ConThu} & $\circ$ & Thứ bậc sinh trong gia đình & Con trưởng, Con thứ ba \\
+        \rowcolor{tablerowalt}
+        \texttt{TinhTrang} & $*$ & Tình trạng sinh học & Còn sống, Đã mất \\
+        \texttt{NgayMat} & $\circ$ & Ngày mất để nhắc ngày giỗ & 2020-04-15 (23/3 Âm lịch) \\
+        \rowcolor{tablerowalt}
+        \texttt{NoiAnTang} & $\circ$ & Vị trí mộ phần / nơi an táng & Nghĩa trang gia tộc Đô Lương \\
+        \texttt{DiaChiHienTai} & $\circ$ & Nơi ở / địa chỉ cư trú hiện tại & Quận 1, TP. Hồ Chí Minh \\
+        \rowcolor{tablerowalt}
+        \texttt{AnhDaiDien} & $\circ$ & Đường dẫn ảnh chân dung của thành viên & \texttt{avatar\_001.jpg} \\
+        \texttt{Tuoi} & Derived & Tuổi tính từ ngày sinh đến hiện tại & 31 \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Danh mục thuộc tính thực thể THANH\_VIEN (Member / Profile)}
+    \label{tab:ent_thanh_vien}
+\end{table}
+
+\subsubsection{Thực thể HO\_SO\_NGHE\_NGHIEP (Career \& Education)}
+Ghi nhận thông tin học vấn, chuyên môn và công việc của các thành viên phục vụ cho việc tạo Danh bạ gia đình (Family Directory), tìm kiếm và kết nối tương trợ giữa các thế hệ.
+
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabularx}{\textwidth}{l c X p{4.2cm}}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Ký hiệu}} & \textcolor{white}{\textbf{Mô tả ý nghĩa nghiệp vụ}} & \textcolor{white}{\textbf{Ví dụ minh họa}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{MaHoSo} & $*$ & Mã hồ sơ chuyên môn danh bạ & \texttt{PROF\_001} \\
+        \texttt{TrinhDoHocVan} & $\circ$ & Học vị / Bằng cấp cao nhất & Thạc sĩ, Cử nhân, Tiến sĩ \\
+        \rowcolor{tablerowalt}
+        \texttt{ChuyenNganh} & $\circ$ & Lĩnh vực chuyên môn đào tạo & Công nghệ thông tin, Y khoa \\
+        \texttt{NgheNghiep} & $\circ$ & Chức danh nghề nghiệp hiện tại & Kỹ sư phần mềm, Bác sĩ \\
+        \rowcolor{tablerowalt}
+        \texttt{CoQuanCongTac} & $\circ$ & Nơi làm việc / Tổ chức công tác & FPT Software, BV Chợ Rẫy \\
+        \texttt{LinhVucKinhDoanh} & $\circ$ & Lĩnh vực hoạt động doanh nghiệp & Bất động sản, Nông sản sạch \\
+        \rowcolor{tablerowalt}
+        \texttt{KhaNangHoTro} & $\circ$ & Lĩnh vực có thể chia sẻ, giúp đỡ con cháu & Tư vấn du học, Hướng nghiệp CNTT \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Danh mục thuộc tính thực thể HO\_SO\_NGHE\_NGHIEP (Career \& Education)}
+    \label{tab:ent_ho_so_nghe_nghiep}
+\end{table}
+
+% ==============================================================================
+% 3. NHÓM TƯƠNG TÁC & SỰ KIỆN
+% ==============================================================================
+\subsection{Nhóm Thực thể Tương tác \& Sự kiện (Community \& Events)}
+Nhóm thực thể phục vụ mạng xã hội nội bộ dòng họ, cho phép chia sẻ tin tức, kết nối giao lưu và tổ chức các sự kiện chung.
+
+\subsubsection{Thực thể BAI\_VIET (Post)}
+Bài viết dạng tin tức dòng họ, thông báo sinh hoạt, chúc mừng hoặc câu chuyện gia đình được chia sẻ trên bảng tin cộng đồng.
+
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabularx}{\textwidth}{l c X p{4.2cm}}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Ký hiệu}} & \textcolor{white}{\textbf{Mô tả ý nghĩa nghiệp vụ}} & \textcolor{white}{\textbf{Ví dụ minh họa}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{MaBaiViet} & $*$ & Mã định danh bài viết & \texttt{POST\_2026\_001} \\
+        \texttt{TieuDe} & $*$ & Tiêu đề của bài viết & "Thông báo lễ mừng thọ đầu xuân" \\
+        \rowcolor{tablerowalt}
+        \texttt{NoiDung} & $*$ & Nội dung chi tiết bài viết & "Ban liên lạc trân trọng kính mời..." \\
+        \texttt{PhamViChiaSe} & $*$ & Chế độ hiển thị & Toàn dòng họ, Toàn chi tộc, Gia đình nhỏ \\
+        \rowcolor{tablerowalt}
+        \texttt{LoaiBaiViet} & $*$ & Phân loại bài viết & Thông báo chính thức, Tin mừng/Hỷ, Tang chế \\
+        \texttt{ThoiGianDang} & $*$ & Thời điểm đăng tải bài viết & 2026-02-10 08:00:00 \\
+        \rowcolor{tablerowalt}
+        \texttt{TrangThaiDuyet} & $*$ & Trạng thái kiểm duyệt & Đã duyệt, Chờ duyệt \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Danh mục thuộc tính thực thể BAI\_VIET (Post)}
+    \label{tab:ent_bai_viet}
+\end{table}
+
+\subsubsection{Thực thể BINH\_LUAN (Comment)}
+Ý kiến phản hồi, trao đổi của thành viên bên dưới mỗi bài viết hoặc sự kiện.
+
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabularx}{\textwidth}{l c X p{4.2cm}}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Ký hiệu}} & \textcolor{white}{\textbf{Mô tả ý nghĩa nghiệp vụ}} & \textcolor{white}{\textbf{Ví dụ minh họa}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{MaBinhLuan} & $*$ & Mã định danh bình luận & \texttt{CMT\_00452} \\
+        \texttt{NoiDung} & $*$ & Nội dung bình luận trao đổi & "Chi Hai xin đăng ký 5 suất tham dự ạ!" \\
+        \rowcolor{tablerowalt}
+        \texttt{ThoiGianTao} & $*$ & Thời điểm gửi bình luận & 2026-02-10 09:30:00 \\
+        \texttt{TrangThai} & $*$ & Trạng thái hiển thị & Hiển thị, Đã ẩn \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Danh mục thuộc tính thực thể BINH\_LUAN (Comment)}
+    \label{tab:ent_binh_luan}
+\end{table}
+
+\subsubsection{Thực thể ALBUM\_ANH (Album)}
+Kho lưu trữ bộ sưu tập hình ảnh, video tư liệu về các hoạt động, buổi sum họp hoặc tài liệu lịch sử gia đình.
+
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabularx}{\textwidth}{l c X p{4.2cm}}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Ký hiệu}} & \textcolor{white}{\textbf{Mô tả ý nghĩa nghiệp vụ}} & \textcolor{white}{\textbf{Ví dụ minh họa}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{MaAlbum} & $*$ & Mã định danh album & \texttt{ALB\_2026\_TET} \\
+        \texttt{TenAlbum} & $*$ & Tên bộ ảnh / video & "Lễ Giỗ tổ Bính Ngọ 2026" \\
+        \rowcolor{tablerowalt}
+        \texttt{MoTa} & $\circ$ & Tóm tắt bối cảnh và ý nghĩa & Tập hợp ảnh sum họp từ đường đầu xuân \\
+        \texttt{NgayTao} & $*$ & Thời điểm tạo album & 2026-02-15 14:00:00 \\
+        \rowcolor{tablerowalt}
+        \texttt{SoLuongAnh} & Derived & Tổng số bức ảnh có trong album & 45 \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Danh mục thuộc tính thực thể ALBUM\_ANH (Album)}
+    \label{tab:ent_album_anh}
+\end{table}
+
+\subsubsection{Thực thể SU\_KIEN (Event)}
+Lưu thông tin về các cuộc gặp gỡ, lễ giỗ họ, đại hội gia tộc, mừng thọ hoặc chương trình khuyến học.
+
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabularx}{\textwidth}{l c X p{4.2cm}}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Ký hiệu}} & \textcolor{white}{\textbf{Mô tả ý nghĩa nghiệp vụ}} & \textcolor{white}{\textbf{Ví dụ minh họa}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{MaSuKien} & $*$ & Mã định danh sự kiện & \texttt{EVT\_GIO\_TO\_2026} \\
+        \texttt{TenSuKien} & $*$ & Tên sự kiện & Lễ Giỗ tổ Thủy tổ năm 2026 \\
+        \rowcolor{tablerowalt}
+        \texttt{MoTa} & $\circ$ & Chi tiết lịch trình và nội dung sự kiện & 08h00: Dâng hương; 11h00: Thụ lộc \\
+        \texttt{ThoiGianBatDau} & $*$ & Thời điểm bắt đầu diễn ra & 2026-03-03 07:30:00 \\
+        \rowcolor{tablerowalt}
+        \texttt{ThoiGianKetThuc} & $\circ$ & Thời điểm kết thúc dự kiến & 2026-03-03 13:00:00 \\
+        \texttt{DiaDiem} & $*$ & Địa điểm tổ chức (Trực tiếp / Trực tuyến) & Nhà thờ tổ dòng họ, Đô Lương \\
+        \rowcolor{tablerowalt}
+        \texttt{NganSachDuKien} & $\circ$ & Kinh phí dự toán tổ chức sự kiện & 25.000.000 VNĐ \\
+        \texttt{TrangThai} & $*$ & Trạng thái sự kiện & Sắp diễn ra, Đã hoàn thành \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Danh mục thuộc tính thực thể SU\_KIEN (Event)}
+    \label{tab:ent_su_kien}
+\end{table}
+
+\subsubsection{Thực thể DANG\_KY\_SU\_KIEN (RSVP)}
+Quản lý việc xác nhận tham gia sự kiện của các thành viên và số lượng người đi cùng, hỗ trợ khâu chuẩn bị hậu cần.
+
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabularx}{\textwidth}{l c X p{4.2cm}}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Ký hiệu}} & \textcolor{white}{\textbf{Mô tả ý nghĩa nghiệp vụ}} & \textcolor{white}{\textbf{Ví dụ minh họa}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{MaDangKy} & $*$ & Mã xác nhận đăng ký & \texttt{RSVP\_001} \\
+        \texttt{TrangThaiThamGia} & $*$ & Trạng thái phản hồi của thành viên & Sẽ tham gia, Không thể tham gia \\
+        \rowcolor{tablerowalt}
+        \texttt{SoNguoiDiCung} & $*$ & Số lượng người đi kèm gia đình & 3 \\
+        \texttt{GhiChu} & $\circ$ & Lời nhắn gửi ban tổ chức & Cần hỗ trợ xe đưa đón người cao tuổi \\
+        \rowcolor{tablerowalt}
+        \texttt{ThoiDiemPhanHoi} & $*$ & Thời gian gửi xác nhận & 2026-02-20 18:45:00 \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Danh mục thuộc tính thực thể DANG\_KY\_SU\_KIEN (RSVP)}
+    \label{tab:ent_dang_ky_su_kien}
+\end{table}
+
+% ==============================================================================
+% 4. NHÓM DI SẢN SỐ
+% ==============================================================================
+\subsection{Nhóm Thực thể Di sản số (Family Heritage)}
+Nhóm thực thể chịu trách nhiệm số hóa, bảo tồn các giá trị phi vật thể, văn bản truyền thống và tri thức dòng họ, đồng thời cung cấp dữ liệu nền tảng cho Trợ lý Trí tuệ nhân tạo (AI Assistant) tra cứu và tóm tắt.
+
+\subsubsection{Thực thể DI\_SAN\_LICH\_SU (Heritage / Document)}
+Lưu trữ các văn bản, hiện vật số hóa như: sắc phong, gia phả cổ, hương ước, văn tự chữ Hán -- Nôm, câu đối, di chúc hoặc các giai thoại truyền khẩu.
+
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabularx}{\textwidth}{l c X p{4.2cm}}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Ký hiệu}} & \textcolor{white}{\textbf{Mô tả ý nghĩa nghiệp vụ}} & \textcolor{white}{\textbf{Ví dụ minh họa}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{MaDiSan} & $*$ & Mã định danh di sản/tư liệu & \texttt{HERITAGE\_01} \\
+        \texttt{TieuDe} & $*$ & Tên gọi của tư liệu/di sản & "Sắc phong thời Cảnh Hưng năm 1783" \\
+        \rowcolor{tablerowalt}
+        \texttt{LoaiDiSan} & $*$ & Thể loại di sản số & Văn bản chữ Hán/Nôm, Điển tích \\
+        \texttt{NienDai} & $\circ$ & Thời kỳ hoặc năm xuất hiện & Năm 1783 (Thời Hậu Lê) \\
+        \rowcolor{tablerowalt}
+        \texttt{NoiDungDichNghia} & $\circ$ & Nội dung phiên âm, dịch nghĩa Quốc ngữ & "Sắc phong cho cụ Thủy tổ..." \\
+        \texttt{DuongDanTepTin} & $*$ & Đường dẫn tệp số hóa độ nét cao & \texttt{sac\_phong\_1783.pdf} \\
+        \rowcolor{tablerowalt}
+        \texttt{TomTatAI} & $\circ$ & Đoạn tóm tắt tạo bởi mô hình LLM & Ghi nhận công lao hộ quốc an dân... \\
+        \texttt{GiaTriLichSu} & $\circ$ & Ý nghĩa giáo dục, giá trị văn hóa & Minh chứng truyền thống trung quân ái quốc \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Danh mục thuộc tính thực thể DI\_SAN\_LICH\_SU (Heritage / Document)}
+    \label{tab:ent_di_san}
+\end{table}
+
+\subsubsection{Thực thể NHAN\_VAT\_TIEU\_BIEU (Notable Member)}
+Lưu danh những nhân vật có công lao to lớn với dòng họ, xã hội hoặc các danh nhân văn hóa, anh hùng liệt sĩ, thủ khoa đỗ đạt để vinh danh và làm gương cho thế hệ trẻ.
+
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabularx}{\textwidth}{l c X p{4.2cm}}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Ký hiệu}} & \textcolor{white}{\textbf{Mô tả ý nghĩa nghiệp vụ}} & \textcolor{white}{\textbf{Ví dụ minh họa}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{MaNhanVat} & $*$ & Mã hồ sơ vinh danh & \texttt{NOTABLE\_01} \\
+        \texttt{DanhHieu} & $*$ & Danh xưng hoặc tước vị vinh danh & "Tiến sĩ khoa Canh Thìn 1460", "Nhà giáo ưu tú" \\
+        \rowcolor{tablerowalt}
+        \texttt{TieuSuChiTiet} & $*$ & Bối cảnh cuộc đời và sự nghiệp & Đỗ Đệ nhị giáp Tiến sĩ năm 1460... \\
+        \texttt{CongLaoDongHo} & $\circ$ & Đóng góp cụ thể cho gia tộc & Hưng công xây dựng từ đường \\
+        \rowcolor{tablerowalt}
+        \texttt{CongHienXaHoi} & $\circ$ & Đóng góp đối với quê hương đất nước & Làm quan Thượng thư Bộ Lễ \\
+        \texttt{TaiLieuThamKhao} & $\circ$ & Nguồn dẫn chứng, sách báo ghi chép & Đại Việt Sử ký Toàn thư, Văn bia \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Danh mục thuộc tính thực thể NHAN\_VAT\_TIEU\_BIEU (Notable Member)}
+    \label{tab:ent_nhan_vat_tieu_bieu}
+\end{table}
