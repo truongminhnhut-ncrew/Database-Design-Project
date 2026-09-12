@@ -1,0 +1,146 @@
+\chapter{Thiết kế mức Quan niệm}
+\label{chap:quan_niem}
+
+Mô hình Thực thể -- Kết hợp (Entity-Relationship Model -- ER) do Peter Chen đề xuất năm 1976 \cite{chen1976}, là công cụ biểu diễn trừu tượng cấu trúc dữ liệu ở mức quan niệm (Conceptual Level).\footnote{Thiết kế quan niệm tách câu hỏi ``nghiệp vụ cần lưu gì'' khỏi câu hỏi ``cài đặt bằng bảng nào''; nhờ đó mô hình không phụ thuộc vào một hệ quản trị cơ sở dữ liệu (DBMS) cụ thể.} Chương này trình bày các thành phần cốt lõi của mô hình ER, phương pháp luận thiết kế theo quy trình sáu bước, thuật toán ánh xạ sang lược đồ quan hệ, cách xử lý thực thể yếu và mô hình EER (Extended ER), sau đó áp dụng toàn bộ phương pháp luận vào dự án thực tế \textit{FamilyConnect}.
+
+\section{Tổng quan mô hình Thực thể -- Kết hợp}
+\label{sec:tongquan_er}
+
+\subsection{Ba khái niệm cốt lõi}
+Mô hình ER được xây dựng dựa trên ba khái niệm cơ bản: thực thể, thuộc tính và mối kết hợp.
+
+\begin{itemize}
+    \item \textbf{Thực thể (Entity)}: lớp đối tượng có vòng đời riêng, cần được lưu trữ lâu dài trong hệ thống (ví dụ: \texttt{SINH\_VIEN}, \texttt{MON\_HOC}). Một khái niệm được xem là thực thể khi nó có nhiều thể hiện cụ thể, có thuộc tính mô tả riêng, cần tra cứu/cập nhật/thống kê độc lập, hoặc tham gia nhiều mối kết hợp.
+    \item \textbf{Thuộc tính (Attribute)}: dữ liệu mô tả cho thực thể hoặc mối kết hợp, gồm bốn loại: đơn (một giá trị nguyên tử, ví dụ \texttt{maSach}), phức hợp (tách được thành phần con, ví dụ \texttt{diaChi} gồm \texttt{soNha}, \texttt{quan}, \texttt{thanhPho}), đa trị (một thể hiện có nhiều giá trị, ví dụ số điện thoại), và dẫn xuất (tính được từ dữ liệu khác, ví dụ \texttt{tuoi} tính từ \texttt{ngaySinh}).
+    \item \textbf{Mối kết hợp (Relationship)}: liên hệ nghiệp vụ giữa các thực thể, thường được nhận diện qua động từ hoặc cụm động từ trong yêu cầu (ví dụ: độc giả \emph{lập} phiếu mượn, nhân viên \emph{tham gia} dự án). Bậc của mối kết hợp cho biết số thực thể tham gia: bậc một (tự liên kết, ví dụ nhân viên quản lý nhân viên), bậc hai (phổ biến nhất), và bậc ba (ba thực thể cùng tham gia một sự kiện nghiệp vụ).
+\end{itemize}
+
+\paragraph{Bản số (Cardinality Ratio)}
+Ba dạng phổ biến: 1--1 (một thực thể A liên kết tối đa với một thực thể B và ngược lại); 1--N (một A liên kết với nhiều B, nhưng một B chỉ liên kết tối đa với một A); N--M (hai phía đều có thể liên kết với nhiều thực thể phía kia). Bản số đầy đủ được biểu diễn dưới dạng khoảng \emph{tối thiểu..tối đa} (ví dụ \texttt{0..*}), trong đó tối thiểu là~1 nghĩa là tham gia \textbf{bắt buộc} (Total participation) và tối thiểu là~0 nghĩa là tham gia \textbf{tùy chọn} (Partial participation).
+
+\paragraph{Khóa định danh}
+Mục tiêu của khóa là phân biệt chắc chắn từng thể hiện của một thực thể. Khóa nên được chọn dựa trên tính ổn định nghiệp vụ (ngắn, ít đổi) chứ không chỉ vì có sẵn trên biểu mẫu --- ví dụ \texttt{maSach} (khóa thay thế, ổn định) thường được ưu tiên hơn \texttt{ISBN} (khóa tự nhiên, có thể thiếu hoặc đổi theo lần in).
+
+\subsection{Ký pháp mô tả mô hình ER}
+\label{sec:kyphap_er}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Ký hiệu Chen} & \textbf{Ý nghĩa} \\
+\hline
+Hình chữ nhật & Thực thể \\
+Hình thoi & Mối kết hợp \\
+Hình elip & Thuộc tính \\
+Hình đôi (chữ nhật/hình thoi kép) & Thực thể yếu / mối kết hợp nhận dạng \\
+Gạch dưới & Thuộc tính khóa \\
+\hline
+\end{tabular}
+\caption{Ký pháp Chen trong ERD}
+\label{tab:kyphap_chen}
+\end{table}
+
+Trong ký pháp UML, một lớp (\emph{class}) được đọc như một ứng viên thực thể hoặc bảng dữ liệu; thuộc tính gạch dưới là thuộc tính định danh, dấu \texttt{/} phía trước tên là thuộc tính dẫn xuất, và bản số được ghi ở hai đầu liên kết theo dạng \texttt{min..max} (ví dụ \texttt{1}, \texttt{0..1}, \texttt{0..*}, \texttt{1..*}). Khi mối kết hợp N--M có thuộc tính riêng, UML biểu diễn bằng một \emph{association class} gắn với đường liên kết.
+
+\section{Phương pháp luận thiết kế mô hình ER}
+\label{sec:phuongphapluan}
+
+Việc thiết kế mô hình ER từ một mô tả nghiệp vụ tuân theo quy trình sáu bước lặp:
+\begin{enumerate}
+    \item Khoanh phạm vi dữ liệu.
+    \item Lập từ điển nghiệp vụ.
+    \item Chọn ứng viên thực thể và mối kết hợp.
+    \item Gắn thuộc tính và xác định khóa.
+    \item Xác định bản số và mức tham gia.
+    \item Kiểm chứng bằng dữ liệu mẫu.
+\end{enumerate}
+
+\paragraph{Bước 1: Khoanh phạm vi}
+Xác định hệ thống lưu trữ phần nào của thế giới thực và bỏ qua phần nào, dữ liệu nào cần lưu lâu dài, và dữ liệu nào chỉ là kết quả tính toán/báo cáo tức thời.
+
+\paragraph{Bước 2: Lập từ điển nghiệp vụ}
+Thống nhất cách gọi tên, tránh một khái niệm bị đặt nhiều tên khác nhau trong cùng một mô hình.
+
+\paragraph{Bước 3: Chọn ứng viên thực thể và mối kết hợp}
+Gạch chân danh từ quan trọng trong yêu cầu để tìm ứng viên thực thể; đồng thời gạch chân động từ để tìm mối kết hợp.
+
+\paragraph{Bước 4: Gắn thuộc tính và xác định khóa}
+Liệt kê thuộc tính cho từng thực thể, kiểm tra thuộc tính riêng của mối kết hợp N--M và chọn khóa định danh.
+
+\paragraph{Bước 5: Xác định bản số và mức tham gia}
+Đặt câu hỏi về bản số tối đa (1 hay N) và mức tham gia tối thiểu (0 hay 1) ở cả hai đầu của mỗi mối kết hợp.
+
+\paragraph{Bước 6: Kiểm chứng bằng dữ liệu mẫu}
+Tạo các bộ dữ liệu mẫu và tình huống biên để kiểm tra mô hình có bao quát được các nghiệp vụ thực tế hay không.
+
+\section{Ánh xạ mô hình ER sang Lược đồ quan hệ}
+\label{sec:anhxa_er}
+
+\subsection{Chuyển thực thể và thuộc tính}
+Mỗi thực thể mạnh trở thành một quan hệ cùng tên; thuộc tính đơn trở thành cột; khóa của thực thể trở thành khóa chính. Thuộc tính phức hợp tách thành các cột con; thuộc tính đa trị tách thành quan hệ riêng; thuộc tính dẫn xuất không lưu trữ trực tiếp.
+
+\subsection{Chuyển các mối kết hợp}
+\begin{itemize}
+    \item \textbf{1--1}: Đặt khóa ngoại ở một trong hai phía kèm ràng buộc \texttt{UNIQUE}.
+    \item \textbf{1--N}: Đưa khóa chính của phía~1 sang quan hệ ở phía~N làm khóa ngoại.
+    \item \textbf{N--M}: Tạo quan hệ trung gian chứa khóa chính của cả hai quan hệ làm khóa ngoại hợp thành khóa chính.
+    \item \textbf{Mối kết hợp đệ quy}: Thêm khóa ngoại tự tham chiếu trong cùng bảng.
+    \item \textbf{Mối kết hợp bậc ba}: Tạo quan hệ trung gian chứa ba khóa ngoại.
+\end{itemize}
+
+\section{Thực thể yếu (Weak Entity)}
+\label{sec:thuc_the_yeu}
+Thực thể yếu là thực thể không có đủ thuộc tính để định danh độc lập; nó chỉ có ý nghĩa khi gắn với một thực thể chủ thông qua một mối kết hợp nhận dạng. Khóa cục bộ (partial key) chỉ phân biệt được thực thể yếu trong phạm vi cùng thực thể chủ. Khóa chính của quan hệ thực thể yếu là cặp ghép giữa khóa thực thể chủ và khóa cục bộ.
+
+\section{Mở rộng mô hình EER: Tổng quát hóa và Chuyên biệt hóa}
+\label{sec:eer}
+EER (Enhanced ER) mở rộng ER bằng các khái niệm mô tả phân cấp kiểu đối tượng:
+\begin{itemize}
+    \item \textbf{Chuyên biệt hóa (Specialization)}: Tách thực thể tổng quát thành các thực thể con cụ thể hơn.
+    \item \textbf{Tổng quát hóa (Generalization)}: Gom phần chung của nhiều thực thể thành một thực thể cha.
+\end{itemize}
+
+\section{Áp dụng vào Nghiên cứu tình huống FamilyConnect}
+\label{sec:casestudy_er}
+
+\subsection{Khoanh phạm vi và ứng viên thực thể}
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|p{9.5cm}|}
+\hline
+\textbf{Thực thể} & \textbf{Nguồn gốc từ yêu cầu chức năng} \\
+\hline
+\texttt{NGUOI\_DUNG} & Đăng ký/xác thực người dùng, RBAC, quản lý hồ sơ \\
+\texttt{GIA\_DINH} & Quản lý gia đình / dòng họ \\
+\texttt{CHI\_NHANH} & Quản lý chi/nhánh/phái trong dòng họ \\
+\texttt{THANH\_VIEN} & Quản lý thành viên, hồ sơ nghề nghiệp, danh bạ \\
+\texttt{BAI\_DANG} & Tạo và quản lý bài đăng, chia sẻ tin tức/hình ảnh \\
+\texttt{BINH\_LUAN} & Bình luận trên bài đăng (thực thể yếu) \\
+\texttt{SU\_KIEN} & Tạo sự kiện gia đình, thông báo nhắc nhở \\
+\texttt{TAI\_LIEU\_DI\_SAN} & Tài liệu lịch sử, câu chuyện gia đình, lưu trữ số \\
+\hline
+\end{tabular}
+\caption{Ứng viên thực thể rút ra từ đề cương FamilyConnect}
+\label{tab:ungvien_thucthe}
+\end{table}
+
+\subsection{Bản số và Mức tham gia}
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Mối kết hợp} & \textbf{Bản số} & \textbf{Mức tham gia} \\
+\hline
+\texttt{NGUOI\_DUNG} -- \texttt{THANH\_VIEN} & 1--1 & Tùy chọn cả hai phía \\
+\texttt{GIA\_DINH} -- \texttt{CHI\_NHANH} & 1--N & Bắt buộc phía \texttt{CHI\_NHANH} \\
+\texttt{THANH\_VIEN} -- \texttt{THANH\_VIEN} (cha/mẹ--con) & 1--N & Tùy chọn (đệ quy) \\
+\texttt{THANH\_VIEN} -- \texttt{THANH\_VIEN} (hôn nhân) & N--M & Tùy chọn (qua \texttt{HON\_NHAN}) \\
+\texttt{THANH\_VIEN} -- \texttt{BAI\_DANG} & 1--N & Bắt buộc phía \texttt{BAI\_DANG} \\
+\texttt{BAI\_DANG} -- \texttt{BINH\_LUAN} & 1--N & Bắt buộc phía \texttt{BINH\_LUAN} (yếu) \\
+\texttt{THANH\_VIEN} -- \texttt{SU\_KIEN} & N--M & Tùy chọn (qua \texttt{THAM\_DU}) \\
+\hline
+\end{tabular}
+\caption{Tổng hợp bản số và mức tham gia các mối kết hợp chính}
+\label{tab:banso_familyconnect}
+\end{table}
