@@ -1,10 +1,199 @@
 % !TEX root = ../../main.tex
-\section{Xác định các mối quan hệ (Relationships) và bản số (Cardinality)}
 \label{sec:1_2_quan_he_cardinality}
 
-% Nội dung xác định các mối quan hệ:
-% - Quan hệ cha/mẹ - con (cây gia phả: đệ quy hoặc qua thực thể liên kết)
-% - Quan hệ hôn phối/vợ chồng (1-1 hoặc 1-n có mốc thời gian)
-% - Thành viên thuộc Chi tộc / Dòng họ (1-n)
-% - Thành viên tạo Bài viết, Sự kiện, Bình luận (1-n)
-% - Bảng tổng hợp bản số (Cardinality Matrix)
+% !TEX root = ../../main.tex
+
+\label{sec:1_2_quan_he_cardinality}
+
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{vietnam}
+\usepackage{amsmath, amsfonts, amssymb}
+\usepackage{graphicx}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{fontspec} 
+\usepackage{polyglossia}
+\setmainlanguage{vietnamese}
+\setmainfont{Times New Roman}
+% Required for inserting images
+
+\begin{document}
+
+% ==========================================
+% MỤC 1.2: XÁC ĐỊNH CÁC MỐI QUAN HỆ VÀ BẢN SỐ
+% ==========================================
+\subsection{Xác định các mối quan hệ (Relationships) và bản số (Cardinality)}
+\label{subsec:xac-dinh-quan-he-ban-so}
+
+Trong cơ sở dữ liệu quản lý gia phả và dòng họ, các mối quan hệ giữa các thực thể mang tính chất phức tạp, đòi hỏi phải phản ánh chính xác các quy luật sinh học, pháp lý và cấu trúc xã hội truyền thống. Mục này xác định chi tiết các mối kết hợp chính, tỷ lệ bản số (Cardinality Ratio), ràng buộc tham gia (Participation Constraint) và ngữ nghĩa dữ liệu tương ứng.
+
+\subsubsection{Quan hệ Cha/Mẹ -- Con (Quan hệ huyết thống đệ quy)}
+
+Quan hệ Cha/Mẹ -- Con là xương sống của đồ thị cây gia phả. Đây là dạng mối kết hợp đặc thù, có thể triển khai dưới dạng **kết hợp đệ quy (Recursive Relationship)** trên chính thực thể \texttt{THANH\_VIEN} hoặc thông qua một **thực thể liên kết (Associative Entity)** trung gian để tối ưu hóa việc truy vấn cấu trúc đồ thị.
+
+\paragraph{a) Bản chất và Ràng buộc toán học:}
+\begin{itemize}
+    \item \textbf{Loại mối kết hợp:} Mối kết hợp Nhị cấp Đệ quy (Binary Recursive) hoặc Tam cấp (Tối ưu khi kết hợp cả Cha và Mẹ).
+    \item \textbf{Tỷ lệ bản số (Cardinality Ratio):} $1:N$ (Một cặp Cha/Mẹ có thể sinh ra nhiều Con; nhưng một người con về mặt sinh học chỉ có đúng 1 Cha sinh và 1 Mẹ sinh).
+    \item \textbf{Ràng buộc tham gia (Participation Constraint):}
+    \begin{itemize}
+        \item Cấp Con: Tham gia một phần (Partial Participation) -- đối với Thủy tổ (người đứng đầu gia phả), dữ liệu về Cha/Mẹ sẽ là \texttt{NULL}.
+        \item Cấp Cha/Mẹ: Tham gia một phần (Partial Participation) -- một thành viên có thể chưa có con hoặc không có con.
+    \end{itemize}
+\end{itemize}
+
+\paragraph{b) Giải pháp Thiết kế Lược đồ Quan hệ:}
+\begin{itemize}
+    \item \textbf{Phương án 1 (Trực tiếp bằng Khóa ngoại đệ quy):} Bổ sung hai thuộc tính \texttt{MaCha} và \texttt{MaMe} vào ngay bảng \texttt{THANH\_VIEN}, tham chiếu ngược lại khóa chính \texttt{MaThanhVien}.
+    \item \textbf{Phương án 2 (Thực thể liên kết quan hệ huyết thống):} Tách thành bảng trung gian \texttt{QUAN\_HE\_HUYET\_THONG}(\underline{\texttt{MaChaMe}}, \underline{\texttt{MaCon}}, \texttt{LoaiQuanHe}) hỗ trợ tốt hơn cho việc truy vấn cây gia phả bằng các thuật toán đồ thị (như CTE -- Common Table Expressions).
+\end{itemize}
+
+\subsubsection{Quan hệ Hôn phối / Vợ chồng (Quan hệ Hôn nhân)}
+
+Quan hệ hôn phối phản ánh liên kết pháp lý và tình cảm giữa các thành viên. Khác với quan hệ huyết thống là cố định, quan hệ hôn nhân có tính biến động theo thời gian (kết hôn, ly hôn, tái hôn, tục thiếp/đa thê trong gia phả cổ).
+
+\paragraph{a) Bản chất và Ràng buộc:}
+\begin{itemize}
+    \item \textbf{Loại mối kết hợp:} Đệ quy phi đối xứng (kèm yếu tố mốc thời gian).
+    \item \textbf{Tỷ lệ bản số (Cardinality Ratio):} 
+    \begin{itemize}
+        \item Theo mô hình hiện đại (Một vợ một chồng tại một thời điểm): $1:1$.
+        \item Theo mô hình gia phả truyền thống / Lịch sử dòng họ: $1:N$ (Một nam thành viên có thể có nhiều người vợ qua các mốc thời gian khác nhau).
+    \end{itemize}
+    \item \textbf{Thuộc tính của mối kết hợp (Relationship Attributes):} \texttt{NgayKetHon}, \texttt{NgayLyHon}, \texttt{TrangThaiHonNhan} (Đang gắn bó, Đã ly hôn, Góa), \texttt{ThứTựVợChồng} (Vợ chính thất, Vợ thứ/Kế thất).
+\end{itemize}
+
+\paragraph{b) Thiết kế Lược đồ Quan hệ:}
+Do mối quan hệ hôn phối có chứa các thuộc tính bổ sung (mốc thời gian, trạng thái), ta bắt buộc phải mô hình hóa thành một **thực thể liên kết** \texttt{HON\_NHAN}:
+\[
+\textbf{HON\_NHAN}(\underline{\texttt{MaHonNhan}}, \texttt{MaChong}, \texttt{MaVo}, \texttt{NgayKetHon}, \texttt{NgayPhanLiet}, \texttt{TrangThai})
+\]
+Trong đó \texttt{MaChong} và \texttt{MaVo} là các khóa ngoại tham chiếu đến \texttt{THANH\_VIEN(MaThanhVien)}.
+
+\subsubsection{Thành viên thuộc Chi tộc / Dòng họ}
+
+Mối quan hệ phân cấp tổ chức hành chính trong dòng họ giúp phân định vị trí của từng cá nhân trong cấu trúc tổng thể (Họ tổng $\rightarrow$ Chi $\rightarrow$ Nhánh $\rightarrow$ Phòng).
+
+\paragraph{a) Bản chất và Ràng buộc:}
+\begin{itemize}
+    \item \textbf{Loại mối kết hợp:} Nhị cấp giữa \texttt{THANH\_VIEN} và \texttt{CHI\_TOC}.
+    \item \textbf{Tỷ lệ bản số (Cardinality Ratio):} $1:N$ (Một Chi tộc/Phân nhánh chứa nhiều Thành viên; mỗi Thành viên chỉ thuộc về đúng một Chi tộc chính thức trong hệ thống).
+    \item \textbf{Ràng buộc tham gia:} 
+    \begin{itemize}
+        \item \texttt{THANH\_VIEN}: Tham gia toàn bộ (Total Participation) -- mọi thành viên cập nhật vào hệ thống bắt buộc phải thuộc một Chi/Nhánh cụ thể.
+        \item \texttt{CHI\_TOC}: Tham gia một phần hoặc toàn bộ.
+    \end{itemize}
+\end{itemize}
+
+\paragraph{b) Thiết kế Lược đồ Quan hệ:}
+Thêm thuộc tính khóa ngoại \texttt{MaChiToc} vào bảng \texttt{THANH\_VIEN}:
+\[
+\textbf{THANH\_VIEN}(\underline{\texttt{MaThanhVien}}, \texttt{HoTen}, \dots, \texttt{MaChiToc})
+\]
+\textit{Khóa ngoại:} \texttt{MaChiToc} $\rightarrow$ \texttt{CHI\_TOC(MaChiToc)}.
+
+\subsubsection{Thành viên tạo Bài viết, Sự kiện, Bình luận (Tương tác hệ thống)}
+
+Đây là nhóm mối kết hợp phản ánh chức năng quản trị nội dung và tương tác cộng đồng trong phần mềm Quản lý Gia phả số.
+
+\paragraph{a) Bản chất và Ràng buộc từng mối liên kết:}
+\begin{enumerate}
+    \item \textbf{Tác giả tạo Bài viết (Thành viên -- Bài viết):}
+    \begin{itemize}
+        \item \textbf{Tỷ lệ bản số:} $1:N$ (Một Thành viên có thể đăng nhiều Bài viết/Tin tức/Sử văn gia tộc; một Bài viết do đúng một Thành viên khởi tạo).
+        \item \textbf{Ràng buộc:} \texttt{BAI\_VIET} tham gia toàn bộ (Total Participation) -- Bài viết bắt buộc phải có tác giả.
+    \end{itemize}
+    \item \textbf{Thành viên chủ trì / ghi nhận Sự kiện (Thành viên -- Sự kiện):}
+    \begin{itemize}
+        \item \textbf{Tỷ lệ bản số:} $1:N$ (Một Thành viên đại diện tạo/chủ trì nhiều Sự kiện như Ngày Giỗ, Lễ Tế Tổ, Cụm Giỗ Chi; một Sự kiện được ghi nhận bởi một Thành viên).
+        \item \textbf{Ràng buộc:} \texttt{SU\_KIEN} tham gia toàn bộ vào mối kết hợp người tạo.
+    \end{itemize}
+    \item \textbf{Thành viên viết Bình luận (Thành viên -- Bình luận):}
+    \begin{itemize}
+        \item \textbf{Tỷ lệ bản số:} $1:N$ (Một Thành viên gửi nhiều Bình luận; một Bình luận thuộc về duy nhất một Thành viên).
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{Bảng tổng hợp Tỷ lệ Bản số và Ràng buộc Tham gia}
+
+Dưới đây là bảng thống kê toàn bộ các mối quan hệ được xác định trong phân mục này:
+
+\begin{table}[h!]
+\centering
+\caption{Bảng tổng hợp các Mối quan hệ và Bản số trong Hệ thống Gia phả}
+\label{tab:tong-hop-quan-he}
+\small
+\begin{tabular}{|p{3.2cm}|p{2.8cm}|p{2.2cm}|p{2.8cm}|p{3.2cm}|}
+\hline
+\textbf{Tên Mối quan hệ} & \textbf{Các Thực thể tham gia} & \textbf{Tỷ lệ Bản số} & \textbf{Thực thể Tham gia Toàn bộ} & \textbf{Ghi chú Kỹ thuật} \\ \hline
+\textbf{ChaMẹ\_Con} & \texttt{THANH\_VIEN} -- \texttt{THANH\_VIEN} & $1:N$ & Không & Sử dụng đệ quy hoặc thực thể liên kết. \\ \hline
+\textbf{HonNhan} & \texttt{THANH\_VIEN} -- \texttt{THANH\_VIEN} & $1:N$ ($1:1$) & Không & Tạo thực thể liên kết lưu mốc thời gian. \\ \hline
+\textbf{Thuoc\_ChiToc} & \texttt{CHI\_TOC} -- \texttt{THANH\_VIEN} & $1:N$ & \texttt{THANH\_VIEN} & FK \texttt{MaChiToc} nằm trong \texttt{THANH\_VIEN}. \\ \hline
+\textbf{Tao\_BaiViet} & \texttt{THANH\_VIEN} -- \texttt{BAI\_VIET} & $1:N$ & \texttt{BAI\_VIET} & FK \texttt{MaNguoiTao} trong \texttt{BAI\_VIET}. \\ \hline
+\textbf{Tuc\_SuKien} & \texttt{THANH\_VIEN} -- \texttt{SU\_KIEN} & $1:N$ & \texttt{SU\_KIEN} & Quan lý Lễ giỗ, Ngày kỷ niệm. \\ \hline
+\textbf{Gui\_BinhLuan} & \texttt{THANH\_VIEN} -- \texttt{BINH\_LUAN} & $1:N$ & \texttt{BINH\_LUAN} & Tương tác truyền thông nội bộ dòng họ. \\ \hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Hiện thực hóa bằng DDL SQL (Minh họa Lược đồ Quan hệ)}
+
+Đoạn mã SQL dưới đây minh họa việc triển khai các khóa ngoại và ràng buộc bản số đã phân tích ở trên vào cơ sở dữ liệu thực tế:
+
+\begin{verbatim}
+-- 1. Bảng Thực thể Chi tộc
+CREATE TABLE CHI_TOC (
+    MaChiToc VARCHAR(10) PRIMARY KEY,
+    TenChiToc NVARCHAR(100) NOT NULL,
+    TruongChi NVARCHAR(100)
+);
+
+-- 2. Bảng Thực thể Thành viên (Có chứa mối quan hệ đệ quy Cha/Mẹ và Chi tộc)
+CREATE TABLE THANH_VIEN (
+    MaThanhVien VARCHAR(10) PRIMARY KEY,
+    HoTen NVARCHAR(100) NOT NULL,
+    GioiTinh NVARCHAR(5) CHECK (GioiTinh IN (N'Nam', N'Nữ')),
+    NgaySinh DATE,
+    MaCha VARCHAR(10),
+    MaMe VARCHAR(10),
+    MaChiToc VARCHAR(10) NOT NULL,
+    
+    -- Khóa ngoại đệ quy Cha/Mẹ
+    CONSTRAINT FK_ThanhVien_Cha FOREIGN KEY (MaCha) 
+        REFERENCES THANH_VIEN(MaThanhVien),
+    CONSTRAINT FK_ThanhVien_Me FOREIGN KEY (MaMe) 
+        REFERENCES THANH_VIEN(MaThanhVien),
+    
+    -- Khóa ngoại Chi tộc (Tham gia toàn bộ)
+    CONSTRAINT FK_ThanhVien_ChiToc FOREIGN KEY (MaChiToc) 
+        REFERENCES CHI_TOC(MaChiToc)
+);
+
+-- 3. Bảng Thực thể liên kết Hôn nhân (Quản lý mối quan hệ Vợ/Chồng)
+CREATE TABLE HON_NHAN (
+    MaHonNhan VARCHAR(10) PRIMARY KEY,
+    MaChong VARCHAR(10) NOT NULL,
+    MaVo VARCHAR(10) NOT NULL,
+    NgayKetHon DATE,
+    TrangThai NVARCHAR(30) DEFAULT N'Đang gắn bó',
+    
+    CONSTRAINT FK_HonNhan_Chong FOREIGN KEY (MaChong) 
+        REFERENCES THANH_VIEN(MaThanhVien),
+    CONSTRAINT FK_HonNhan_Vo FOREIGN KEY (MaVo) 
+        REFERENCES THANH_VIEN(MaThanhVien)
+);
+
+-- 4. Bảng Bài viết do Thành viên khởi tạo (Tương tác 1-N)
+CREATE TABLE BAI_VIET (
+    MaBaiViet VARCHAR(10) PRIMARY KEY,
+    TieuDe NVARCHAR(200) NOT NULL,
+    NoiDung NVARCHAR(MAX),
+    NgayDang DATETIME DEFAULT GETDATE(),
+    MaTacGia VARCHAR(10) NOT NULL,
+    
+    CONSTRAINT FK_BaiViet_ThanhVien FOREIGN KEY (MaTacGia) 
+        REFERENCES THANH_VIEN(MaThanhVien) ON DELETE CASCADE
+);
+\end{verbatim}
+
+\end{document}
