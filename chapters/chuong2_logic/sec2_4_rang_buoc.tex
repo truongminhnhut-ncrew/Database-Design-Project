@@ -1,67 +1,16 @@
-% !TEX root = ../../main.tex
-\documentclass[11pt,a4paper,oneside]{article}
-\usepackage[utf8]{vietnam}
-\usepackage[margin=1in]{geometry}
-\usepackage{amsmath,amssymb,amsfonts,amsthm}
-\usepackage{booktabs}
-\usepackage{multirow}
-\usepackage{array}
-\usepackage{tikz}
-\usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit, backgrounds}
-\usepackage{listings}
-\usepackage{xcolor}
-\usepackage{hyperref}
-\usepackage{enumitem}
-
-\definecolor{primaryblue}{RGB}{20, 80, 160}
-\definecolor{codebg}{RGB}{245, 247, 250}
-\definecolor{commentgreen}{RGB}{34, 139, 34}
-\definecolor{keywordpurple}{RGB}{128, 0, 128}
-
-\hypersetup{
-    colorlinks=true,
-    linkcolor=primaryblue,
-    citecolor=primaryblue,
-    urlcolor=primaryblue
-}
-
-\theoremstyle{definition}
-\newtheorem{algorithm}{Thuật toán}
-\newtheorem{definition}{Định nghĩa}
-\newtheorem{example}{Ví dụ}
-
-\lstset{
-    backgroundcolor=\color{codebg},
-    basicstyle=\ttfamily\small,
-    keywordstyle=\color{keywordpurple}\bfseries,
-    commentstyle=\color{commentgreen}\itshape,
-    stringstyle=\color{red},
-    numbers=left,
-    numberstyle=\tiny\color{gray},
-    stepnumber=1,
-    numbersep=8pt,
-    frame=single,
-    frameround=tttt,
-    rulecolor=\color{gray!30},
-    breaklines=true,
-    captionpos=b
-}
-
-\begin{document}
-
-\section{CHƯƠNG 2: THIẾT KẾ LOGIC -- Thiết kế ràng buộc toàn vẹn mức logic}
+\section{Thiết kế logic và Ràng buộc toàn vẹn}
 
 \subsection{Giới thiệu và Căn cứ Phương pháp luận}
-Trong chu kỳ sống của một Hệ quản trị Cơ sở dữ liệu (DBMS), giai đoạn **Thiết kế Logic** đóng vai trò là cầu nối cốt lõi giữa Mô hình Quan niệm (ERD/EER/UML) và Thiết kế Vật lý trên một hệ quản trị cụ thể (PostgreSQL). Mục tiêu của phần này là thực hiện ánh xạ chuẩn hóa các thực thể, thuộc tính và mối kết hợp từ bài toán \textbf{FamilyConnect: Nền tảng Cộng đồng Gia đình số tích hợp Trí tuệ Nhân tạo} sang Lược đồ Quan hệ (Relational Schema).
+Trong chu kỳ sống của một Hệ quản trị Cơ sở dữ liệu (DBMS), giai đoạn \textbf{Thiết kế Logic} đóng vai trò là cầu nối cốt lõi giữa Mô hình Quan niệm (ERD/EER/UML) và Thiết kế Vật lý trên một hệ quản trị cụ thể (PostgreSQL). Mục tiêu của phần này là thực hiện ánh xạ chuẩn hóa các thực thể, thuộc tính và mối kết hợp từ bài toán \textbf{FamilyConnect: Nền tảng Cộng đồng Gia đình số tích hợp Trí tuệ Nhân tạo} sang Lược đồ Quan hệ (Relational Schema).
 
-Đồng thời, nội dung tập trung phân tích triệt để các **Phụ thuộc hàm (FD)**, tính toán bao đóng, xác định khóa ứng viên và tiến hành chuẩn hóa lược đồ đạt **Dạng chuẩn Boyce-Codd (BCNF)** hoặc **Dạng chuẩn 3 (3NF)** nhằm loại bỏ hoàn toàn các bất thường dữ liệu (biến động thêm, sửa, xóa) và thiết lập hệ thống **Ràng buộc Toàn vẹn (Integrity Constraints)** mức logic vững chắc.
+Đồng thời, nội dung tập trung phân tích triệt để các \textbf{Phụ thuộc hàm (FD)}, tính toán bao đóng, xác định khóa ứng viên và tiến hành chuẩn hóa lược đồ đạt \textbf{Dạng chuẩn Boyce-Codd (BCNF)} hoặc \textbf{Dạng chuẩn 3 (3NF)} nhằm loại bỏ hoàn toàn các bất thường dữ liệu (biến động thêm, sửa, xóa) và thiết lập hệ thống \textbf{Ràng buộc Toàn vẹn (Integrity Constraints)} mức logic vững chắc.
 
 ---
 
 \subsection{Kiến trúc Chi tiết và Lược đồ Quan hệ Logic}
 
 Dựa trên các yêu cầu nghiệp vụ của hệ thống \textbf{FamilyConnect}, hệ thống được phân rã thành các phân hệ chính bao gồm:
-\begin{enumerate}
+\begin{enumerate}[label=\arabic*.]
     \item \textbf{User \& Security}: Quản lý người dùng, tài khoản, vai trò (RBAC) và xác minh thành viên.
     \item \textbf{Family \& Genealogy}: Quản lý gia đình, chi/nhánh/phái, thành viên, quan hệ cha mẹ - con cái và hôn nhân.
     \item \textbf{Community \& Events}: Quản lý bài đăng, tương tác, tin tức, sự kiện, phản hồi RSVP và lưu trữ di sản số.
@@ -94,7 +43,7 @@ Dưới đây là tập hợp các quan hệ logic thu được sau khi áp dụ
 
 Để đảm bảo cơ sở dữ liệu không bị lặp lại thông tin, tiết kiệm không gian lưu trữ và tránh các dị thường dữ liệu (Anomalies) khi cập nhật, chúng ta áp dụng lý thuyết Phụ thuộc hàm (Functional Dependency - FD) để phân tích và tiến hành chuẩn hóa.
 
-\subsubsection{Xác định Tập Phụ thuộc Hàm (F) cho các Quan hệ Trọng yếu}
+\subsubsection{Xác định Tập Phụ thuộc Hàm ($F$) cho các Quan hệ Trọng yếu}
 
 \begin{example}[\textbf{Phân tích Phụ thuộc hàm cho Quan hệ MemberProfile}]
 Xét lược đồ quan hệ $MemberProfile(U)$ với tập thuộc tính:
@@ -114,7 +63,7 @@ Tính bao đóng của $\{M\}^+$ theo tập phụ thuộc hàm $F$:
     \item Bước 2: Áp dụng $f_1 \implies \{M\}^+ = \{M, U, B, BN, G\}$.
     \item Bước 3: Áp dụng $f_2$ (vì $U \subseteq \{M\}^+$) $\implies \{M\}^+ = \{M, U, B, BN, G, E\} = U$.
 \end{itemize}
-Do $\{M\}^+ = U$ và không có tập con thực sự nào của $\{M\}$ xác định được $U$, nên $K = \{M\}$ là **Khóa ứng viên duy nhất** (và là Khóa chính) của lược đồ $MemberProfile$.
+Do $\{M\}^+ = U$ và không có tập con thực sự nào của $\{M\}$ xác định được $U$, nên $K = \{M\}$ là \textbf{Khóa ứng viên duy nhất} (và là Khóa chính) của lược đồ $MemberProfile$.
 \end{example}
 
 \subsubsection{Kiểm tra Dạng chuẩn và Phân rã Lược đồ}
@@ -125,18 +74,20 @@ Xét lược đồ $MemberProfile$ ở trên, ta nhận thấy:
     \item Tồn tại phụ thuộc hàm $f_3: B \rightarrow \{BN, G\}$. Thuộc tính $B$ (mã chi/nhánh) không phải là siêu khóa, và $\{BN, G\}$ không phải là thuộc tính nguyên tố.
     \item Tồn tại phụ thuộc bắc cầu $M \rightarrow B \rightarrow \{BN, G\}$.
 \end{itemize}
-$\implies$ Lược đồ $MemberProfile$ **vi phạm Dạng chuẩn 3 (3NF)** và **Dạng chuẩn Boyce-Codd (BCNF)**. Điều này dẫn đến dị thường dữ liệu: khi tên chi/nhánh hoặc cấp thế hệ của $B$ thay đổi, ta phải cập nhật trên tất cả các hồ sơ thành viên thuộc chi đó.
+$\implies$ Lược đồ $MemberProfile$ \textbf{vi phạm Dạng chuẩn 3 (3NF)} và \textbf{Dạng chuẩn Boyce-Codd (BCNF)}. Điều này dẫn đến dị thường dữ liệu: khi tên chi/nhánh hoặc cấp thế hệ của $B$ thay đổi, ta phải cập nhật trên tất cả các hồ sơ thành viên thuộc chi đó.
 
 \paragraph{Phân rã đảm bảo Bảo toàn Phụ thuộc và Phép kết Không tổn thất (Lossless Join):}
 Áp dụng thuật toán phân rã BCNF, ta tách $MemberProfile$ thành 2 quan hệ con:
-1. $Branch\_Schema(\underline{branch\_id}, branch\_name, generation\_level)$ với tập FD $F_1 = \{B \rightarrow \{BN, G\}\}$ đạt BCNF.
-2. $MemberProfile\_Schema(\underline{member\_id}, user\_id, branch\_id\textsuperscript{FK})$ với tập FD $F_2 = \{M \rightarrow \{U, B\}, U \rightarrow E\}$ đạt BCNF.
+\begin{enumerate}[label=\arabic*.]
+    \item $Branch\_Schema(\underline{branch\_id}, branch\_name, generation\_level)$ với tập FD $F_1 = \{B \rightarrow \{BN, G\}\}$ đạt BCNF.
+    \item $MemberProfile\_Schema(\underline{member\_id}, user\_id, branch\_id\textsuperscript{FK})$ với tập FD $F_2 = \{M \rightarrow \{U, B\}, U \rightarrow E\}$ đạt BCNF.
+\end{enumerate}
 
 ---
 
 \subsection{Biểu diễn Đồ thị Quan hệ và Mô hình Đồ thị AI (Graph Database Support)}
 
-Bên cạnh việc thiết kế mô hình quan hệ bảng chuẩn cho hệ thống RDBMS (PostgreSQL), bài toán **FamilyConnect** đòi hỏi tính năng trực quan hóa gia phả tương tác, tra cứu mối quan hệ huyết thống và hỗ trợ AI giải thích quan hệ. Do đó, lược đồ quan hệ logic được bổ sung thiết kế biểu diễn dạng Đồ thị (Graph Data Model) tương thích với Lớp dịch vụ AI.
+Bên cạnh việc thiết kế mô hình quan hệ bảng chuẩn cho hệ thống RDBMS (PostgreSQL), bài toán \textbf{FamilyConnect} đòi hỏi tính năng trực quan hóa gia phả tương tác, tra cứu mối quan hệ huyết thống và hỗ trợ AI giải thích quan hệ. Do đó, lược đồ quan hệ logic được bổ sung thiết kế biểu diễn dạng Đồ thị (Graph Data Model) tương thích với Lớp dịch vụ AI.
 
 \begin{figure}[htbp]
 \centering
@@ -178,7 +129,7 @@ Bên cạnh việc thiết kế mô hình quan hệ bảng chuẩn cho hệ th�
 
 \subsection{Ràng buộc Toàn vẹn Mức Logic (Integrity Constraints)}
 
-Ràng buộc toàn vẹn mức logic là các quy tắc nghiệp vụ bắt buộc hệ quản trị CSDL phải tuân thủ nhằm đảm bảo tính đúng đắn, nhất quán của dữ liệu. Hệ thống **FamilyConnect** áp dụng 4 nhóm ràng buộc toàn vẹn chính:
+Ràng buộc toàn vẹn mức logic là các quy tắc nghiệp vụ bắt buộc hệ quản trị CSDL phải tuân thủ nhằm đảm bảo tính đúng đắn, nhất quán của dữ liệu. Hệ thống \textbf{FamilyConnect} áp dụng 4 nhóm ràng buộc toàn vẹn chính:
 
 \subsubsection{Ràng buộc Miền giá trị (Domain Constraints)}
 \begin{itemize}
@@ -214,7 +165,7 @@ $$\text{Nếu } m.is\_alive = \text{\texttt{TRUE}} \implies m.death\_date \text{
 \end{definition}
 
 \begin{definition}[\textbf{Ràng buộc C4.2: Ngăn ngừa Vòng lặp Quan hệ Huyết thống (Acyclic Genealogic Constraint)}]
-Đồ thị quan hệ cha mẹ - con cái $G = (V, E)$ trong đó $V = \{member\_id\}$ và $E = \{(parent\_id, child\_id)\}$ bắt buộc phải là một **Đồ thị có hướng không chu trình (Directed Acyclic Graph - DAG)**.
+Đồ thị quan hệ cha mẹ - con cái $G = (V, E)$ trong đó $V = \{member\_id\}$ và $E = \{(parent\_id, child\_id)\}$ bắt buộc phải là một \textbf{Đồ thị có hướng không chu trình (Directed Acyclic Graph - DAG)}.
 $$\forall m \in MemberProfile, \quad (m, m) \notin E^+ \quad (\text{Không một thành viên nào có thể là tổ tiên của chính mình})$$
 \end{definition}
 
@@ -250,7 +201,5 @@ Bảng \ref{tab:integrity_matrix} tóm tắt danh mục các ràng buộc toàn 
 
 ---
 
-\subsection{Kết luận Mục}
-Trong phần này, bài báo cáo đã hoàn thành việc chuyển đổi mô hình nghiệp vụ của dự án **FamilyConnect** sang **Lược đồ Logic chuẩn hóa**. Bằng việc áp dụng lý thuyết Phụ thuộc hàm và các thuật toán phân rã, lược đồ dữ liệu đã đạt dạng chuẩn BCNF/3NF, đảm bảo loại bỏ tình trạng dư thừa và các bất thường dữ liệu. Hệ thống các ràng buộc toàn vẹn mức logic được thiết lập chặt chẽ sẽ là tiền đề trực tiếp để tiến hành **Thiết kế Vật lý và Viết script DDL** ở các bước tiếp theo của dự án.
-
-\end{document}
+\subsection{Tóm tắt Phần thiết kế}
+Trong phần này, bài báo cáo đã hoàn thành việc chuyển đổi mô hình nghiệp vụ của dự án \textbf{FamilyConnect} sang \textbf{Lược đồ Logic chuẩn hóa}. Bằng việc áp dụng lý thuyết Phụ thuộc hàm và các thuật toán phân rã, lược đồ dữ liệu đã đạt dạng chuẩn BCNF/3NF, đảm bảo loại bỏ tình trạng dư thừa và các bất thường dữ liệu. Hệ thống các ràng buộc toàn vẹn mức logic được thiết lập chặt chẽ sẽ là tiền đề trực tiếp để tiến hành \textbf{Thiết kế Vật lý và Viết script DDL} ở các bước tiếp theo của dự án.
