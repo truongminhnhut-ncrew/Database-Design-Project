@@ -1,0 +1,143 @@
+3.1.1. Tiếng Anh: FamilyConnect: AI-powered Digital Family Community Platform
+3.1.2. Tiếng Việt: FamilyConnect: Nền tảng Cộng đồng Gia đình số tích hợp Trí tuệ nhân tạo
+(*) 3.2. Nội dung đề xuất chính (bao gồm kết quả và sản phẩm)
+a) Bối cảnh:
+Các gia đình hiện đại ngày càng phân tán về mặt địa lý do giáo dục, cơ hội nghề nghiệp, di cư và toàn cầu hóa. Hệ quả là, giao tiếp giữa các thành viên trong gia đình trở nên ít thường xuyên hơn, gia phả khó được duy trì và các thế hệ trẻ có ít cơ hội hơn để tìm hiểu về di sản gia đình hoặc xây dựng các mối quan hệ có ý nghĩa trong dòng họ.
+Các nền tảng mạng xã hội hiện tại hỗ trợ tốt việc giao tiếp nhưng không được thiết kế để bảo tồn gia phả, hỗ trợ cộng tác hướng tới gia đình hay củng cố sự phát triển gia đình trong dài hạn. Tương tự, các hệ thống gia phả truyền thống chủ yếu tập trung vào việc ghi chép thông tin dòng dõi mà không cung cấp các tính năng cộng đồng tương tác.
+Ngày càng có nhu cầu lớn về một nền tảng số chuyên dụng không chỉ bảo tồn di sản gia đình mà còn củng cố các kết nối gia đình, hỗ trợ giao tiếp, tổ chức các hoạt động, tạo điều kiện chia sẻ kiến thức và thúc đẩy sự hỗ trợ lẫn nhau giữa các thế hệ.
+Những tiến bộ gần đây trong điện toán di động, công nghệ đám mây và Trí tuệ Nhân tạo (AI) cho phép phát triển các nền tảng cộng đồng thông minh có khả năng cung cấp tính năng tìm kiếm cá nhân hóa, đề xuất nội dung, hỗ trợ kiến thức và truy xuất thông tin ngữ nghĩa.
+Do đó, dự án này đề xuất FamilyConnect, một Nền tảng Cộng đồng Gia đình số tích hợp Trí tuệ Nhân tạo (AI), kết hợp quản lý gia phả, giao tiếp gia đình, quản lý sự kiện, chia sẻ kiến thức và các dịch vụ hỗ trợ bởi AI vào một hệ sinh thái phần mềm thống nhất.
+b) Giải pháp đề xuất:
+FamilyConnect được thiết kế như một nền tảng số kết hợp quản lý gia phả với các dịch vụ cộng đồng gia đình nhằm củng cố mối quan hệ giữa các thành viên trong gia đình đồng thời bảo tồn di sản dòng họ.
+Nền tảng sắp xếp thông tin gia phả bằng cách sử dụng đồ thị gia đình có cấu trúc, cho phép người dùng trực quan hóa các mối quan hệ, điều hướng qua các thế hệ và duy trì hồ sơ gia đình một cách chính xác.
+Vượt ra ngoài việc quản lý gia phả, FamilyConnect cung cấp các dịch vụ hướng tới cộng đồng bao gồm tin tức gia đình, tổ chức sự kiện, lưu trữ số và danh bạ thành viên. Những tính năng này khuyến khích sự tương tác và cộng tác liên tục giữa các thành viên trong gia đình thay vì chỉ coi gia phả là một dạng thông tin tĩnh.
+Để nâng cao trải nghiệm người dùng, nền tảng tích hợp các dịch vụ hỗ trợ bởi AI cho phép tìm kiếm ngữ nghĩa, truy xuất kiến thức thông minh, giải thích mối quan hệ và các đề xuất cá nhân hóa dựa trên thông tin gia đình. AI đóng vai trò như một trợ lý thông minh giúp người dùng khám phá các thông tin liên quan và điều hướng cơ sở kiến thức gia đình một cách hiệu quả hơn.
+Hệ thống áp dụng kiến trúc mô-đun bao gồm Cổng quản trị Web, Ứng dụng di động cho các thành viên trong gia đình và Lớp dịch vụ AI được kết nối thông qua các API RESTful. Kiến trúc này hỗ trợ việc mở rộng hệ thống trong tương lai đồng thời duy trì tính linh hoạt và khả năng mở rộng quy mô.
+c) Yêu cầu chức năng:
+Người dùng & Bảo mật (User & Security)
+Đăng ký và xác thực người dùng
+Kiểm soát truy cập dựa trên vai trò (RBAC)
+Quản lý hồ sơ người dùng
+Xác minh thành viên gia đình
+Quản lý Gia đình & Gia phả (Family & Genealogy Management)
+Quản lý gia đình
+Quản lý chi/nhánh/phái
+Quản lý thành viên
+Quản lý mối quan hệ cha mẹ - con cái
+Quản lý hôn nhân
+Cây gia phả tương tác
+Trực quan hóa mối quan hệ
+Truy vấn mối quan hệ
+Cộng đồng (Community)
+Tạo và quản lý bài đăng
+Bình luận và tương tác (react) bài đăng
+Chia sẻ tin tức gia đình
+Chia sẻ hình ảnh
+Thông báo gia đình
+Sự kiện (Events)
+Tạo sự kiện gia đình
+Quản lý phản hồi tham dự (RSVP)
+Quản lý người tham gia
+Thư viện ảnh sự kiện
+Nhắc nhở sự kiện
+Danh bạ Gia đình (Family Directory)
+Danh bạ thành viên
+Hồ sơ nghề nghiệp
+Hồ sơ học vấn
+Tìm kiếm thành viên theo nghề nghiệp, vị trí hoặc thế hệ
+Di sản Gia đình (Family Heritage)
+Tài liệu lịch sử
+Những câu chuyện gia đình
+Những thành viên tiêu biểu trong gia đình
+Thư viện hình ảnh
+Lưu trữ số
+Các dịch vụ hỗ trợ bởi AI (AI-assisted Services)
+Tìm kiếm ngữ nghĩa bằng AI
+Trợ lý AI về kiến thức gia đình
+AI giải thích mối quan hệ
+AI tóm tắt nội dung
+AI đề xuất các thành viên liên quan và tài nguyên gia đình
+Bảng điều khiển & Báo cáo (Dashboard & Reporting)
+Thống kê gia đình
+Bảng điều khiển hoạt động cộng đồng
+Thống kê sự kiện
+Nhân khẩu học thành viên
+Xuất báo cáo
+Quản trị (Administration)
+Quản lý người dùng
+Kiểm duyệt nội dung
+Ghi nhật ký kiểm toán (Audit logging)
+Sao lưu & Khôi phục
+Cấu hình hệ thống
+d) Yêu cầu phi chức năng:
+Ứng dụng Web đáp ứng (Responsive)
+Ứng dụng di động đa nền tảng
+Xác thực bảo mật (JWT)
+Kiến trúc API RESTful
+Kiến trúc phần mềm dạng mô-đun
+Trực quan hóa đồ thị tương tác
+Cơ sở dữ liệu PostgreSQL
+Tích hợp dịch vụ AI
+Triển khai bằng Docker
+Tính sẵn sàng cao
+Ghi nhật ký kiểm toán (Audit Logging)
+e) Lý thuyết & Thực tiễn:
+Công nghệ phần mềm
+Phân tích và Thiết kế Hướng đối tượng
+Kiến trúc phần mềm
+Hệ thống thông tin doanh nghiệp
+Thiết kế cơ sở dữ liệu
+Mô hình hóa dữ liệu đồ thị
+Tương tác Người - Máy (HCI)
+Phát triển ứng dụng di động
+Thiết kế API RESTful
+Xác thực & Cấp quyền
+Kiểm thử phần mềm
+Truy xuất thông tin
+Tích hợp Mô hình Ngôn ngữ Lớn (LLM)
+f) Sản phẩm (Kết quả bàn giao dự kiến):
+Cổng Web FamilyConnect
+Ứng dụng di động FamilyConnect
+Mô-đun Quản lý gia phả
+Mô-đun Quản lý cộng đồng
+Mô-đun Quản lý sự kiện
+Mô-đun Di sản gia đình
+Mô-đun Trợ lý AI
+Mô-đun Bảng điều khiển & Báo cáo
+Các dịch vụ RESTful API
+Gói triển khai Docker
+Tài liệu phần mềm
+g) Các công việc đề xuất:
+Gói công việc 1 – Phân tích yêu cầu & Thiết kế hệ thống
+Khảo sát yêu cầu và phân tích các bên liên quan
+Mô hình hóa quy trình nghiệp vụ
+Thiết kế kiến trúc phần mềm
+Thiết kế cơ sở dữ liệu
+Thiết kế UI/UX
+Đặc tả API
+Gói công việc 2 – Phát triển Nền tảng lõi
+Xác thực và phân quyền người dùng
+Quản lý gia đình và gia phả
+Quản lý cộng đồng
+Quản lý sự kiện
+Quản lý di sản gia đình
+Gói công việc 3 – Ứng dụng di động & Tích hợp AI
+Phát triển ứng dụng di động
+Tìm kiếm ngữ nghĩa bằng AI
+Trợ lý kiến thức AI
+AI giải thích mối quan hệ
+Dịch vụ đề xuất bằng AI
+Gói công việc 4 – Trực quan hóa & Phân tích
+Trực quan hóa gia phả tương tác
+Phát triển bảng điều khiển
+Báo cáo thống kê
+Xuất dữ liệu
+Quản trị hệ thống
+Gói công việc 5 – Kiểm thử & Triển khai
+Tích hợp hệ thống
+Kiểm thử chức năng
+Kiểm thử hiệu năng
+Triển khai Docker
+Tài liệu hướng dẫn người dùng
+4. Các ý kiến khác (đề xuất tất cả các vấn đề liên quan nếu có):
+(Phần này dành cho những ghi chú hoặc đề xuất bổ sung thêm từ người viết đề cương)

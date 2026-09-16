@@ -1,0 +1,152 @@
+\chapter{Thiết kế mức Logic}
+\label{chap:chuong2_logic}
+
+Thiết kế Logic là giai đoạn chuyển đổi mô hình quan niệm (lược đồ ER) thành lược đồ quan hệ (relational schema), đồng thời áp dụng các thuật toán chuẩn hóa nhằm loại bỏ dư thừa dữ liệu và các bất thường cập nhật (update anomalies).
+
+\section{Dẫn nhập và Định nghĩa}
+
+\subsection{Khái niệm cơ bản}
+\begin{itemize}
+    \item \textbf{Lược đồ quan hệ (Relation schema)}: Ký hiệu $R(A_1, A_2, \ldots, A_n)$, trong đó $R$ là tên quan hệ, $A_1, \ldots, A_n$ là tập các thuộc tính.
+    \item \textbf{Bộ (Tuple)}: Một dòng dữ liệu cụ thể $t = (v_1, v_2, \ldots, v_n)$ trong quan hệ.
+    \item \textbf{Miền giá trị (Domain)}: Tập các giá trị hợp lệ mà một thuộc tính có thể nhận, ký hiệu $\text{dom}(A_i)$.
+\end{itemize}
+
+\subsection{Các bất thường dữ liệu (Anomalies)}
+Khi thiết kế lược đồ chưa tốt (chưa đạt chuẩn hóa), dữ liệu có thể gặp ba loại bất thường:
+\begin{itemize}
+    \item \textbf{Bất thường chèn (Insertion anomaly)}: Không thể thêm dữ liệu mới nếu thiếu thông tin về một số thuộc tính khác chưa có sẵn.
+    \item \textbf{Bất thường xóa (Deletion anomaly)}: Xóa một bộ có thể vô tình làm mất thông tin quan trọng khác không liên quan.
+    \item \textbf{Bất thường sửa (Update anomaly)}: Phải cập nhật dữ liệu lặp lại ở nhiều bộ khác nhau, dễ gây ra mâu thuẫn dữ liệu nếu cập nhật không đồng bộ.
+\end{itemize}
+
+\section{Tính chất Phụ thuộc hàm (Functional Dependency)}
+
+\subsection{Định nghĩa}
+Cho lược đồ quan hệ $R$ với tập thuộc tính $U$, và $X, Y \subseteq U$. Ta nói $X$ \textbf{xác định hàm} $Y$ (ký hiệu $X \rightarrow Y$) nếu với mọi cặp bộ $t_1, t_2$ trong $R$, nếu $t_1[X] = t_2[X]$ thì $t_1[Y] = t_2[Y]$.
+
+Ý nghĩa: Giá trị của tập thuộc tính $X$ xác định duy nhất giá trị của tập thuộc tính $Y$.
+
+\subsection{Ví dụ minh họa}
+Trong quan hệ \texttt{SINH\_VIEN(MSSV, HoTen, NgaySinh, Lop)}, ta có phụ thuộc hàm:
+$$\text{MSSV} \rightarrow \text{HoTen, NgaySinh, Lop}$$
+bởi vì mỗi mã số sinh viên xác định duy nhất họ tên, ngày sinh và lớp tương ứng của sinh viên đó.
+
+\subsection{Phụ thuộc hàm đầy đủ và Phụ thuộc bộ phận}
+\begin{itemize}
+    \item \textbf{Phụ thuộc hàm đầy đủ (Full functional dependency)}: $X \rightarrow Y$ là phụ thuộc đầy đủ nếu không tồn tại $X' \subset X$ sao cho $X' \rightarrow Y$.
+    \item \textbf{Phụ thuộc bộ phận (Partial dependency)}: Tồn tại $X' \subset X$ với $X' \rightarrow Y$, tức $Y$ chỉ phụ thuộc vào một tập con thực sự của khóa.
+\end{itemize}
+
+\subsection{Phụ thuộc bắc cầu (Transitive Dependency)}
+$X \rightarrow Z$ là phụ thuộc bắc cầu nếu tồn tại $Y$ sao cho $X \rightarrow Y$, $Y \rightarrow Z$, và $Y \not\rightarrow X$ (nghĩa là $Y$ không xác định ngược lại $X$).
+
+\section{Hệ tiên đề Armstrong}
+
+Hệ tiên đề Armstrong (1974) \cite{armstrong1974} là tập các luật suy diễn dùng để tìm tất cả các phụ thuộc hàm được suy ra từ một tập phụ thuộc hàm cho trước $F$.
+
+\subsection{Các luật cơ bản}
+Cho $X, Y, Z, W \subseteq U$:
+\begin{itemize}
+    \item \textbf{Luật phản xạ (Reflexivity)}: Nếu $Y \subseteq X$ thì $X \rightarrow Y$.
+    \item \textbf{Luật tăng trưởng (Augmentation)}: Nếu $X \rightarrow Y$ thì $XZ \rightarrow YZ$.
+    \item \textbf{Luật bắc cầu (Transitivity)}: Nếu $X \rightarrow Y$ và $Y \rightarrow Z$ thì $X \rightarrow Z$.
+\end{itemize}
+
+\subsection{Các luật suy diễn (Dẫn xuất)}
+\begin{itemize}
+    \item \textbf{Luật hợp (Union)}: Nếu $X \rightarrow Y$ và $X \rightarrow Z$ thì $X \rightarrow YZ$.
+    \item \textbf{Luật phân rã (Decomposition)}: Nếu $X \rightarrow YZ$ thì $X \rightarrow Y$ và $X \rightarrow Z$.
+    \item \textbf{Luật tựa bắc cầu (Pseudo-transitivity)}: Nếu $X \rightarrow Y$ và $YW \rightarrow Z$ thì $XW \rightarrow Z$.
+\end{itemize}
+
+\subsection{Tính đúng đắn và đầy đủ}
+Hệ luật dẫn Armstrong được chứng minh là \textbf{đúng đắn} (sound --- mọi phụ thuộc suy ra đều đúng trên thực tế dữ liệu) và \textbf{đầy đủ} (complete --- mọi phụ thuộc đúng đều có thể suy ra được bằng các luật này).
+
+\section{Bao đóng và Xác định khóa}
+
+\subsection{Bao đóng của tập thuộc tính}
+Bao đóng của tập thuộc tính $X$ đối với tập phụ thuộc hàm $F$, ký hiệu $X^+$, là tập tất cả thuộc tính $A$ sao cho $X \rightarrow A$ được suy diễn từ $F$ bằng hệ luật Armstrong.
+
+\subsection{Thuật toán tính bao đóng}
+\begin{enumerate}
+    \item Khởi tạo $X^+ = X$.
+    \item Lặp: Với mỗi phụ thuộc hàm $Y \rightarrow Z$ trong $F$, nếu $Y \subseteq X^+$ thì cập nhật $X^+ = X^+ \cup Z$.
+    \item Lặp lại bước 2 cho đến khi $X^+$ không thay đổi thêm.
+\end{enumerate}
+
+\subsection{Xác định khóa dựa trên phụ thuộc hàm}
+$K \subseteq U$ là một \textbf{khóa} (candidate key) của lược đồ quan hệ $R(U)$ nếu thỏa mãn hai điều kiện:
+\begin{enumerate}
+    \item $K^+ = U$ ($K$ xác định hàm toàn bộ tập thuộc tính).
+    \item Không tồn tại $K' \subset K$ sao cho $K'^+ = U$ (tính tối tiểu của khóa).
+\end{enumerate}
+
+\subsection{Thuật toán tìm một khóa}
+\begin{enumerate}
+    \item Khởi tạo $K = U$ (tập toàn bộ thuộc tính).
+    \item Với mỗi thuộc tính $A \in K$: Tính $(K - \{A\})^+$. Nếu $(K - \{A\})^+ = U$, loại $A$ khỏi $K$ ($K = K - \{A\}$).
+    \item Lặp lại cho đến khi duyệt hết các thuộc tính. Kết quả $K$ là một khóa tối tiểu.
+\end{enumerate}
+
+\section{Phủ tối thiểu (Minimal Cover)}
+
+Phủ tối thiểu (minimal cover / canonical cover) $F_c$ của tập phụ thuộc hàm $F$ là một phủ tương đương với $F$ thỏa các tính chất:
+\begin{itemize}
+    \item Vế phải của mỗi phụ thuộc hàm chỉ chứa đúng một thuộc tính đơn ($X \rightarrow A$).
+    \item Không có phụ thuộc hàm nào dư thừa.
+    \item Không có thuộc tính dư thừa ở vế trái của bất kỳ phụ thuộc hàm nào.
+\end{itemize}
+
+\subsection{Thuật toán tìm phủ tối thiểu}
+\begin{enumerate}
+    \item \textbf{Tách vế phải}: Chuyển mọi $X \rightarrow Y_1Y_2\ldots Y_n$ thành các phụ thuộc hàm đơn $X \rightarrow Y_1, X \rightarrow Y_2, \ldots, X \rightarrow Y_n$.
+    \item \textbf{Loại thuộc tính dư thừa vế trái}: Với mỗi $X \rightarrow A$ có $|X| > 1$, kiểm tra từng $B \in X$: Nếu $A \in (X - \{B\})^+_F$, thay $X \rightarrow A$ bằng $(X - \{B\}) \rightarrow A$.
+    \item \textbf{Loại phụ thuộc hàm dư thừa}: Với mỗi $X \rightarrow A \in F$, nếu $A \in X^+_{F - \{X \rightarrow A\}}$, loại bỏ $X \rightarrow A$ khỏi $F$.
+\end{enumerate}
+
+\section{Các Dạng chuẩn (Normal Forms)}
+
+\subsection{Dạng chuẩn 1 (1NF)}
+Lược đồ quan hệ đạt 1NF nếu mọi thuộc tính đều chứa giá trị nguyên tố (atomic), không chứa thuộc tính đa trị hoặc phức hợp.
+
+\subsection{Dạng chuẩn 2 (2NF)}
+Lược đồ đạt 2NF nếu đạt 1NF và mọi thuộc tính không khóa đều phụ thuộc hàm \textbf{đầy đủ} vào mọi khóa chính (không tồn tại phụ thuộc bộ phận).
+
+\subsection{Dạng chuẩn 3 (3NF)}
+Lược đồ đạt 3NF nếu đạt 2NF và không tồn tại phụ thuộc bắc cầu của thuộc tính không khóa vào khóa chính. Tương đương: Với mọi $X \rightarrow A \in F$, hoặc $A \in X$ (tầm thường), hoặc $X$ là siêu khóa, hoặc $A$ là thuộc tính khóa.
+
+\subsection{Dạng chuẩn Boyce-Codd (BCNF)}
+Lược đồ đạt BCNF nếu với mọi phụ thuộc hàm $X \rightarrow A$ không tầm thường, $X$ đều là một \textbf{siêu khóa} (superkey).
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|p{10cm}|}
+\hline
+\textbf{Dạng chuẩn} & \textbf{Điều kiện tiên quyết \& Ràng buộc chính} \\
+\hline
+1NF & Miền giá trị nguyên tố, không thuộc tính lặp/phức hợp \\
+2NF & 1NF + Không có phụ thuộc bộ phận vào khóa chính \\
+3NF & 2NF + Không có phụ thuộc bắc cầu vào khóa chính \\
+BCNF & Mọi vế trái $X$ của phụ thuộc hàm không tầm thường đều là siêu khóa \\
+\hline
+\end{tabular}
+\caption{Bảng so sánh điều kiện các dạng chuẩn}
+\label{tab:so_sanh_dang_chuan}
+\end{table}
+
+\section{Thuật toán Phân rã và Tổng hợp 3NF}
+
+\subsection{Tính chất phân rã cần bảo toàn}
+\begin{itemize}
+    \item \textbf{Bảo toàn thông tin (Lossless Join)}: Kết nối tự nhiên các quan hệ con phải hoàn trả chính xác dữ liệu của quan hệ ban đầu ($R_1 \bowtie R_2 = R$).
+    \item \textbf{Bảo toàn phụ thuộc hàm (Dependency Preservation)}: $(\bigcup F_i)^+ = F^+$.
+\end{itemize}
+
+\subsection{Thuật toán tổng hợp Bernstein (3NF Synthesis)}
+\begin{enumerate}
+    \item Tìm phủ tối thiểu $F_c$ của tập phụ thuộc hàm $F$.
+    \item Nhóm các phụ thuộc hàm trong $F_c$ có cùng vế trái: Với mỗi nhóm $X \rightarrow A_1, X \rightarrow A_2, \ldots$, tạo lược đồ quan hệ con $R_i(X \cup \{A_1, A_2, \ldots\})$.
+    \item Nếu chưa có lược đồ con nào chứa một khóa của lược đồ ban đầu $R$, tạo thêm một lược đồ con mới chỉ chứa tập thuộc tính khóa đó để đảm bảo bảo toàn thông tin.
+    \item Loại bỏ các lược đồ con bị bao hàm hoàn toàn bởi lược đồ con khác.
+\end{enumerate}
