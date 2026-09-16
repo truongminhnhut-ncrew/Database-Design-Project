@@ -1,27 +1,199 @@
 % !TEX root = ../main.tex
+
 \chapter*{GIỚI THIỆU ĐỀ TÀI}
+
 \addcontentsline{toc}{chapter}{GIỚI THIỆU ĐỀ TÀI}
+
 \label{chap:gioi_thieu_de_tai}
 
-\section*{1. Bối cảnh và lý do chọn đề tài}
-\addcontentsline{toc}{section}{1. Bối cảnh và lý do chọn đề tài}
-% Nội dung bối cảnh và lý do chọn đề tài
+% =========================================================
+% 1. BỐI CẢNH VÀ LÝ DO CHỌN ĐỀ TÀI
+% =========================================================
 
-\section*{2. Mục tiêu đề tài \& Giải pháp đề xuất}
-\addcontentsline{toc}{section}{2. Mục tiêu đề tài \& Giải pháp đề xuất}
-% Nội dung mục tiêu đề tài và giải pháp đề xuất
+\section*{1. Bối cảnh và lý do chọn đề tài}
+
+\addcontentsline{toc}{section}{1. Bối cảnh và lý do chọn đề tài}
+
+Trong bối cảnh xã hội hiện đại, sự phát triển mạnh mẽ của công nghệ thông tin và quá trình toàn cầu hóa đã tạo ra nhiều thay đổi trong đời sống gia đình và cộng đồng. Các thành viên trong gia đình ngày càng có xu hướng sinh sống, học tập và làm việc tại nhiều tỉnh thành khác nhau, thậm chí ở các quốc gia khác nhau. Điều này mang lại nhiều cơ hội phát triển cá nhân nhưng đồng thời cũng đặt ra thách thức trong việc duy trì sự gắn kết giữa các thế hệ, lưu giữ truyền thống gia đình và bảo tồn thông tin về nguồn gốc dòng họ.
+
+Tại Việt Nam, gia đình và dòng họ giữ vai trò quan trọng trong việc duy trì các giá trị văn hóa, đạo đức và truyền thống dân tộc. Những câu nói như `Uống nước nhớ nguồn'' hay `Chim có tổ, người có tông'' thể hiện rõ ý nghĩa của việc ghi nhớ cội nguồn và duy trì mối liên kết giữa các thế hệ. Tuy nhiên, việc quản lý thông tin gia đình, gia phả và các hoạt động dòng họ hiện nay vẫn còn phụ thuộc nhiều vào phương pháp truyền thống hoặc các công cụ chưa được thiết kế chuyên biệt.
+
+Qua khảo sát thực tế, các giải pháp hiện có còn tồn tại một số hạn chế. Các mạng xã hội phổ biến như Facebook, Zalo hay TikTok chủ yếu phục vụ nhu cầu giao tiếp chung, chưa hỗ trợ tốt việc tổ chức và lưu trữ dữ liệu có cấu trúc về gia đình, dòng họ và các mối quan hệ huyết thống. Bên cạnh đó, các phần mềm gia phả truyền thống thường tập trung vào việc tra cứu thông tin tĩnh, thiếu các tính năng tương tác cộng đồng, tổ chức sự kiện và chia sẻ di sản gia đình.
+
+Từ những thực trạng trên, việc xây dựng một nền tảng số chuyên biệt nhằm kết nối các thành viên trong gia đình, quản lý thông tin gia phả và lưu giữ các giá trị truyền thống là cần thiết. Đề tài FamilyConnect được đề xuất nhằm giải quyết những hạn chế trên thông qua việc kết hợp giữa quản lý dữ liệu gia đình, tương tác cộng đồng và ứng dụng công nghệ trí tuệ nhân tạo.
+
+Đặc biệt, đề tài tập trung nghiên cứu và xây dựng cơ sở dữ liệu làm nền tảng cho toàn bộ hệ thống. Cơ sở dữ liệu cần đảm bảo khả năng lưu trữ chính xác thông tin người dùng, gia đình, thành viên, chi nhánh dòng họ, bài đăng, sự kiện và di sản. Đồng thời, hệ thống phải duy trì được tính toàn vẹn dữ liệu và phản ánh chính xác các mối quan hệ giữa các thực thể trong môi trường gia đình và dòng tộc.
+
+% =========================================================
+% 2. MỤC TIÊU VÀ GIẢI PHÁP
+% =========================================================
+
+\section*{2. Mục tiêu đề tài & Giải pháp đề xuất}
+
+\addcontentsline{toc}{section}{2. Mục tiêu đề tài & Giải pháp đề xuất}
+
+\subsection*{2.1. Mục tiêu đề tài}
+
+\addcontentsline{toc}{subsection}{2.1. Mục tiêu đề tài}
+
+Mục tiêu tổng quát của đề tài là nghiên cứu, phân tích và thiết kế một hệ thống cơ sở dữ liệu phục vụ nền tảng FamilyConnect, nhằm hỗ trợ việc quản lý thông tin gia đình, dòng họ và các hoạt động cộng đồng trên môi trường số.
+
+Đề tài hướng đến các mục tiêu cụ thể sau:
+
+\begin{itemize}[leftmargin=*]
+\item Xây dựng mô hình dữ liệu phản ánh đầy đủ các đối tượng nghiệp vụ trong hệ thống FamilyConnect.
+\item Xác định các thực thể, thuộc tính và mối quan hệ giữa các đối tượng dữ liệu.
+\item Thiết kế cơ sở dữ liệu có cấu trúc rõ ràng, hạn chế dư thừa và đảm bảo tính nhất quán của dữ liệu.
+\item Quản lý hiệu quả thông tin thành viên, gia đình, chi nhánh dòng họ và các mối quan hệ huyết thống.
+\item Hỗ trợ lưu trữ và quản lý các bài đăng, sự kiện và di sản gia đình.
+\item Đảm bảo khả năng mở rộng cơ sở dữ liệu để phục vụ các chức năng phát triển trong tương lai, bao gồm tích hợp trí tuệ nhân tạo.
+\end{itemize}
+
+\subsection*{2.2. Giải pháp đề xuất}
+
+\addcontentsline{toc}{subsection}{2.2. Giải pháp đề xuất}
+
+FamilyConnect được đề xuất là một nền tảng cộng đồng gia đình số kết hợp giữa quản lý dữ liệu gia phả và các chức năng tương tác hiện đại. Giải pháp được xây dựng dựa trên việc thiết kế một hệ thống cơ sở dữ liệu tập trung, đóng vai trò lưu trữ và cung cấp thông tin cho các chức năng của ứng dụng.
+
+Các nhóm chức năng chính của hệ thống bao gồm:
+
+\begin{enumerate}[leftmargin=*]
+\item \textbf{Quản lý người dùng và gia đình:} Lưu trữ thông tin tài khoản, hồ sơ cá nhân và thông tin các gia đình tham gia hệ thống.
+
+```
+\item \textbf{Quản lý thành viên và gia phả:} Quản lý thông tin thành viên, các mối quan hệ giữa các thành viên và cấu trúc dòng họ qua nhiều thế hệ.
+
+\item \textbf{Quản lý chi nhánh dòng họ:} Hỗ trợ tổ chức thông tin theo các chi, nhánh hoặc đơn vị gia đình thuộc cùng một dòng họ.
+
+\item \textbf{Quản lý bài đăng và tương tác cộng đồng:} Cho phép thành viên chia sẻ thông tin, hình ảnh, câu chuyện và hoạt động trong không gian riêng tư của gia đình.
+
+\item \textbf{Quản lý sự kiện:} Lưu trữ và tổ chức các sự kiện gia đình, dòng họ như họp mặt, ngày giỗ, lễ tết hoặc các hoạt động cộng đồng.
+
+\item \textbf{Quản lý di sản gia đình:} Lưu trữ các hình ảnh, tài liệu, câu chuyện và tư liệu có giá trị lịch sử, văn hóa của gia đình và dòng họ.
+
+\item \textbf{Tích hợp trí tuệ nhân tạo:} Hỗ trợ tìm kiếm thông tin ngữ nghĩa và giải thích các mối quan hệ dòng tộc dựa trên dữ liệu được lưu trữ trong hệ thống.
+```
+
+\end{enumerate}
+
+Giải pháp đề xuất không chỉ hướng đến việc số hóa thông tin gia phả mà còn xây dựng một môi trường kết nối cộng đồng gia đình. Trong đó, cơ sở dữ liệu giữ vai trò trung tâm, đảm bảo dữ liệu được tổ chức khoa học, chính xác và có khả năng phục vụ nhiều nhóm chức năng khác nhau.
+
+% =========================================================
+% 3. PHẠM VI VÀ ĐỐI TƯỢNG
+% =========================================================
 
 \section*{3. Phạm vi và đối tượng áp dụng}
-\addcontentsline{toc}{section}{3. Phạm vi và đối tượng áp dụng}
-% Nội dung phạm vi và đối tượng áp dụng
 
-\section*{4. Khảo sát hiện trạng \& Các yêu cầu của hệ thống}
-\addcontentsline{toc}{section}{4. Khảo sát hiện trạng \& Các yêu cầu của hệ thống}
+\addcontentsline{toc}{section}{3. Phạm vi và đối tượng áp dụng}
+
+\subsection*{3.1. Đối tượng áp dụng}
+
+\addcontentsline{toc}{subsection}{3.1. Đối tượng áp dụng}
+
+Hệ thống FamilyConnect được hướng đến các nhóm đối tượng sử dụng sau:
+
+\begin{itemize}[leftmargin=*]
+\item \textbf{Thành viên gia đình:} Các cá nhân thuộc gia đình hạt nhân hoặc gia đình mở rộng có nhu cầu kết nối, chia sẻ thông tin và duy trì quan hệ giữa các thế hệ.
+
+```
+\item \textbf{Dòng họ và chi nhánh gia tộc:} Các dòng họ, chi họ hoặc nhánh gia đình có nhu cầu quản lý thông tin thành viên, cây gia phả và các hoạt động chung.
+
+\item \textbf{Ban quản lý dòng họ:} Trưởng họ, người quản lý gia phả hoặc những cá nhân được phân quyền quản trị thông tin và tổ chức các hoạt động cộng đồng.
+
+\item \textbf{Người quản trị hệ thống:} Người chịu trách nhiệm quản lý tài khoản, phân quyền và đảm bảo hoạt động ổn định của hệ thống.
+```
+
+\end{itemize}
+
+\subsection*{3.2. Phạm vi đề tài}
+
+\addcontentsline{toc}{subsection}{3.2. Phạm vi đề tài}
+
+Trong khuôn khổ môn học Thiết kế Cơ sở dữ liệu, đề tài tập trung chủ yếu vào việc khảo sát, phân tích và thiết kế cơ sở dữ liệu cho hệ thống FamilyConnect.
+
+Phạm vi nghiên cứu bao gồm:
+
+\begin{itemize}[leftmargin=*]
+\item Phân tích yêu cầu nghiệp vụ của nền tảng FamilyConnect.
+\item Xác định các thực thể và thuộc tính cần quản lý trong hệ thống.
+\item Xây dựng mô hình thực thể kết hợp (ER Model).
+\item Xác định các mối quan hệ giữa các thực thể và các ràng buộc dữ liệu.
+\item Chuyển đổi mô hình thực thể kết hợp sang mô hình quan hệ.
+\item Thiết kế các bảng dữ liệu, khóa chính, khóa ngoại và các ràng buộc toàn vẹn.
+\item Chuẩn hóa cơ sở dữ liệu nhằm hạn chế dư thừa dữ liệu và đảm bảo tính nhất quán.
+\item Định hướng triển khai cơ sở dữ liệu trên hệ quản trị cơ sở dữ liệu MySQL.
+\end{itemize}
+
+Đề tài không đi sâu vào việc phát triển hoàn chỉnh giao diện người dùng hoặc triển khai các mô hình trí tuệ nhân tạo. Các chức năng AI được xem xét ở mức độ định hướng tích hợp và khai thác dữ liệu từ cơ sở dữ liệu đã được thiết kế.
+
+% =========================================================
+% 4. KHẢO SÁT HIỆN TRẠNG VÀ YÊU CẦU HỆ THỐNG
+% =========================================================
+
+\section*{4. Khảo sát hiện trạng & Các yêu cầu của hệ thống}
+
+\addcontentsline{toc}{section}{4. Khảo sát hiện trạng & Các yêu cầu của hệ thống}
 
 \subsection*{4.1. Yêu cầu chức năng}
+
 \addcontentsline{toc}{subsection}{4.1. Yêu cầu chức năng}
-% Nội dung yêu cầu chức năng
+
+Dựa trên quá trình khảo sát nhu cầu sử dụng và mục tiêu của hệ thống, FamilyConnect cần đáp ứng các yêu cầu chức năng chính sau:
+
+\begin{enumerate}[leftmargin=*]
+\item \textbf{Quản lý người dùng:} Cho phép đăng ký, đăng nhập, cập nhật và quản lý thông tin cá nhân của người dùng.
+
+```
+\item \textbf{Quản lý gia đình:} Cho phép tạo, cập nhật và quản lý thông tin các gia đình hoặc dòng họ tham gia hệ thống.
+
+\item \textbf{Quản lý thành viên:} Cho phép thêm, sửa, xóa và tra cứu thông tin thành viên thuộc một gia đình hoặc dòng họ.
+
+\item \textbf{Quản lý quan hệ gia phả:} Cho phép xác định và lưu trữ các mối quan hệ giữa các thành viên như cha mẹ, con cái, vợ chồng hoặc các quan hệ huyết thống khác.
+
+\item \textbf{Quản lý chi nhánh dòng họ:} Cho phép phân chia và quản lý các chi, nhánh thuộc một dòng họ.
+
+\item \textbf{Quản lý bài đăng:} Cho phép thành viên tạo, chỉnh sửa, xóa và chia sẻ bài viết trong phạm vi gia đình hoặc dòng họ.
+
+\item \textbf{Quản lý tương tác:} Cho phép người dùng bình luận và tương tác với các bài đăng được chia sẻ trong cộng đồng.
+
+\item \textbf{Quản lý sự kiện:} Cho phép tạo, cập nhật và theo dõi các sự kiện gia đình, đồng thời quản lý danh sách thành viên tham dự.
+
+\item \textbf{Quản lý di sản:} Cho phép lưu trữ và tra cứu các tài liệu, hình ảnh, câu chuyện và thông tin lịch sử liên quan đến gia đình.
+
+\item \textbf{Quản lý phân quyền:} Cho phép phân quyền người dùng theo các vai trò khác nhau như quản trị viên, trưởng họ, thành viên và khách.
+
+\item \textbf{Tra cứu và tìm kiếm thông tin:} Hỗ trợ tìm kiếm thành viên, gia đình, sự kiện và các thông tin liên quan trong hệ thống.
+
+\item \textbf{Hỗ trợ AI:} Cho phép khai thác dữ liệu để phục vụ chức năng tìm kiếm ngữ nghĩa và giải thích mối quan hệ giữa các thành viên.
+```
+
+\end{enumerate}
+
+Các yêu cầu chức năng trên là cơ sở để xác định các thực thể, thuộc tính và mối quan hệ cần thiết trong quá trình thiết kế cơ sở dữ liệu.
 
 \subsection*{4.2. Yêu cầu phi chức năng}
+
 \addcontentsline{toc}{subsection}{4.2. Yêu cầu phi chức năng}
-% Nội dung yêu cầu phi chức năng
+
+Bên cạnh các yêu cầu chức năng, hệ thống FamilyConnect cần đáp ứng các yêu cầu phi chức năng nhằm đảm bảo chất lượng, tính ổn định và khả năng phát triển lâu dài.
+
+\begin{itemize}[leftmargin=*]
+\item \textbf{Tính toàn vẹn dữ liệu:} Cơ sở dữ liệu phải đảm bảo tính chính xác, nhất quán và hợp lệ của thông tin. Các ràng buộc về khóa chính, khóa ngoại và quan hệ giữa các thực thể cần được kiểm soát chặt chẽ.
+
+```
+\item \textbf{Tính bảo mật:} Thông tin cá nhân, dữ liệu gia đình và thông tin dòng họ cần được bảo vệ khỏi việc truy cập trái phép. Hệ thống phải hỗ trợ cơ chế phân quyền phù hợp với từng nhóm người dùng.
+
+\item \textbf{Hiệu năng:} Hệ thống cần đảm bảo thời gian truy vấn và phản hồi hợp lý khi số lượng thành viên, gia đình và dữ liệu gia phả tăng lên.
+
+\item \textbf{Khả năng mở rộng:} Thiết kế cơ sở dữ liệu cần có khả năng mở rộng để bổ sung các chức năng mới trong tương lai mà không làm ảnh hưởng đến cấu trúc dữ liệu hiện tại.
+
+\item \textbf{Tính nhất quán dữ liệu:} Các thông tin liên quan giữa người dùng, thành viên, gia đình và các hoạt động cộng đồng phải được duy trì đồng bộ trong toàn hệ thống.
+
+\item \textbf{Khả năng bảo trì:} Cấu trúc cơ sở dữ liệu cần được tổ chức rõ ràng, dễ hiểu và thuận tiện cho việc bảo trì, cập nhật và phát triển hệ thống.
+
+\item \textbf{Khả năng sao lưu và phục hồi:} Dữ liệu cần có cơ chế sao lưu và phục hồi nhằm hạn chế nguy cơ mất mát thông tin quan trọng.
+```
+
+\end{itemize}
+
+Từ các yêu cầu trên, việc thiết kế cơ sở dữ liệu FamilyConnect cần đảm bảo sự cân bằng giữa tính chính xác của dữ liệu, hiệu năng truy vấn và khả năng mở rộng trong tương lai. Đây sẽ là nền tảng quan trọng cho các chương tiếp theo về thiết kế quan niệm, thiết kế logic và triển khai cơ sở dữ liệu.
