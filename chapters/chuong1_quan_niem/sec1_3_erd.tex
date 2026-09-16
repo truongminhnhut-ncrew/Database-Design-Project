@@ -1,5 +1,44 @@
+```latex
 % !TEX root = ../../main.tex
+
 \section{Mô hình Thực thể -- Liên kết mở rộng (ERD / EERD)}
 \label{sec:1_3_mo_hinh_erd_eerd}
 
-% Nội dung sơ đồ ERD / EERD chi tiết thể hiện đầy đủ các thực thể, mối quan hệ, thuộc tính khóa và bản số
+Mô hình ERD/EERD của hệ thống FamilyConnect được xây dựng nhằm mô tả
+một cách trực quan các thực thể, thuộc tính và mối liên kết giữa các
+đối tượng dữ liệu trong hệ thống. Mô hình thể hiện đầy đủ các thực thể
+chính, các thuộc tính quan trọng, thuộc tính khóa, các mối quan hệ và
+bản số (cardinality) giữa các thực thể.
+
+Mô hình EERD được sử dụng để mở rộng mô hình ER truyền thống, cho phép
+biểu diễn các trường hợp có tính phân cấp hoặc chuyên biệt hóa giữa
+các thực thể khi cần thiết. Đây là cơ sở quan trọng để chuyển đổi mô
+hình quan niệm sang mô hình dữ liệu quan hệ ở các bước thiết kế tiếp
+theo.
+
+\begin{figure}[H]
+    \centering
+    % \includegraphics[width=\textwidth]{images/familyconnect-erd.png}
+    \caption{Mô hình Thực thể -- Liên kết mở rộng (ERD/EERD) của hệ thống FamilyConnect}
+    \label{fig:familyconnect-erd}
+\end{figure}
+
+\noindent
+Trong sơ đồ trên, các thành phần chính bao gồm:
+\begin{itemize}
+    \item \textbf{Thực thể (Entity):} biểu diễn các đối tượng nghiệp vụ
+    cần quản lý như Người dùng, Gia đình, Thành viên, Chi nhánh, Bài đăng,
+    Sự kiện
+    
+    \item \textbf{Thuộc tính (Attribute):} mô tả các đặc điểm của từng
+    thực thể, trong đó thuộc tính khóa được sử dụng để định danh duy nhất
+    mỗi đối tượng.
+    
+    \item \textbf{Mối quan hệ (Relationship):} thể hiện sự liên kết giữa
+    các thực thể trong hệ thống.
+    
+    \item \textbf{Bản số (Cardinality):} xác định số lượng đối tượng của
+    một thực thể có thể tham gia vào một mối quan hệ, chẳng hạn
+    $1:1$, $1:N$ hoặc $M:N$.
+\end{itemize}
+```
