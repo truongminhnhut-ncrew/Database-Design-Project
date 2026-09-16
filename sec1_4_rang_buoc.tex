@@ -1,0 +1,237 @@
+% !TEX root = ../../main.tex
+\section{Ràng buộc toàn vẹn mức quan niệm (Business Rules)}
+\label{sec:1_4_rang_buoc_quan_niem}
+
+Ràng buộc toàn vẹn mức quan niệm (Conceptual Integrity Constraints) là tập hợp các quy tắc ngữ nghĩa biểu diễn tính đúng đắn, hợp lệ và nhất quán của dữ liệu trong thế giới thực mà cơ sở dữ liệu phải thỏa mãn tại mọi thời điểm. Các ràng buộc này hoàn toàn độc lập với hệ quản trị cơ sở dữ liệu (DBMS) và phản ánh trung thực các quy luật sinh học tự nhiên, tập quán văn hóa dòng họ Việt Nam cùng các chính sách phân quyền đa cấp của nền tảng \textbf{FamilyConnect}.
+
+Trong thiết kế hệ thống, mỗi ràng buộc toàn vẹn được chuẩn hóa gồm 4 thành phần:
+\begin{itemize}[noitemsep,topsep=2pt]
+    \item \textbf{Nội dung nghiệp vụ (Semantics):} Diễn giải quy tắc bằng ngôn ngữ tự nhiên.
+    \item \textbf{Biểu diễn hình thức (Formal Specification):} Mô hình hóa bằng vị từ logic toán học.
+    \item \textbf{Bối cảnh áp dụng (Context):} Xác định các thực thể và thuộc tính chịu ảnh hưởng.
+    \item \textbf{Quy tắc toàn vẹn (Integrity Rule):} Điều kiện dữ liệu phải thỏa mãn tại mọi thời điểm.
+\end{itemize}
+
+% ==============================================================================
+% 1.4.1. NHÓM QUY TẮC HUYẾT THỐNG VÀ PHẢ HỆ
+% ==============================================================================
+\subsection{Nhóm quy tắc toàn vẹn huyết thống và cấu trúc phả hệ}
+Cây phả hệ là một đồ thị quan hệ huyết thống có hướng. Các thực thể \texttt{THANH\_VIEN} và các mối liên kết cha--mẹ, hôn phối bắt buộc phải tuân thủ các quy luật sinh học và cấu trúc đồ thị toán học sau:
+
+% --- RB01 ---
+\subsubsection{RB01 --- Tính duy nhất của quan hệ phụ mẫu ruột (Single Biological Parentage)}
+\begin{itemize}
+    \item \textbf{Nội dung nghiệp vụ:} Mỗi cá nhân trong gia phả chỉ có tối đa một người cha ruột và tối đa một người mẹ ruột. Cho phép giá trị rỗng (NULL) đối với tiền nhân chưa rõ căn cước, nhưng tuyệt đối không tồn tại hai cha ruột hoặc hai mẹ ruột.
+    \item \textbf{Biểu diễn toán học:} Gọi $TV = \text{THANH\_VIEN}$. Đặt $\text{ChaRuot}(f, p)$, $\text{MeRuot}(m, p)$ là các vị từ quan hệ phụ mẫu:
+    \begin{alignat}{2}
+        &\forall p \in TV, \quad
+        &&\big|\{ f \in TV \mid \text{ChaRuot}(f, p) \}\big| \le 1 \\[3pt]
+        &\forall p \in TV, \quad
+        &&\big|\{ m \in TV \mid \text{MeRuot}(m, p) \}\big| \le 1
+    \end{alignat}
+    \item \textbf{Bối cảnh:} Thực thể \texttt{THANH\_VIEN}, thuộc tính \texttt{MaCha}, \texttt{MaMe}, \texttt{GioiTinh}.
+    \item \textbf{Quy tắc toàn vẹn:} Không được phép ghi nhận thêm quan hệ phụ mẫu nếu cá nhân đã có cha hoặc mẹ ruột cùng giới tính tương ứng.
+\end{itemize}
+
+% --- RB02 ---
+\subsubsection{RB02 --- Ràng buộc mốc thời gian sinh học (Biological Age Consistency)}
+\begin{itemize}
+    \item \textbf{Nội dung nghiệp vụ:}
+    \begin{enumerate}[label=(\alph*),noitemsep]
+        \item Con cái phải sinh sau cha/mẹ ít nhất 15 năm (độ tuổi sinh sản tối thiểu).
+        \item Người mẹ không thể sinh con sau ngày mất của chính mình.
+        \item Người cha không thể có con sinh sau ngày mất của mình quá 300 ngày (giới hạn y học).
+    \end{enumerate}
+    \item \textbf{Biểu diễn toán học:} Viết tắt $\text{ns}(x) = x.\text{NgaySinh}$, $\text{nm}(x) = x.\text{NgayMat}$:
+    \begin{alignat}{2}
+        &\forall c, p \in TV, \quad
+        &&\text{ChaMe}(p, c) \implies \text{ns}(c) \ge \text{ns}(p) + 15\text{ n\u0103m} \\[3pt]
+        &\forall c, m \in TV, \quad
+        &&\text{MeRuot}(m, c) \land \text{nm}(m) \ne \emptyset \implies \text{ns}(c) \le \text{nm}(m) \\[3pt]
+        &\forall c, f \in TV, \quad
+        &&\text{ChaRuot}(f, c) \land \text{nm}(f) \ne \emptyset \implies \text{ns}(c) \le \text{nm}(f) + 300\text{ ng\u00e0y}
+    \end{alignat}
+    \item \textbf{Bối cảnh:} Thực thể \texttt{THANH\_VIEN}, thuộc tính \texttt{NgaySinh\-DuongLich}, \texttt{NgayMat}, \texttt{GioiTinh}.
+    \item \textbf{Quy tắc toàn vẹn:} Mọi bộ dữ liệu $(c, p)$ có quan hệ phụ mẫu đều phải thỏa mãn đồng thời cả ba điều kiện thời gian trên.
+\end{itemize}
+
+% --- RB03 ---
+\subsubsection{RB03 --- Ràng buộc Đồ thị có hướng không chu trình (DAG Acyclicity)}
+\begin{itemize}
+    \item \textbf{Nội dung nghiệp vụ:} Cây phả hệ thể hiện dòng chảy thế hệ đơn hướng. Một cá nhân không thể vừa là tổ tiên vừa là hậu duệ của chính mình.
+    \item \textbf{Biểu diễn toán học:} Gọi $G = (V, E)$ là đồ thị phả hệ với $V = TV$, $E = \{(u,v) \mid \text{ChaMe}(u,v)\}$. Gọi $E^{+}$ là bao đóng bắc cầu của $E$:
+    \begin{equation}
+        \forall p \in TV: \quad
+        (p, p) \notin E^{+}
+        \quad\iff\quad
+        \text{Ancestors}(p) \cap \text{Descendants}(p) = \emptyset
+    \end{equation}
+    \item \textbf{Bối cảnh:} Quan hệ phụ mẫu giữa các thực thể \texttt{THANH\_VIEN}.
+    \item \textbf{Quy tắc toàn vẹn:} Mọi thao tác thêm/sửa liên kết phụ mẫu đều phải kiểm tra chu trình trong đồ thị $G$ và bị từ chối nếu tạo ra vòng lặp.
+\end{itemize}
+
+% --- RB04 ---
+\subsubsection{RB04 --- Tính tăng đơn điệu của bậc thế hệ (Generation Monotonicity)}
+\begin{itemize}
+    \item \textbf{Nội dung nghiệp vụ:} Bậc thế hệ của con cái luôn bằng bậc thế hệ của người cha cộng thêm 1 đơn vị (tính từ Cụ Khởi tổ là đời thứ 1).
+    \item \textbf{Biểu diễn toán học:}
+    \begin{equation}
+        \forall c, f \in TV: \quad
+        \text{ChaRuot}(f, c) \implies c.\text{TheHe} = f.\text{TheHe} + 1
+    \end{equation}
+    \item \textbf{Bối cảnh:} Thực thể \texttt{THANH\_VIEN}, thuộc tính \texttt{TheHe}, \texttt{MaCha}.
+    \item \textbf{Quy tắc toàn vẹn:} Bậc thế hệ \texttt{TheHe} phải được tính toán nhất quán khi gắn nối thành viên vào cây phả hệ; không được phép gán bậc thế hệ tùy tiện.
+\end{itemize}
+
+% --- RB05 ---
+\subsubsection{RB05 --- Ràng buộc kiểm soát hôn nhân và cấm cận huyết (Consanguinity Constraint)}
+\begin{itemize}
+    \item \textbf{Nội dung nghiệp vụ:} Hai cá nhân kết hôn phải khác giới tính và tuân thủ Luật Hôn nhân \& Gia đình Việt Nam: khoảng cách huyết thống tới Tổ tiên chung gần nhất (\textit{LCA -- Lowest Common Ancestor}) phải vượt quá phạm vi 3 đời.
+    \item \textbf{Biểu diễn toán học:} Gọi $\text{Dist}(p_1, p_2)$ là khoảng cách huyết thống:
+    \begin{alignat}{2}
+        &\forall p_1, p_2 \in TV, \quad
+        &&\text{KetHon}(p_1, p_2) \implies p_1.\text{GioiTinh} \ne p_2.\text{GioiTinh} \\[3pt]
+        &\forall p_1, p_2 \in TV, \quad
+        &&\text{KetHon}(p_1, p_2) \implies \text{Dist}(p_1, p_2) > 3
+    \end{alignat}
+    \item \textbf{Bối cảnh:} Quan hệ hôn phối, thực thể \texttt{THANH\_VIEN}, thuộc tính \texttt{GioiTinh}.
+    \item \textbf{Quy tắc toàn vẹn:} Mọi đề nghị kết hôn phải thỏa mãn đồng thời điều kiện khác giới và khoảng cách huyết thống, ngược lại bị từ chối.
+\end{itemize}
+
+% ==============================================================================
+% 1.4.2. NHÓM QUY TẮC KIỂM SOÁT TRUY CẬP VÀ PHÂN QUYỀN
+% ==============================================================================
+\subsection{Nhóm quy tắc kiểm soát truy cập và phân quyền sử dụng dữ liệu}
+
+% --- RB06 ---
+\subsubsection{RB06 --- Phân lập dữ liệu theo phạm vi Dòng họ (Family Data Isolation)}
+\begin{itemize}
+    \item \textbf{Nội dung nghiệp vụ:} Mỗi Dòng họ là một không gian thông tin riêng biệt và độc lập. Thành viên chỉ có quyền xem và thao tác dữ liệu (thành viên phả hệ, bài viết, sự kiện, di sản) thuộc dòng họ mình. Tư liệu được Trưởng tộc công bố công khai là ngoại lệ duy nhất được phép truy cập chéo dòng họ.
+    \item \textbf{Biểu diễn toán học:} Gọi $\text{DHTV}$ là Dòng họ của thực thể. Đặt $\text{CK}$ là cờ công khai:
+    \begin{equation}
+        \begin{aligned}
+            \forall u \in \text{ND},\ \forall obj \in \mathcal{E}: \quad
+            \text{CoQuyenXem}(u, obj)
+            &\iff \bigl[\,\text{DongHo}(u) = \text{DongHo}(obj)\,\bigr] \\
+            &\lor\ \bigl[\,obj.\text{CongKhai} = \top\,\bigr]
+        \end{aligned}
+    \end{equation}
+    \item \textbf{Bối cảnh:} Các thực thể \texttt{NGUOI\_DUNG}, \texttt{DONG\_HO}, \texttt{THANH\_VIEN}, \texttt{BAI\_VIET}, \texttt{SU\_KIEN}, \texttt{DI\_SAN\_LICH\_SU}.
+    \item \textbf{Quy tắc toàn vẹn:} Mọi thao tác truy cập dữ liệu phải thỏa mãn $\text{CoQuyenXem}(u, obj) = \top$. Vi phạm điều kiện này là trái quy tắc nghiệp vụ và phải bị từ chối.
+\end{itemize}
+
+% --- RB07 ---
+\subsubsection{RB07 --- Phân quyền chỉnh sửa hồ sơ theo vai trò Chi/Nhánh (Branch Role Authorization)}
+\begin{itemize}
+    \item \textbf{Nội dung nghiệp vụ:} Quyền chỉnh sửa hồ sơ thành viên phả hệ được phân cấp:
+    \begin{itemize}[noitemsep]
+        \item \textit{Trưởng chi họ:} Có quyền chỉnh sửa toàn bộ hồ sơ, bài viết và sự kiện trong chi nhánh mình quản lý; không can thiệp vào chi nhánh khác.
+        \item \textit{Thành viên thường:} Chỉ chỉnh sửa hồ sơ bản thân và con ruột dưới 18 tuổi; có quyền xem toàn bộ cây phả hệ.
+    \end{itemize}
+    \item \textbf{Biểu diễn toán học:} Gọi $\text{ND} = \text{NGUOI\_DUNG}$, $TV = \text{THANH\_VIEN}$:
+    \begin{equation}
+        \begin{aligned}
+            \text{CoQuyenChinhSua}(u, p) \iff\ &
+            \bigl[\,u.\text{VaiTro} = \text{TruongChi}
+            \land u.\text{MaChiToc} = p.\text{MaChiToc}\,\bigr] \\
+            &\lor\; \bigl[\,u.\text{MaTV} = p.\text{MaTV}\,\bigr]
+        \end{aligned}
+    \end{equation}
+    \item \textbf{Bối cảnh:} Thực thể \texttt{NGUOI\_DUNG}, \texttt{THANH\_VIEN}, \texttt{CHI\_TOC}, quan hệ phân quyền vai trò.
+    \item \textbf{Quy tắc toàn vẹn:} Mọi thao tác cập nhật hồ sơ chỉ được thực hiện khi $\text{CoQuyenChinhSua}(u, p) = \top$. Không thành viên nào được sửa đổi hồ sơ ngoài phạm vi quyền hạn nghiệp vụ.
+\end{itemize}
+
+% --- RB08 ---
+\subsubsection{RB08 --- Tính xác thực song ánh khi liên kết hồ sơ phả hệ (Profile Claiming 1:1)}
+\begin{itemize}
+    \item \textbf{Nội dung nghiệp vụ:} Một tài khoản người dùng chỉ được liên kết với tối đa một hồ sơ phả hệ và ngược lại, một hồ sơ phả hệ chỉ thuộc về tối đa một tài khoản đang kích hoạt (ánh xạ song ánh).
+    \item \textbf{Biểu diễn toán học:}
+    \begin{alignat}{2}
+        &\forall u_1, u_2 \in \text{ND},\ \forall p \in TV, \quad
+        &&\text{LienKet}(u_1, p) \land \text{LienKet}(u_2, p) \implies u_1 = u_2 \\[3pt]
+        &\forall u \in \text{ND},\ \forall p_1, p_2 \in TV, \quad
+        &&\text{LienKet}(u, p_1) \land \text{LienKet}(u, p_2) \implies p_1 = p_2
+    \end{alignat}
+    \item \textbf{Bối cảnh:} Thực thể \texttt{NGUOI\_DUNG}, \texttt{THANH\_VIEN}, quan hệ liên kết tài khoản -- hồ sơ.
+    \item \textbf{Quy tắc toàn vẹn:} Yêu cầu liên kết hồ sơ phải bị từ chối nếu thành viên hoặc tài khoản đã có liên kết hợp lệ trước đó.
+\end{itemize}
+
+% --- RB09 ---
+\subsubsection{RB09 --- Tính nhất quán mốc thời gian sự kiện (Event Timeline Consistency)}
+\begin{itemize}
+    \item \textbf{Nội dung nghiệp vụ:} Thời điểm kết thúc của một sự kiện dòng họ (nếu có ghi nhận) bắt buộc phải diễn ra sau thời điểm bắt đầu.
+    \item \textbf{Biểu diễn toán học:} Gọi $SK = \text{SU\_KIEN}$, $t_s = \text{ThoiGianBatDau}$, $t_e = \text{ThoiGianKetThuc}$:
+    \begin{equation}
+        \forall e \in SK: \quad
+        e.t_e \ne \emptyset \implies e.t_e > e.t_s
+    \end{equation}
+    \item \textbf{Bối cảnh:} Thực thể \texttt{SU\_KIEN}, thuộc tính \texttt{ThoiGianBatDau}, \texttt{ThoiGianKetThuc}.
+    \item \textbf{Quy tắc toàn vẹn:} Mọi bản ghi sự kiện có thời gian kết thúc đều phải thỏa mãn $t_e > t_s$. Dữ liệu vi phạm không có ý nghĩa trong thực tế và không được phép tồn tại.
+\end{itemize}
+
+% --- RB10 ---
+\subsubsection{RB10 --- Tính nhất quán trạng thái sinh tử và ngày mất (Vital Status Consistency)}
+\begin{itemize}
+    \item \textbf{Nội dung nghiệp vụ:} Nếu đã ghi nhận ngày mất của một thành viên thì trạng thái sinh học bắt buộc phải là ``Đã mất'' và ngày mất không thể xảy ra trước ngày sinh.
+    \item \textbf{Biểu diễn toán học:} Gọi $\text{nm} = \text{NgayMat}$, $\text{ns} = \text{NgaySinh}$, $\text{tt} = \text{TinhTrang}$:
+    \begin{equation}
+        \begin{aligned}
+            \forall p \in TV: \quad p.\text{nm} \ne \emptyset \implies
+            &\;\bigl(\,p.\text{tt} = \text{Đã Mất}\,\bigr) \\
+            &\land\; \bigl(\,p.\text{nm} \ge p.\text{ns}\,\bigr)
+        \end{aligned}
+    \end{equation}
+    \item \textbf{Bối cảnh:} Thực thể \texttt{THANH\_VIEN}, thuộc tính \texttt{TinhTrang}, \texttt{NgayMat}, \texttt{NgaySinhDuongLich}.
+    \item \textbf{Quy tắc toàn vẹn:} Không thể đồng thời tồn tại hồ sơ có ngày mất được ghi nhận mà trạng thái vẫn là ``Còn sống'', hoặc có ngày mất trước ngày sinh. Hai trạng thái này mâu thuẫn với thực tế sinh học và phải bị ràng buộc loại trừ.
+\end{itemize}
+
+% ==============================================================================
+% 1.4.3. BẢNG TẦM ẢNH HƯỞNG CỦA CÁC RÀNG BUỘC TOÀN VẸN
+% ==============================================================================
+\subsection{Bảng tầm ảnh hưởng của các ràng buộc toàn vẹn (Impact Matrix)}
+Bảng tầm ảnh hưởng xác định các thao tác biến đổi dữ liệu: \textbf{Thêm mới} ($+$), \textbf{Xóa} ($-$), \textbf{Sửa đổi} ($\ast$) trên từng nhóm thực thể có nguy cơ vi phạm ràng buộc toàn vẹn. Kết quả phân tích này là đầu vào cho giai đoạn thiết kế logic và vật lý:
+
+\begin{table}[H]
+\centering
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{|l|*{12}{>{\centering\arraybackslash}X|}}
+\hline
+\rowcolor{tableheader}
+\textcolor{white}{\textbf{Mã RBTV}} &
+\multicolumn{3}{c|}{\textcolor{white}{\textbf{THANH\_VIEN}}} &
+\multicolumn{3}{c|}{\textcolor{white}{\textbf{NGUOI\_DUNG}}} &
+\multicolumn{3}{c|}{\textcolor{white}{\textbf{BAI\_VIET / EVT}}} &
+\multicolumn{3}{c|}{\textcolor{white}{\textbf{DONG\_HO / CHI}}} \\ \cline{2-13}
+\rowcolor{tableheader}
+& \textcolor{white}{\small\textbf{+}} & \textcolor{white}{\small\textbf{$-$}} & \textcolor{white}{\small\textbf{$\ast$}}
+& \textcolor{white}{\small\textbf{+}} & \textcolor{white}{\small\textbf{$-$}} & \textcolor{white}{\small\textbf{$\ast$}}
+& \textcolor{white}{\small\textbf{+}} & \textcolor{white}{\small\textbf{$-$}} & \textcolor{white}{\small\textbf{$\ast$}}
+& \textcolor{white}{\small\textbf{+}} & \textcolor{white}{\small\textbf{$-$}} & \textcolor{white}{\small\textbf{$\ast$}} \\ \hline
+\rowcolor{tablerowalt}
+\textbf{RB01} & $\checkmark$ & & $\checkmark$ & & & & & & & & & \\ \hline
+\textbf{RB02} & $\checkmark$ & & $\checkmark$ & & & & & & & & & \\ \hline
+\rowcolor{tablerowalt}
+\textbf{RB03} & $\checkmark$ & & $\checkmark$ & & & & & & & & & \\ \hline
+\textbf{RB04} & $\checkmark$ & & $\checkmark$ & & & & & & & & & \\ \hline
+\rowcolor{tablerowalt}
+\textbf{RB05} & $\checkmark$ & & $\checkmark$ & & & & & & & & & \\ \hline
+\textbf{RB06} & $\checkmark$ & & $\checkmark$ & $\checkmark$ & & $\checkmark$ & $\checkmark$ & & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ \\ \hline
+\rowcolor{tablerowalt}
+\textbf{RB07} & $\checkmark$ & $\checkmark$ & $\checkmark$ & & & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & & & \\ \hline
+\textbf{RB08} & & & $\checkmark$ & $\checkmark$ & & $\checkmark$ & & & & & & \\ \hline
+\rowcolor{tablerowalt}
+\textbf{RB09} & & & & & & & $\checkmark$ & & $\checkmark$ & & & \\ \hline
+\textbf{RB10} & $\checkmark$ & & $\checkmark$ & & & & & & & & & \\ \hline
+\end{tabularx}
+\caption{Bảng tầm ảnh hưởng của các ràng buộc toàn vẹn mức quan niệm (Impact Matrix)}
+\label{tab:impact_matrix_conceptual}
+\end{table}
+
+\noindent\textbf{Quy ước ký hiệu:}\ Dấu $(\checkmark)$ chỉ thao tác có nguy cơ vi phạm ràng buộc và bắt buộc phải kiểm tra tính hợp lệ. Ô trống có nghĩa thao tác tương ứng không ảnh hưởng đến ràng buộc này.
+\begin{itemize}[noitemsep,topsep=4pt]
+    \item \textbf{Cột $+$ (Thêm mới):} Ghi nhận bản ghi mới có nguy cơ vi phạm ràng buộc.
+    \item \textbf{Cột $-$ (Xóa):} Xóa bản ghi có thể phá vỡ tham chiếu toàn vẹn.
+    \item \textbf{Cột $\ast$ (Sửa đổi):} Cập nhật thuộc tính liên quan có nguy cơ vi phạm ràng buộc.
+\end{itemize}
