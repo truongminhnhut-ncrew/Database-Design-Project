@@ -10,3 +10,89 @@
 
 \subsection{Lược đồ các bảng phân hệ Tương tác, Sự kiện \& Di sản}
 % Danh sách bảng Posts, Comments, Albums, Events, EventParticipants, HeritageItems, NotableMembers
+% !TEX root = main.tex
+\section{Quy tắc chuyển đổi từ mô hình ER sang mô hình quan hệ (Relational Model)}
+\label{sec:2_1_quy_tac_chuyen_doi}
+
+Chuyển đổi từ mô hình Thực thể -- Liên kết (ERD) sang Mô hình Quan hệ (Relational Model) là bước then chốt trong giai đoạn Thiết kế Logic (Logical Design). Quá trình này đảm bảo toàn bộ thông tin, ràng buộc dữ liệu và mối quan hệ giữa các đối tượng trong hệ thống Quản lý Gia phả được biểu diễn chính xác dưới dạng các lược đồ quan hệ (Relation schemas).
+
+\subsection{Chuyển đổi thực thể thông thường thành các bảng (Relation schemas)}
+\label{subsec:2_1_1_chuyen_doi_thuc_the}
+
+Mỗi thực thể mạnh trong mô hình ERD tương ứng với một bảng trong mô hình quan hệ. Các thuộc tính đơn trở thành các cột của bảng, và thuộc tính định danh được chọn làm Khóa chính (Primary Key -- PK).
+
+\begin{itemize}
+	\item \textbf{Thực thể Thành viên (\texttt{ThanhVien}):} Lưu trữ thông tin định danh và cá nhân của từng người trong gia tộc.
+	\begin{itemize}
+		\item Lược đồ quan hệ: \texttt{THANH\_VIEN}(\underline{\texttt{MaThanhVien}}, \texttt{HoTen}, \texttt{GioiTinh}, \texttt{NgaySinh}, \texttt{NgayMat}, \texttt{DiaChi}, \texttt{TrangThaiConSong}).
+		\item \textbf{PK:} \texttt{MaThanhVien}.
+	\end{itemize}
+	
+	\item \textbf{Thực thể Bài viết (\texttt{BaiViet}):} Lưu trữ tin tức, bài viết truyền thống của gia tộc.
+	\begin{itemize}
+		\item Lược đồ quan hệ: \texttt{BAI\_VIET}(\underline{\texttt{MaBaiViet}}, \texttt{TieuDe}, \texttt{NoiDung}, \texttt{ThoiGianDang}, \texttt{QuyenRiengTu}).
+		\item \textbf{PK:} \texttt{MaBaiViet}.
+	\end{itemize}
+	
+	\item \textbf{Thực thể Sự kiện (\texttt{SuKien}):} Lưu trữ thông tin ngày giỗ, họp mặt, giỗ tổ.
+	\begin{itemize}
+		\item Lược đồ quan hệ: \texttt{SU\_KIEN}(\underline{\texttt{MaSuKien}}, \texttt{TenSuKien}, \texttt{NgayAmLich}, \texttt{NgayDuongLich}, \texttt{DiaDiem}).
+		\item \textbf{PK:} \texttt{MaSuKien}.
+	\end{itemize}
+\end{itemize}
+
+\subsection{Chuyển đổi các mối quan hệ 1--1, 1--N, N--N và mối quan hệ đệ quy}
+\label{subsec:2_1_2_chuyen_doi_moi_quan_he}
+
+\subsubsection{Mối quan hệ 1--1 (One-to-One)}
+Được xử lý bằng cách đưa Khóa chính của một trong hai thực thể sang thực thể còn lại làm Khóa ngoại (Foreign Key -- FK).
+\begin{itemize}
+	\item \textbf{Tài khoản -- Thành viên (1--1):} Mỗi thành viên có thể được cấp một tài khoản đăng nhập hệ thống.
+	\item Lược đồ quan hệ: \texttt{TAI\_KHOAN}(\underline{\texttt{MaTaiKhoan}}, \texttt{TenDangNhap}, \texttt{MatKhau}, \texttt{VaiTro}, \texttt{MaThanhVien}\textsuperscript{FK}).
+\end{itemize}
+
+\subsubsection{Mối quan hệ 1--N (One-to-Many)}
+Khóa chính của bảng phía nhánh 1 được đưa sang làm Khóa ngoại ở bảng phía nhánh N.
+\begin{itemize}
+	\item \textbf{Tác giả bài viết (Thành viên -- Bài viết):} Một thành viên có thể đăng nhiều bài viết.
+	\item Lược đồ quan hệ: \texttt{BAI\_VIET}(\underline{\texttt{MaBaiViet}}, \texttt{TieuDe}, \texttt{NoiDung}, \texttt{ThoiGianDang}, \texttt{MaNguoiDang}\textsuperscript{FK}).
+\end{itemize}
+
+\subsubsection{Mối quan hệ N--N (Many-to-Many)}
+Tạo một bảng liên kết trung gian chứa Khóa chính của hai thực thể tham gia làm Khóa ngoại. Tập hợp hai khóa ngoại này hợp thành Khóa chính hợp phần.
+\begin{itemize}
+	\item \textbf{Tham gia sự kiện (Thành viên -- Sự kiện):}
+	\item Lược đồ quan hệ: \texttt{THAM\_GIA\_SU\_KIEN}(\underline{\texttt{MaThanhVien}}\textsuperscript{FK}, \underline{\texttt{MaSuKien}}\textsuperscript{FK}, \texttt{TrangThaiRSVP}, \texttt{GhiChu}).
+\end{itemize}
+
+\subsubsection{Mối quan hệ đệ quy (Recursive Relationships)}
+Áp dụng cho các mối quan hệ nội bộ giữa các đối tượng trong cùng thực thể \texttt{ThanhVien}:
+\begin{itemize}
+	\item \textbf{Mối quan hệ Cha/Mẹ -- Con (Đệ quy 1--N):} Mỗi thành viên có một cha và một mẹ (đều thuộc bảng \texttt{THANH\_VIEN}). Ta thêm hai thuộc tính khóa ngoại tự tham chiếu:
+	\begin{itemize}
+		\item Lược đồ quan hệ bổ sung: \texttt{THANH\_VIEN}(\dots, \texttt{MaCha}\textsuperscript{FK}, \texttt{MaMe}\textsuperscript{FK}).
+	\end{itemize}
+	\item \textbf{Mối quan hệ Hôn phối / Vợ -- Chồng (Đệ quy 1--1 hoặc N--N theo thời gian):} Để lưu lịch sử hôn nhân (kết hôn, ly hôn), tạo bảng liên kết đệ quy:
+	\begin{itemize}
+		\item Lược đồ quan hệ: \texttt{QUAN\_HE\_HON\_NHAN}(\underline{\texttt{MaChong}}\textsuperscript{FK}, \underline{\texttt{MaVo}}\textsuperscript{FK}, \texttt{NgayKetHon}, \texttt{TrangThai}).
+	\end{itemize}
+\end{itemize}
+
+\subsection{Xử lý quan hệ kế thừa hoặc phân loại}
+\label{subsec:2_1_3_xu_ly_ke_thua}
+
+Trong cây gia phả, thực thể \texttt{ThanhVien} được phân loại (kế thừa) thành hai nhóm: \textbf{Thành viên nội tộc (Ruột thịt)} và \textbf{Thành viên ngoại tộc (Dâu/Rể)}. 
+
+Áp dụng phương pháp \textbf{Biểu diễn lớp cha và các lớp con (Class Hierarchy Mapping)} để tránh dư thừa dữ liệu:
+
+\begin{enumerate}
+	\item \textbf{Bảng lớp cha (\texttt{THANH\_VIEN}):} Chứa tất cả các thuộc tính chung (Họ tên, Ngày sinh, Giới tính, \dots).
+	\item \textbf{Bảng lớp con \texttt{THANH\_VIEN\_NOI\_TOC}:} Chứa thuộc tính riêng của người mang dòng máu gia tộc (Đời thứ mấy, Chi/Nhánh). Khóa chính \texttt{MaThanhVien} vừa là PK vừa là FK tham chiếu về \texttt{THANH\_VIEN}.
+	\item \textbf{Bảng lớp con \texttt{THANH\_VIEN\_DAU\_RE}:} Chứa thuộc tính riêng của dâu/rể (Gia tộc gốc, Ngày nhập tộc). Khóa chính \texttt{MaThanhVien} vừa là PK vừa là FK tham chiếu về \texttt{THANH\_VIEN}.
+\end{enumerate}
+
+\textbf{Lược đồ chi tiết:}
+\begin{itemize}
+	\item \texttt{THANH\_VIEN\_NOI\_TOC}(\underline{\texttt{MaThanhVien}}\textsuperscript{PK, FK}, \texttt{DoiThu}, \texttt{ThuocChi}).
+	\item \texttt{THANH\_VIEN\_DAU\_RE}(\underline{\texttt{MaThanhVien}}\textsuperscript{PK, FK}, \texttt{GiaTocGoc}, \texttt{NgayVeLamDauRe}).
+\end{itemize}
