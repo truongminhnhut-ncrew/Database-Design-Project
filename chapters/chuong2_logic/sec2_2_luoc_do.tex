@@ -1,86 +1,109 @@
 % !TEX root = ../../main.tex
-\section{Lược đồ quan hệ logic (Relational Schemas)}
+\section{Lược đồ Quan hệ Logic (Relational Schemas)}
 \label{sec:2_2_luoc_do_quan_he}
 
-Sau khi áp dụng các quy tắc chuyển đổi từ mô hình thực thể -- liên kết (ERD), hệ thống cơ sở dữ liệu \textbf{FamilyConnect} được cụ thể hóa thành tập hợp các lược đồ quan hệ (Relation Schemas). Dưới đây là mô tả chi tiết các lược đồ quan hệ thu được.
+Sau khi áp dụng các quy tắc chuyển đổi từ mô hình Thực thể -- Liên kết mở rộng (ERD/EERD), hệ thống \textbf{FamilyConnect} được cụ thể hóa thành tập hợp 13 lược đồ quan hệ (Relation Schemas) phân bổ vào 5 phân hệ nghiệp vụ chính.
 
-\subsection{Lược đồ các bảng quan hệ thực thể}
-\label{subsec:2_2_1_chuyen_doi_thuc_the}
+\subsection{Phân hệ Người dùng \& Bảo mật (User \& Security)}
+\label{subsec:2_2_1_user_security}
 
-Mỗi thực thể mạnh trong mô hình ERD tương ứng với một bảng trong mô hình quan hệ. Các thuộc tính đơn trở thành các cột của bảng, và thuộc tính định danh được chọn làm Khóa chính (Primary Key -- PK).
+\begin{enumerate}[label=\textbf{\arabic*.}]
+    \item \textbf{Users} (\underline{user\_id}, username, email, password\_hash, full\_name,
+          phone\_number, created\_at, is\_active, role\_code)\\
+          \textit{Ánh xạ từ:} Thực thể \texttt{NGUOI\_DUNG} (quan hệ 1--1 với MemberProfile).
 
-\begin{itemize}
-	\item \textbf{Thực thể Thành viên (\texttt{ThanhVien}):} Lưu trữ thông tin định danh và cá nhân của từng người trong gia tộc.
-	\begin{itemize}
-		\item Lược đồ quan hệ: \texttt{THANH\_VIEN}(\underline{\texttt{MaThanhVien}}, \texttt{HoTen}, \texttt{GioiTinh}, \texttt{NgaySinh}, \texttt{NgayMat}, \texttt{DiaChi}, \texttt{TrangThaiConSong}).
-		\item \textbf{PK:} \texttt{MaThanhVien}.
-	\end{itemize}
-	
-	\item \textbf{Thực thể Bài viết (\texttt{BaiViet}):} Lưu trữ tin tức, bài viết truyền thống của gia tộc.
-	\begin{itemize}
-		\item Lược đồ quan hệ: \texttt{BAI\_VIET}(\underline{\texttt{MaBaiViet}}, \texttt{TieuDe}, \texttt{NoiDung}, \texttt{ThoiGianDang}, \texttt{QuyenRiengTu}).
-		\item \textbf{PK:} \texttt{MaBaiViet}.
-	\end{itemize}
-	
-	\item \textbf{Thực thể Sự kiện (\texttt{SuKien}):} Lưu trữ thông tin ngày giỗ, họp mặt, giỗ tổ.
-	\begin{itemize}
-		\item Lược đồ quan hệ: \texttt{SU\_KIEN}(\underline{\texttt{MaSuKien}}, \texttt{TenSuKien}, \texttt{NgayAmLich}, \texttt{NgayDuongLich}, \texttt{DiaDiem}).
-		\item \textbf{PK:} \texttt{MaSuKien}.
-	\end{itemize}
-\end{itemize}
-
-\subsection{Chuyển đổi các mối quan hệ 1--1, 1--N, N--N và mối quan hệ đệ quy}
-\label{subsec:2_2_2_chuyen_doi_moi_quan_he}
-
-\subsubsection{Mối quan hệ 1--1 (One-to-One)}
-Được xử lý bằng cách đưa Khóa chính của một trong hai thực thể sang thực thể còn lại làm Khóa ngoại (Foreign Key -- FK).
-\begin{itemize}
-	\item \textbf{Tài khoản -- Thành viên (1--1):} Mỗi thành viên có thể được cấp một tài khoản đăng nhập hệ thống.
-	\item Lược đồ quan hệ: \texttt{TAI\_KHOAN}(\underline{\texttt{MaTaiKhoan}}, \texttt{TenDangNhap}, \texttt{MatKhau}, \texttt{VaiTro}, \texttt{MaThanhVien}\textsuperscript{FK}).
-\end{itemize}
-
-\subsubsection{Mối quan hệ 1--N (One-to-Many)}
-Khóa chính của bảng phía nhánh 1 được đưa sang làm Khóa ngoại ở bảng phía nhánh N.
-\begin{itemize}
-	\item \textbf{Tác giả bài viết (Thành viên -- Bài viết):} Một thành viên có thể đăng nhiều bài viết.
-	\item Lược đồ quan hệ: \texttt{BAI\_VIET}(\underline{\texttt{MaBaiViet}}, \texttt{TieuDe}, \texttt{NoiDung}, \texttt{ThoiGianDang}, \texttt{MaNguoiDang}\textsuperscript{FK}).
-\end{itemize}
-
-\subsubsection{Mối quan hệ N--N (Many-to-Many)}
-Tạo một bảng liên kết trung gian chứa Khóa chính của hai thực thể tham gia làm Khóa ngoại. Tập hợp hai khóa ngoại này hợp thành Khóa chính hợp phần.
-\begin{itemize}
-	\item \textbf{Tham gia sự kiện (Thành viên -- Sự kiện):}
-	\item Lược đồ quan hệ: \texttt{THAM\_GIA\_SU\_KIEN}(\underline{\texttt{MaThanhVien}}\textsuperscript{FK}, \underline{\texttt{MaSuKien}}\textsuperscript{FK}, \texttt{TrangThaiRSVP}, \texttt{GhiChu}).
-\end{itemize}
-
-\subsubsection{Mối quan hệ đệ quy (Recursive Relationships)}
-Áp dụng cho các mối quan hệ nội bộ giữa các đối tượng trong cùng thực thể \texttt{ThanhVien}:
-\begin{itemize}
-	\item \textbf{Mối quan hệ Cha/Mẹ -- Con (Đệ quy 1--N):} Mỗi thành viên có một cha và một mẹ (đều thuộc bảng \texttt{THANH\_VIEN}). Ta thêm hai thuộc tính khóa ngoại tự tham chiếu:
-	\begin{itemize}
-		\item Lược đồ quan hệ bổ sung: \texttt{THANH\_VIEN}(\dots, \texttt{MaCha}\textsuperscript{FK}, \texttt{MaMe}\textsuperscript{FK}).
-	\end{itemize}
-	\item \textbf{Mối quan hệ Hôn phối / Vợ -- Chồng (Đệ quy 1--1 hoặc N--N theo thời gian):} Để lưu lịch sử hôn nhân (kết hôn, ly hôn), tạo bảng liên kết đệ quy:
-	\begin{itemize}
-		\item Lược đồ quan hệ: \texttt{QUAN\_HE\_HON\_NHAN}(\underline{\texttt{MaChong}}\textsuperscript{FK}, \underline{\texttt{MaVo}}\textsuperscript{FK}, \texttt{NgayKetHon}, \texttt{TrangThai}).
-	\end{itemize}
-\end{itemize}
-
-\subsection{Xử lý quan hệ kế thừa hoặc phân loại}
-\label{subsec:2_2_3_xu_ly_ke_thua}
-
-Trong cây gia phả, thực thể \texttt{ThanhVien} được phân loại (kế thừa) thành hai nhóm: \textbf{Thành viên nội tộc (Ruột thịt)} và \textbf{Thành viên ngoại tộc (Dâu/Rể)}. 
-
-Áp dụng phương pháp \textbf{Biểu diễn lớp cha và các lớp con (Class Hierarchy Mapping)} để tránh dư thừa dữ liệu:
-
-\begin{enumerate}
-	\item \textbf{Bảng lớp cha (\texttt{THANH\_VIEN}):} Chứa tất cả các thuộc tính chung (Họ tên, Ngày sinh, Giới tính, \dots).
-	\item \textbf{Bảng lớp con \texttt{THANH\_VIEN\_NOI\_TOC}:} Chứa thuộc tính riêng của người mang dòng máu gia tộc (Đời thứ mấy, Chi/Nhánh). Khóa chính \texttt{MaThanhVien} vừa là PK vừa là FK tham chiếu về \texttt{THANH\_VIEN}.
-	\item \textbf{Bảng lớp con \texttt{THANH\_VIEN\_DAU\_RE}:} Chứa thuộc tính riêng của dâu/rể (Gia tộc gốc, Ngày nhập tộc). Khóa chính \texttt{MaThanhVien} vừa là PK vừa là FK tham chiếu về \texttt{THANH\_VIEN}.
+    \item \textbf{AuditLog} (\underline{audit\_id}, user\_id\textsuperscript{FK},
+          action\_type, entity\_name, entity\_id, timestamp, ip\_address)\\
+          \textit{Ánh xạ từ:} Thực thể yếu \texttt{NHAT\_KY\_KIEM\_TOAN} (phụ thuộc vào Users).
 \end{enumerate}
 
-\textbf{Lược đồ chi tiết:}
-\begin{itemize}
-	\item \texttt{THANH\_VIEN\_NOI\_TOC}(\underline{\texttt{MaThanhVien}}\textsuperscript{PK, FK}, \texttt{DoiThu}, \texttt{ThuocChi}).
-	\item \texttt{THANH\_VIEN\_DAU\_RE}(\underline{\texttt{MaThanhVien}}\textsuperscript{PK, FK}, \texttt{GiaTocGoc}, \texttt{NgayVeLamDauRe}).
-\end{itemize}
+\subsection{Phân hệ Gia đình \& Gia phả (Family \& Genealogy)}
+\label{subsec:2_2_2_family_genealogy}
+
+\begin{enumerate}[resume, label=\textbf{\arabic*.}]
+    \item \textbf{FamilyTree} (\underline{family\_id}, family\_name, founding\_date,
+          description, created\_by\_user\_id\textsuperscript{FK})\\
+          \textit{Ánh xạ từ:} Thực thể \texttt{DONG\_HO}.
+
+    \item \textbf{Branch} (\underline{branch\_id}, branch\_name, generation\_level,
+          description, family\_id\textsuperscript{FK})\\
+          \textit{Ánh xạ từ:} Thực thể \texttt{CHI\_TOC} (quan hệ 1--N từ FamilyTree).
+
+    \item \textbf{MemberProfile} (\underline{member\_id}, first\_name, last\_name, gender,
+          birth\_date, death\_date, is\_alive, bio, occupation, education\_level,
+          current\_location, user\_id\textsuperscript{FK}, branch\_id\textsuperscript{FK})\\
+          \textit{Ánh xạ từ:} Thực thể \texttt{THANH\_VIEN} (quan hệ 1--1 với Users, N--1 với Branch).
+
+    \item \textbf{ParentChildRelation} (\underline{parent\_id\textsuperscript{FK},
+          child\_id\textsuperscript{FK}}, relation\_type)\\
+          \textit{Ánh xạ từ:} Mối quan hệ đệ quy \texttt{CHA\_ME\_CON} (N--M đệ quy trên MemberProfile).
+
+    \item \textbf{MarriageRelation} (\underline{marriage\_id}, husband\_id\textsuperscript{FK},
+          wife\_id\textsuperscript{FK}, marriage\_date, divorce\_date, status)\\
+          \textit{Ánh xạ từ:} Mối quan hệ đệ quy \texttt{HON\_NHAN} (dạng lịch sử, N--M theo thời gian).
+\end{enumerate}
+
+\subsection{Phân hệ Cộng đồng \& Sự kiện (Community \& Events)}
+\label{subsec:2_2_3_community_events}
+
+\begin{enumerate}[resume, label=\textbf{\arabic*.}]
+    \item \textbf{Post} (\underline{post\_id}, title, content, visibility\_scope, created\_at,
+          author\_member\_id\textsuperscript{FK}, family\_id\textsuperscript{FK})\\
+          \textit{Ánh xạ từ:} Thực thể \texttt{BAI\_VIET} (quan hệ N--1 với MemberProfile và FamilyTree).
+
+    \item \textbf{PostInteraction} (\underline{interaction\_id}, post\_id\textsuperscript{FK},
+          member\_id\textsuperscript{FK}, reaction\_type, comment\_text, created\_at)\\
+          \textit{Ánh xạ từ:} Mối quan hệ N--M \texttt{TUONG\_TAC} (MemberProfile $\leftrightarrow$ Post).
+
+    \item \textbf{Event} (\underline{event\_id}, event\_title, event\_description, start\_time,
+          end\_time, location, event\_type, family\_id\textsuperscript{FK},
+          organizer\_member\_id\textsuperscript{FK})\\
+          \textit{Ánh xạ từ:} Thực thể \texttt{SU\_KIEN}.
+
+    \item \textbf{EventRSVP} (\underline{event\_id\textsuperscript{FK},
+          member\_id\textsuperscript{FK}}, rsvp\_status, updated\_at)\\
+          \textit{Ánh xạ từ:} Mối quan hệ N--M \texttt{THAM\_GIA} (MemberProfile $\leftrightarrow$ Event).
+\end{enumerate}
+
+\subsection{Phân hệ Di sản \& AI (Heritage \& AI Services)}
+\label{subsec:2_2_4_heritage_ai}
+
+\begin{enumerate}[resume, label=\textbf{\arabic*.}]
+    \item \textbf{HeritageDocument} (\underline{document\_id}, title, document\_type,
+          file\_path, historical\_period, summary,
+          uploaded\_by\_member\_id\textsuperscript{FK}, family\_id\textsuperscript{FK})\\
+          \textit{Ánh xạ từ:} Thực thể \texttt{TAI\_LIEU\_DI\_SAN}.
+
+    \item \textbf{AIAssistantLog} (\underline{log\_id}, member\_id\textsuperscript{FK},
+          prompt\_query, response\_summary, vector\_embedding\_id, logged\_at)\\
+          \textit{Ánh xạ từ:} Thực thể yếu \texttt{NHAT\_KY\_TRO\_LY\_AI}.
+\end{enumerate}
+
+\subsection{Bảng tổng hợp Lược đồ Quan hệ Logic}
+\label{subsec:2_2_5_tong_hop}
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Danh mục 13 lược đồ quan hệ logic của hệ thống FamilyConnect.}
+\label{tab:relational_schemas}
+\begin{tabularx}{\textwidth}{c l Y Y}
+\toprule
+\textbf{STT} & \textbf{Tên bảng} & \textbf{Khóa chính (PK)} & \textbf{Phân hệ} \\
+\midrule
+1  & Users                & user\_id          & User \& Security \\
+2  & AuditLog             & audit\_id         & User \& Security \\
+3  & FamilyTree           & family\_id        & Family \& Genealogy \\
+4  & Branch               & branch\_id        & Family \& Genealogy \\
+5  & MemberProfile        & member\_id        & Family \& Genealogy \\
+6  & ParentChildRelation  & (parent\_id, child\_id) & Family \& Genealogy \\
+7  & MarriageRelation     & marriage\_id      & Family \& Genealogy \\
+8  & Post                 & post\_id          & Community \& Events \\
+9  & PostInteraction      & interaction\_id   & Community \& Events \\
+10 & Event                & event\_id         & Community \& Events \\
+11 & EventRSVP            & (event\_id, member\_id) & Community \& Events \\
+12 & HeritageDocument     & document\_id      & Heritage \& AI \\
+13 & AIAssistantLog       & log\_id           & Heritage \& AI \\
+\bottomrule
+\end{tabularx}
+\end{table}

@@ -1,152 +1,37 @@
 % !TEX root = ../../main.tex
-\section{Thiết kế ràng buộc toàn vẹn mức logic}
+\section{Ràng buộc Toàn vẹn Mức Logic (Integrity Constraints)}
 \label{sec:2_4_rang_buoc_logic}
 
-\subsection{Giới thiệu và Căn cứ Phương pháp luận}
-Trong chu kỳ sống của một Hệ quản trị Cơ sở dữ liệu (DBMS), giai đoạn \textbf{Thiết kế Logic} đóng vai trò là cầu nối cốt lõi giữa Mô hình Quan niệm (ERD/EER/UML) và Thiết kế Vật lý trên một hệ quản trị cụ thể (PostgreSQL). Mục tiêu của phần này là thực hiện ánh xạ chuẩn hóa các thực thể, thuộc tính và mối kết hợp từ bài toán \textbf{FamilyConnect: Nền tảng Cộng đồng Gia đình số tích hợp Trí tuệ Nhân tạo} sang Lược đồ Quan hệ (Relational Schema).
+Ràng buộc toàn vẹn mức logic là các quy tắc nghiệp vụ bắt buộc hệ quản trị CSDL phải tuân thủ nhằm đảm bảo tính đúng đắn, nhất quán của dữ liệu. Hệ thống \textbf{FamilyConnect} áp dụng 4 nhóm ràng buộc toàn vẹn chính.
 
-Đồng thời, nội dung tập trung phân tích triệt để các \textbf{Phụ thuộc hàm (FD)}, tính toán bao đóng, xác định khóa ứng viên và tiến hành chuẩn hóa lược đồ đạt \textbf{Dạng chuẩn Boyce-Codd (BCNF)} hoặc \textbf{Dạng chuẩn 3 (3NF)} nhằm loại bỏ hoàn toàn các bất thường dữ liệu (biến động thêm, sửa, xóa) và thiết lập hệ thống \textbf{Ràng buộc Toàn vẹn (Integrity Constraints)} mức logic vững chắc.
+\subsection{Ràng buộc Miền giá trị (Domain Constraints)}
+\label{subsec:2_4_1_domain}
 
-\subsection{Kiến trúc Chi tiết và Lược đồ Quan hệ Logic}
-
-Dựa trên các yêu cầu nghiệp vụ của hệ thống \textbf{FamilyConnect}, hệ thống được phân rã thành các phân hệ chính bao gồm:
-\begin{enumerate}[label=\arabic*.]
-    \item \textbf{User \& Security}: Quản lý người dùng, tài khoản, vai trò (RBAC) và xác minh thành viên.
-    \item \textbf{Family \& Genealogy}: Quản lý gia đình, chi/nhánh/phái, thành viên, quan hệ cha mẹ -- con cái và hôn nhân.
-    \item \textbf{Community \& Events}: Quản lý bài đăng, tương tác, tin tức, sự kiện, phản hồi RSVP và lưu trữ di sản số.
-    \item \textbf{AI-Assisted Services \& Heritage}: Tìm kiếm ngữ nghĩa bằng AI, nhật ký trợ lý AI, lưu trữ văn bản di sản và tài liệu lịch sử.
-    \item \textbf{System Administration}: Kiểm duyệt, nhật ký kiểm toán (Audit Log) và cấu hình.
-\end{enumerate}
-
-\subsubsection{Danh sách các Lược đồ Quan hệ Ánh xạ từ ERD}
-Dưới đây là tập hợp các quan hệ logic thu được sau khi áp dụng Thuật toán ánh xạ ER/EER sang Mô hình Quan hệ:
-
-\begin{enumerate}[label=\textbf{\arabic*.}]
-    \item \textbf{Users} (\underline{user\_id}, username, email, password\_hash, full\_name, phone\_number, created\_at, is\_active, role\_code)
-    \item \textbf{FamilyTree} (\underline{family\_id}, family\_name, founding\_date, description, created\_by\_user\_id\textsuperscript{FK})
-    \item \textbf{Branch} (\underline{branch\_id}, branch\_name, generation\_level, description, family\_id\textsuperscript{FK})
-    \item \textbf{MemberProfile} (\underline{member\_id}, first\_name, last\_name, gender, birth\_date, death\_date, is\_alive, bio, occupation, education\_level, current\_location, user\_id\textsuperscript{FK}, branch\_id\textsuperscript{FK})
-    \item \textbf{ParentChildRelation} (\underline{parent\_id\textsuperscript{FK}, child\_id\textsuperscript{FK}}, relation\_type)
-    \item \textbf{MarriageRelation} (\underline{marriage\_id}, husband\_id\textsuperscript{FK}, wife\_id\textsuperscript{FK}, marriage\_date, divorce\_date, status)
-    \item \textbf{Post} (\underline{post\_id}, title, content, visibility\_scope, created\_at, author\_member\_id\textsuperscript{FK}, family\_id\textsuperscript{FK})
-    \item \textbf{PostInteraction} (\underline{interaction\_id}, post\_id\textsuperscript{FK}, member\_id\textsuperscript{FK}, reaction\_type, comment\_text, created\_at)
-    \item \textbf{Event} (\underline{event\_id}, event\_title, event\_description, start\_time, end\_time, location, event\_type, family\_id\textsuperscript{FK}, organizer\_member\_id\textsuperscript{FK})
-    \item \textbf{EventRSVP} (\underline{event\_id\textsuperscript{FK}, member\_id\textsuperscript{FK}}, rsvp\_status, updated\_at)
-    \item \textbf{HeritageDocument} (\underline{document\_id}, title, document\_type, file\_path, historical\_period, summary, uploaded\_by\_member\_id\textsuperscript{FK}, family\_id\textsuperscript{FK})
-    \item \textbf{AIAssistantLog} (\underline{log\_id}, member\_id\textsuperscript{FK}, prompt\_query, response\_summary, vector\_embedding\_id, logged\_at)
-    \item \textbf{AuditLog} (\underline{audit\_id}, user\_id\textsuperscript{FK}, action\_type, entity\_name, entity\_id, timestamp, ip\_address)
-\end{enumerate}
-
-\subsection{Phân tích Phụ thuộc Hàm và Chuẩn hóa Lược đồ}
-
-Để đảm bảo cơ sở dữ liệu không bị lặp lại thông tin, tiết kiệm không gian lưu trữ và tránh các dị thường dữ liệu (Anomalies) khi cập nhật, chúng ta áp dụng lý thuyết Phụ thuộc hàm (Functional Dependency -- FD) để phân tích và tiến hành chuẩn hóa.
-
-\subsubsection{Xác định Tập Phụ thuộc Hàm ($F$) cho các Quan hệ Trọng yếu}
-
-\begin{example}[Phân tích Phụ thuộc hàm cho Quan hệ MemberProfile]
-Xét lược đồ quan hệ $MemberProfile(U)$ với tập thuộc tính:
-\[
-U = \{\text{member\_id (M)}, \text{user\_id (U)}, \text{email (E)}, \text{branch\_id (B)}, \text{branch\_name (BN)}, \text{generation\_level (G)}\}
-\]
-
-Tập phụ thuộc hàm $F$ bao gồm:
-\begin{align*}
-    f_1: & \quad M \rightarrow \{U, B, BN, G\} \\
-    f_2: & \quad U \rightarrow E \\
-    f_3: & \quad B \rightarrow \{BN, G\}
-\end{align*}
-
-\paragraph{Tính Bao đóng và Tìm Khóa Ứng viên:}
-Tính bao đóng của $\{M\}^+$ theo tập phụ thuộc hàm $F$:
-\begin{itemize}
-    \item Bước 1: Khởi tạo $\{M\}^+ = \{M\}$.
-    \item Bước 2: Áp dụng $f_1 \implies \{M\}^+ = \{M, U, B, BN, G\}$.
-    \item Bước 3: Áp dụng $f_2$ (vì $U \subseteq \{M\}^+$) $\implies \{M\}^+ = \{M, U, B, BN, G, E\} = U$.
-\end{itemize}
-Do $\{M\}^+ = U$ và không có tập con thực sự nào của $\{M\}$ xác định được $U$, nên $K = \{M\}$ là \textbf{Khóa ứng viên duy nhất} (và là Khóa chính) của lược đồ $MemberProfile$.
-\end{example}
-
-\subsubsection{Kiểm tra Dạng chuẩn và Phân rã Lược đồ}
-
-Xét lược đồ $MemberProfile$ ở trên, ta nhận thấy:
-\begin{itemize}
-    \item Khóa chính là $M$.
-    \item Tồn tại phụ thuộc hàm $f_3: B \rightarrow \{BN, G\}$. Thuộc tính $B$ (mã chi/nhánh) không phải là siêu khóa, và $\{BN, G\}$ không phải là thuộc tính nguyên tố.
-    \item Tồn tại phụ thuộc bắc cầu $M \rightarrow B \rightarrow \{BN, G\}$.
-\end{itemize}
-$\implies$ Lược đồ $MemberProfile$ \textbf{vi phạm Dạng chuẩn 3 (3NF)} và \textbf{Dạng chuẩn Boyce-Codd (BCNF)}. Điều này dẫn đến dị thường dữ liệu: khi tên chi/nhánh hoặc cấp thế hệ của $B$ thay đổi, ta phải cập nhật trên tất cả các hồ sơ thành viên thuộc chi đó.
-
-\paragraph{Phân rã đảm bảo Bảo toàn Phụ thuộc và Phép kết Không tổn thất (Lossless Join):}
-Áp dụng thuật toán phân rã BCNF, ta tách $MemberProfile$ thành 2 quan hệ con:
-\begin{enumerate}[label=\arabic*.]
-    \item $Branch\_Schema(\underline{branch\_id}, branch\_name, generation\_level)$ với tập FD $F_1 = \{B \rightarrow \{BN, G\}\}$ đạt BCNF.
-    \item $MemberProfile\_Schema(\underline{member\_id}, user\_id, branch\_id\textsuperscript{FK})$ với tập FD $F_2 = \{M \rightarrow \{U, B\}, U \rightarrow E\}$ đạt BCNF.
-\end{enumerate}
-
-\subsection{Biểu diễn Đồ thị Quan hệ và Mô hình Đồ thị AI (Graph Database Support)}
-
-Bên cạnh việc thiết kế mô hình quan hệ bảng chuẩn cho hệ thống RDBMS (PostgreSQL), bài toán \textbf{FamilyConnect} đòi hỏi tính năng trực quan hóa gia phả tương tác, tra cứu mối quan hệ huyết thống và hỗ trợ AI giải thích quan hệ. Do đó, lược đồ quan hệ logic được bổ sung thiết kế biểu diễn dạng Đồ thị (Graph Data Model) tương thích với Lớp dịch vụ AI.
-
-\begin{figure}[htbp]
-\centering
-\begin{tikzpicture}[
-    node distance=1.8cm and 2.2cm,
-    entity/.style={rectangle, draw=blue, fill=blue!5, thick, minimum width=2.6cm, minimum height=1.1cm, align=center, font=\small},
-    rel/.style={diamond, draw=red!80!black, fill=red!5, thick, aspect=1.8, inner sep=2pt, align=center, font=\small},
-    line/.style={draw, thick, -{Stealth[length=2.5mm]}}
-]
-
-    \node[entity] (member) {\textbf{MemberProfile}\\(\underline{member\_id})};
-    \node[rel, above=1.5cm of member] (marriage) {Marriage};
-
-    \node[entity, left=2.2cm of member] (user) {\textbf{Users}\\(\underline{user\_id})};
-
-    \node[entity, right=2.2cm of member] (family) {\textbf{FamilyTree}\\(\underline{family\_id})};
-    
-    \node[entity, below left=2.0cm and 0.8cm of member] (post) {\textbf{Post}\\(\underline{post\_id})};
-    \node[entity, below right=2.0cm and 0.8cm of member] (event) {\textbf{Event}\\(\underline{event\_id})};
-    
-    \node[rel, below=1.8cm of member] (parent) {Parent-Child\\(Recursive)};
-
-    \draw[line] (user) -- node[above, font=\footnotesize] {1:1} (member);
-    \draw[line] (member) -- node[above, font=\footnotesize] {N:1} (family);
-    \draw[line] (member) -- node[left, font=\footnotesize] {1:N} (post);
-    \draw[line] (member) -- node[right, font=\footnotesize] {1:N} (event);
-    
-    \draw[line] (member.north) -- (marriage.south);
-    \draw[line] (member.south) -- (parent.north);
-
-\end{tikzpicture}
-\caption{Sơ đồ Lược đồ Logic và Các mối liên kết cốt lõi hệ thống FamilyConnect.}
-\label{fig:family_logic_graph}
-\end{figure}
-
-\subsection{Ràng buộc Toàn vẹn Mức Logic (Integrity Constraints)}
-
-Ràng buộc toàn vẹn mức logic là các quy tắc nghiệp vụ bắt buộc hệ quản trị CSDL phải tuân thủ nhằm đảm bảo tính đúng đắn, nhất quán của dữ liệu. Hệ thống \textbf{FamilyConnect} áp dụng 4 nhóm ràng buộc toàn vẹn chính:
-
-\subsubsection{Ràng buộc Miền giá trị (Domain Constraints)}
 \begin{itemize}
     \item \textbf{C1.1 (Gender Domain):} Thuộc tính $\text{gender} \in \{\text{'Male'}, \text{'Female'}, \text{'Other'}\}$.
     \item \textbf{C1.2 (RSVP Status Domain):} Thuộc tính $\text{rsvp\_status} \in \{\text{'Attending'}, \text{'Declined'}, \text{'Pending'}, \text{'Maybe'}\}$.
     \item \textbf{C1.3 (Reaction Type Domain):} Thuộc tính $\text{reaction\_type} \in \{\text{'Like'}, \text{'Love'}, \text{'Celebrate'}, \text{'Care'}\}$.
 \end{itemize}
 
-\subsubsection{Ràng buộc Thực thể và Khóa (Entity \& Key Constraints)}
+\subsection{Ràng buộc Thực thể và Khóa (Entity \& Key Constraints)}
+\label{subsec:2_4_2_entity_key}
+
 \begin{itemize}
     \item \textbf{C2.1 (Primary Keys):} Tất cả các bảng phải có Khóa chính (Primary Key) xác định duy nhất từng bản ghi và không được phép nhận giá trị \texttt{NULL}.
     \item \textbf{C2.2 (User Unique Identity):} Thuộc tính \texttt{username} và \texttt{email} trong bảng \texttt{Users} phải là duy nhất (\texttt{UNIQUE}).
     \item \textbf{C2.3 (Marriage Uniqueness):} Cặp $(\text{husband\_id}, \text{wife\_id}, \text{marriage\_date})$ trong quan hệ \texttt{MarriageRelation} là duy nhất.
 \end{itemize}
 
-\subsubsection{Ràng buộc Toàn vẹn Tham chiếu (Referential Integrity Constraints)}
+\subsection{Ràng buộc Toàn vẹn Tham chiếu (Referential Integrity Constraints)}
+\label{subsec:2_4_3_referential}
+
 \begin{itemize}
     \item \textbf{C3.1 (Member to User Reference):}
     \[
     \forall m \in \text{MemberProfile}, \quad (m.\text{user\_id} \neq \text{NULL}) \implies (\exists u \in \text{Users}: m.\text{user\_id} = u.\text{user\_id})
     \]
     Chính sách hành vi khi xóa người dùng: \texttt{ON DELETE SET NULL}.
-    
+
     \item \textbf{C3.2 (Parent-Child Reference):}
     \[
     \begin{aligned}
@@ -157,14 +42,15 @@ Ràng buộc toàn vẹn mức logic là các quy tắc nghiệp vụ bắt bu�
     Chính sách hành vi khi xóa thành viên: \texttt{ON DELETE CASCADE}.
 \end{itemize}
 
-\subsubsection{Ràng buộc Nghiệp vụ Phức tạp liên Quan hệ (Cross-Table \& Semantic Constraints)}
+\subsection{Ràng buộc Nghiệp vụ Phức tạp (Cross-Table \& Semantic Constraints)}
+\label{subsec:2_4_4_semantic}
 
 \begin{definition}[Ràng buộc C4.1: Ngày sinh -- Ngày mất và Vòng đời]
 Với mọi thành viên $m \in \text{MemberProfile}$:
 \[
 \begin{aligned}
 m.\text{is\_alive} = \text{\texttt{FALSE}} &\implies m.\text{death\_date} \ge m.\text{birth\_date} \\
-m.\text{is\_alive} = \text{\texttt{TRUE}} &\implies m.\text{death\_date} \text{ IS NULL}
+m.\text{is\_alive} = \text{\texttt{TRUE}}  &\implies m.\text{death\_date} \text{ IS NULL}
 \end{aligned}
 \]
 \end{definition}
@@ -184,9 +70,8 @@ m_{\text{child}}.\text{birth\_date} - m_{\text{parent}}.\text{birth\_date} \ge 1
 \]
 \end{definition}
 
-\subsection{Bảng tổng hợp Ràng buộc Toàn vẹn và Giải pháp Cài đặt}
-
-Bảng \ref{tab:integrity_matrix} tóm tắt danh mục các ràng buộc toàn vẹn mức logic của hệ thống FamilyConnect cùng phương pháp cài đặt tương ứng ở mức CSDL.
+\subsection{Bảng tổng hợp Ràng buộc Toàn vẹn và Cơ chế Cài đặt}
+\label{subsec:2_4_5_tong_hop}
 
 \begin{table}[htbp]
 \centering
@@ -207,5 +92,34 @@ Bảng \ref{tab:integrity_matrix} tóm tắt danh mục các ràng buộc toàn 
 \end{tabularx}
 \end{table}
 
-\subsection{Tóm tắt Phần thiết kế}
-Trong phần này, bài báo cáo đã hoàn thành việc chuyển đổi mô hình nghiệp vụ của dự án \textbf{FamilyConnect} sang \textbf{Lược đồ Logic chuẩn hóa}. Bằng việc áp dụng lý thuyết Phụ thuộc hàm và các thuật toán phân rã, lược đồ dữ liệu đã đạt dạng chuẩn BCNF/3NF, đảm bảo loại bỏ tình trạng dư thừa và các bất thường dữ liệu. Hệ thống các ràng buộc toàn vẹn mức logic được thiết lập chặt chẽ sẽ là tiền đề trực tiếp để tiến hành \textbf{Thiết kế Vật lý và Viết script DDL} ở các bước tiếp theo của dự án.
+\subsection{Biểu diễn Đồ thị Quan hệ (Graph Data Model)}
+\label{subsec:2_4_6_graph}
+
+Ngoài mô hình quan hệ bảng chuẩn, hệ thống \textbf{FamilyConnect} bổ sung lớp biểu diễn dạng Đồ thị tương thích với Lớp dịch vụ AI để hỗ trợ tra cứu quan hệ huyết thống và trực quan hóa gia phả tương tác.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    node distance=1.8cm and 2.2cm,
+    entity/.style={rectangle, draw=blue, fill=blue!5, thick, minimum width=2.6cm, minimum height=1.1cm, align=center, font=\small},
+    rel/.style={diamond, draw=red!80!black, fill=red!5, thick, aspect=1.8, inner sep=2pt, align=center, font=\small},
+    line/.style={draw, thick, -{Stealth[length=2.5mm]}}
+]
+    \node[entity] (member) {\textbf{MemberProfile}\\(\underline{member\_id})};
+    \node[rel, above=1.5cm of member] (marriage) {Marriage};
+    \node[entity, left=2.2cm of member] (user) {\textbf{Users}\\(\underline{user\_id})};
+    \node[entity, right=2.2cm of member] (family) {\textbf{FamilyTree}\\(\underline{family\_id})};
+    \node[entity, below left=2.0cm and 0.8cm of member] (post) {\textbf{Post}\\(\underline{post\_id})};
+    \node[entity, below right=2.0cm and 0.8cm of member] (event) {\textbf{Event}\\(\underline{event\_id})};
+    \node[rel, below=1.8cm of member] (parent) {Parent-Child\\(Recursive)};
+
+    \draw[line] (user) -- node[above, font=\footnotesize] {1:1} (member);
+    \draw[line] (member) -- node[above, font=\footnotesize] {N:1} (family);
+    \draw[line] (member) -- node[left, font=\footnotesize] {1:N} (post);
+    \draw[line] (member) -- node[right, font=\footnotesize] {1:N} (event);
+    \draw[line] (member.north) -- (marriage.south);
+    \draw[line] (member.south) -- (parent.north);
+\end{tikzpicture}
+\caption{Sơ đồ các mối liên kết cốt lõi của hệ thống FamilyConnect (Graph Data Model).}
+\label{fig:family_logic_graph}
+\end{figure}
