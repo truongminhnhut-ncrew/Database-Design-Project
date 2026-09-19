@@ -1,42 +1,189 @@
 % !TEX root = ../../main.tex
-
 \section{Mô hình Thực thể -- Liên kết mở rộng (ERD / EERD)}
 \label{sec:1_3_mo_hinh_erd_eerd}
 
-Mô hình ERD/EERD của hệ thống FamilyConnect được xây dựng nhằm mô tả
-một cách trực quan các thực thể, thuộc tính và mối liên kết giữa các
-đối tượng dữ liệu trong hệ thống. Mô hình thể hiện đầy đủ các thực thể
-chính, các thuộc tính quan trọng, thuộc tính khóa, các mối quan hệ và
-bản số (cardinality) giữa các thực thể.
+% =====================================================
+% GIỚI THIỆU
+% =====================================================
+\subsection{Giới thiệu}
+% Mục này mô tả mục đích của tài liệu: trình bày mô hình thực thể (ERD)
+% mở rộng (EERD) cho hệ thống FamilyConnect, bao gồm các thực thể chính,
+% thuộc tính khóa, thuộc tính số (kiểu dữ liệu) và các mối quan hệ giữa chúng.
+Tài liệu này trình bày mô hình thực thể -- mối quan hệ (ERD) mở rộng (EERD)
+cho nền tảng \textbf{FamilyConnect}. Mô hình bao gồm 11 thực thể chính,
+thể hiện đầy đủ thuộc tính khóa (PK), thuộc tính khóa ngoại (FK), thuộc tính
+số liệu, và các mối quan hệ (kèm bậc số -- cardinality) giữa các thực thể.
 
-Mô hình EERD được sử dụng để mở rộng mô hình ER truyền thống, cho phép
-biểu diễn các trường hợp có tính phân cấp hoặc chuyên biệt hóa giữa
-các thực thể khi cần thiết. Đây là cơ sở quan trọng để chuyển đổi mô
-hình quan niệm sang mô hình dữ liệu quan hệ ở các bước thiết kế tiếp
-theo.
+% =====================================================
+% DANH SÁCH THỰC THỂ
+% =====================================================
+\subsection{Danh sách thực thể và thuộc tính}
 
-\begin{figure}[H]
-    \centering
-    % \includegraphics[width=\textwidth]{images/familyconnect-erd.png}
-    \caption{Mô hình Thực thể -- Liên kết mở rộng (ERD/EERD) của hệ thống FamilyConnect}
-    \label{fig:familyconnect-erd}
-\end{figure}
+% ---- USER ----
+\subsubsection{USER (Người dùng)}
+% Thực thể đại diện cho tài khoản đăng nhập hệ thống, phục vụ nhóm
+% chức năng "Người dùng & Bảo mật" (đăng ký, xác thực, RBAC).
+\begin{longtable}{@{}p{3cm}p{2cm}p{9.5cm}@{}}
+\toprule
+\textbf{Thuộc tính} & \textbf{Khóa} & \textbf{Ghi chú} \\
+\midrule
+id & PK & Định danh duy nhất (uuid) \\
+username & & Tên đăng nhập \\
+email & & Địa chỉ email, dùng xác thực \\
+password\_hash & & Mật khẩu đã mã hóa \\
+role & & Vai trò (RBAC): quản trị viên / thành viên \\
+\bottomrule
+\end{longtable}
 
-\noindent
-Trong sơ đồ trên, các thành phần chính bao gồm:
-\begin{itemize}
-    \item \textbf{Thực thể (Entity):} biểu diễn các đối tượng nghiệp vụ
-    cần quản lý như Người dùng, Gia đình, Thành viên, Chi nhánh, Bài đăng,
-    Sự kiện
-    
-    \item \textbf{Thuộc tính (Attribute):} mô tả các đặc điểm của từng
-    thực thể, trong đó thuộc tính khóa được sử dụng để định danh duy nhất
-    mỗi đối tượng.
-    
-    \item \textbf{Mối quan hệ (Relationship):} thể hiện sự liên kết giữa
-    các thực thể trong hệ thống.
-    
-    \item \textbf{Bản số (Cardinality):} xác định số lượng đối tượng của
-    một thực thể có thể tham gia vào một mối quan hệ, chẳng hạn
-    $1:1$, $1:N$ hoặc $M:N$.
-\end{itemize}
+% ---- FAMILY ----
+\subsubsection{FAMILY (Gia đình)}
+% Thực thể gốc đại diện cho một gia đình / chi / nhánh, là điểm neo
+% cho toàn bộ dữ liệu gia phả, cộng đồng, sự kiện và di sản.
+\begin{longtable}{@{}p{3cm}p{2cm}p{9.5cm}@{}}
+\toprule
+\textbf{Thuộc tính} & \textbf{Khóa} & \textbf{Ghi chú} \\
+\midrule
+id & PK & Định danh duy nhất \\
+name & & Tên gia đình / dòng họ \\
+branch & & Chi / nhánh / phái \\
+description & & Mô tả tổng quan \\
+\bottomrule
+\end{longtable}
+
+% ---- PERSON ----
+\subsubsection{PERSON (Thành viên gia phả)}
+% Thực thể lõi của phân hệ gia phả. Thuộc tính parent_id tự tham chiếu
+% (self-reference) đến chính thực thể PERSON để biểu diễn quan hệ
+% cha/mẹ - con qua nhiều thế hệ mà không cần bảng riêng cho từng cấp.
+\begin{longtable}{@{}p{3cm}p{2cm}p{9.5cm}@{}}
+\toprule
+\textbf{Thuộc tính} & \textbf{Khóa} & \textbf{Ghi chú} \\
+\midrule
+id & PK & Định danh duy nhất \\
+family\_id & FK & Tham chiếu đến FAMILY \\
+user\_id & FK & Tham chiếu đến USER (nếu thành viên có tài khoản) \\
+parent\_id & FK & Tự tham chiếu đến PERSON (quan hệ cha/mẹ) \\
+full\_name & & Họ và tên đầy đủ \\
+dob & & Ngày sinh \\
+dod & & Ngày mất (nếu có) \\
+gender & & Giới tính \\
+occupation & & Nghề nghiệp / học vấn \\
+\bottomrule
+\end{longtable}
+
+% ---- MARRIAGE ----
+\subsubsection{MARRIAGE (Hôn nhân)}
+% Tách thành bảng riêng thay vì gắn trực tiếp vào PERSON, vì một người
+% có thể có nhiều cuộc hôn nhân theo thời gian (đảm bảo chuẩn hóa dữ liệu).
+\begin{longtable}{@{}p{3cm}p{2cm}p{9.5cm}@{}}
+\toprule
+\textbf{Thuộc tính} & \textbf{Khóa} & \textbf{Ghi chú} \\
+\midrule
+id & PK & Định danh duy nhất \\
+person1\_id & FK & Tham chiếu đến PERSON (vợ/chồng 1) \\
+person2\_id & FK & Tham chiếu đến PERSON (vợ/chồng 2) \\
+marriage\_date & & Ngày kết hôn \\
+\bottomrule
+\end{longtable}
+
+% ---- POST / COMMENT ----
+\subsubsection{POST (Bài đăng) \& COMMENT (Bình luận)}
+% Phục vụ nhóm chức năng "Cộng đồng & Tương tác": chia sẻ tin tức,
+% hình ảnh gia đình và tương tác bình luận.
+\begin{longtable}{@{}p{3cm}p{2cm}p{9.5cm}@{}}
+\toprule
+\textbf{Thuộc tính} & \textbf{Khóa} & \textbf{Ghi chú} \\
+\midrule
+\multicolumn{3}{l}{\textit{POST}} \\
+id & PK & Định danh duy nhất \\
+user\_id & FK & Người đăng bài \\
+family\_id & FK & Bài đăng thuộc gia đình nào \\
+content & & Nội dung bài đăng \\
+created\_at & & Thời điểm đăng \\
+\addlinespace
+\multicolumn{3}{l}{\textit{COMMENT}} \\
+id & PK & Định danh duy nhất \\
+post\_id & FK & Tham chiếu đến POST \\
+user\_id & FK & Người bình luận \\
+content & & Nội dung bình luận \\
+created\_at & & Thời điểm bình luận \\
+\bottomrule
+\end{longtable}
+
+% ---- EVENT / RSVP ----
+\subsubsection{EVENT (Sự kiện) \& RSVP}
+% Phục vụ nhóm "Quản lý Sự kiện": tạo sự kiện, nhắc nhở, quản lý người
+% tham gia. RSVP dùng khóa chính kép (event_id, user_id) -- không cần id riêng.
+\begin{longtable}{@{}p{3cm}p{2cm}p{9.5cm}@{}}
+\toprule
+\textbf{Thuộc tính} & \textbf{Khóa} & \textbf{Ghi chú} \\
+\midrule
+\multicolumn{3}{l}{\textit{EVENT}} \\
+id & PK & Định danh duy nhất \\
+family\_id & FK & Sự kiện thuộc gia đình nào \\
+name & & Tên sự kiện \\
+event\_date & & Ngày diễn ra \\
+location & & Địa điểm \\
+\addlinespace
+\multicolumn{3}{l}{\textit{RSVP}} \\
+event\_id & PK, FK & Khóa chính kép -- Tham chiếu EVENT \\
+user\_id & PK, FK & Khóa chính kép -- Tham chiếu USER \\
+status & & Trạng thái tham gia (đồng ý / từ chối / chưa rõ) \\
+\bottomrule
+\end{longtable}
+
+% ---- DOCUMENT ----
+\subsubsection{DOCUMENT (Tài liệu / Di sản)}
+% Phục vụ nhóm "Danh bạ & Di sản": lưu trữ tài liệu, câu chuyện lịch sử,
+% lưu trữ số của gia đình.
+\begin{longtable}{@{}p{3cm}p{2cm}p{9.5cm}@{}}
+\toprule
+\textbf{Thuộc tính} & \textbf{Khóa} & \textbf{Ghi chú} \\
+\midrule
+id & PK & Định danh duy nhất \\
+family\_id & FK & Tài liệu thuộc gia đình nào \\
+title & & Tiêu đề tài liệu \\
+file\_url & & Đường dẫn lưu trữ tệp \\
+story\_text & & Nội dung câu chuyện lịch sử \\
+\bottomrule
+\end{longtable}
+
+% ---- NOTIFICATION ----
+\subsubsection{NOTIFICATION (Thông báo)}
+% Phục vụ hệ thống thông báo trong nhóm "Cộng đồng & Tương tác".
+\begin{longtable}{@{}p{3cm}p{2cm}p{9.5cm}@{}}
+\toprule
+\textbf{Thuộc tính} & \textbf{Khóa} & \textbf{Ghi chú} \\
+\midrule
+id & PK & Định danh duy nhất \\
+user\_id & FK & Người nhận thông báo \\
+content & & Nội dung thông báo \\
+is\_read & & Trạng thái đã đọc / chưa đọc \\
+\bottomrule
+\end{longtable}
+
+% =====================================================
+% MỐI QUAN HỆ
+% =====================================================
+\subsection{Danh sách mối quan hệ (Relationships)}
+% Bảng tổng hợp các mối quan hệ giữa các thực thể, kèm bậc số
+% (cardinality) theo ký hiệu chuẩn ERD: 1 - n (một - nhiều).
+\begin{longtable}{@{}p{3.2cm}p{1.2cm}p{3.2cm}p{6.5cm}@{}}
+\toprule
+\textbf{Thực thể A} & \textbf{Bậc số} & \textbf{Thực thể B} & \textbf{Diễn giải} \\
+\midrule
+USER & 1--n & PERSON & Một tài khoản có thể liên kết một hồ sơ gia phả \\
+FAMILY & 1--n & PERSON & Một gia đình gồm nhiều thành viên \\
+PERSON & 1--n & PERSON & Quan hệ cha/mẹ -- con (tự tham chiếu) \\
+PERSON & 1--n & MARRIAGE & Một người có thể có nhiều cuộc hôn nhân \\
+USER & 1--n & POST & Một người dùng đăng nhiều bài viết \\
+FAMILY & 1--n & POST & Bài viết thuộc về một gia đình \\
+POST & 1--n & COMMENT & Một bài viết nhận nhiều bình luận \\
+USER & 1--n & COMMENT & Một người dùng viết nhiều bình luận \\
+FAMILY & 1--n & EVENT & Một gia đình tổ chức nhiều sự kiện \\
+EVENT & 1--n & RSVP & Một sự kiện nhận nhiều phản hồi tham gia \\
+USER & 1--n & RSVP & Một người dùng tham gia nhiều sự kiện \\
+FAMILY & 1--n & DOCUMENT & Một gia đình lưu trữ nhiều tài liệu \\
+USER & 1--n & NOTIFICATION & Một người dùng nhận nhiều thông báo \\
+\bottomrule
+\end{longtable}

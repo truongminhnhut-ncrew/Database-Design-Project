@@ -1,109 +1,136 @@
 % !TEX root = ../../main.tex
-\section{Lược đồ Quan hệ Logic (Relational Schemas)}
+\section{Danh sách các lược đồ quan hệ (Relational Schemas)}
 \label{sec:2_2_luoc_do_quan_he}
 
-Sau khi áp dụng các quy tắc chuyển đổi từ mô hình Thực thể -- Liên kết mở rộng (ERD/EERD), hệ thống \textbf{FamilyConnect} được cụ thể hóa thành tập hợp 13 lược đồ quan hệ (Relation Schemas) phân bổ vào 5 phân hệ nghiệp vụ chính.
+\subsection{Lược đồ các bảng phân hệ Người dùng \& Bảo mật}
+\label{subsec:2_2_1_nguoidung_baomat}
 
-\subsection{Phân hệ Người dùng \& Bảo mật (User \& Security)}
-\label{subsec:2_2_1_user_security}
+% Danh sách bảng: Users, Roles, Permissions, UserRoles, RolePermissions, AuditLogs
+% Phân hệ này hiện thực hóa yêu cầu "Đăng ký và xác thực người dùng" và
+% "Kiểm soát truy cập dựa trên vai trò (RBAC)" trong đề xuất dự án.
+% Users - Roles là quan hệ n-n (một người dùng có thể giữ nhiều vai trò,
+% một vai trò áp dụng cho nhiều người dùng) -> tách thành bảng liên kết
+% UserRoles với khóa chính kép.
+% Roles - Permissions cũng là quan hệ n-n (một vai trò có nhiều quyền,
+% một quyền thuộc nhiều vai trò) -> tách thành bảng liên kết
+% RolePermissions với khóa chính kép.
+% AuditLogs ghi lại hành động của Users theo quan hệ 1-n (một người dùng
+% có nhiều bản ghi audit log).
 
-\begin{enumerate}[label=\textbf{\arabic*.}]
-    \item \textbf{Users} (\underline{user\_id}, username, email, password\_hash, full\_name,
-          phone\_number, created\_at, is\_active, role\_code)\\
-          \textit{Ánh xạ từ:} Thực thể \texttt{NGUOI\_DUNG} (quan hệ 1--1 với MemberProfile).
+\begin{itemize}
+  \item \textbf{Users}(\underline{user\_id}, username, email, password\_hash, full\_name, status, created\_at)
+  \item \textbf{Roles}(\underline{role\_id}, role\_name, description)
+  \item \textbf{Permissions}(\underline{permission\_id}, permission\_name, description)
+  \item \textbf{UserRoles}(\underline{user\_id} (FK $\rightarrow$ Users), \underline{role\_id} (FK $\rightarrow$ Roles), assigned\_at)
+  \item \textbf{RolePermissions}(\underline{role\_id} (FK $\rightarrow$ Roles), \underline{permission\_id} (FK $\rightarrow$ Permissions))
+  \item \textbf{AuditLogs}(\underline{log\_id}, user\_id (FK $\rightarrow$ Users), action, target\_table, target\_id, created\_at)
+\end{itemize}
 
-    \item \textbf{AuditLog} (\underline{audit\_id}, user\_id\textsuperscript{FK},
-          action\_type, entity\_name, entity\_id, timestamp, ip\_address)\\
-          \textit{Ánh xạ từ:} Thực thể yếu \texttt{NHAT\_KY\_KIEM\_TOAN} (phụ thuộc vào Users).
-\end{enumerate}
+\subsection{Lược đồ các bảng phân hệ Gia tộc \& Phả hệ}
+\label{subsec:2_2_2_giatoc_phahe}
 
-\subsection{Phân hệ Gia đình \& Gia phả (Family \& Genealogy)}
-\label{subsec:2_2_2_family_genealogy}
+% Danh sách bảng: Clans, Branches, Members, Marriages, CareerProfiles
+% Ánh xạ từ nhóm chức năng "Quản lý Gia phả" và "Danh bạ & Di sản".
+% Clans (1) - Branches (n): mỗi dòng họ gồm nhiều chi/nhánh/phái.
+% Branches (1) - Members (n): mỗi chi/nhánh gồm nhiều thành viên.
+% Members - Members: quan hệ đệ quy cha/mẹ - con qua parent_id (tự tham
+% chiếu về chính bảng Members).
+% Members - Members qua Marriages: quan hệ n-n (một người có thể có
+% nhiều cuộc hôn nhân theo thời gian) -> tách thành bảng liên kết
+% Marriages với 2 khóa ngoại độc lập trỏ về Members.
+% Members (1) - CareerProfiles (n): một thành viên có thể có nhiều hồ sơ
+% học vấn/nghề nghiệp theo từng giai đoạn.
 
-\begin{enumerate}[resume, label=\textbf{\arabic*.}]
-    \item \textbf{FamilyTree} (\underline{family\_id}, family\_name, founding\_date,
-          description, created\_by\_user\_id\textsuperscript{FK})\\
-          \textit{Ánh xạ từ:} Thực thể \texttt{DONG\_HO}.
+\begin{itemize}
+  \item \textbf{Clans}(\underline{clan\_id}, clan\_name, description)
+  \item \textbf{Branches}(\underline{branch\_id}, clan\_id (FK $\rightarrow$ Clans), branch\_name, description)
+  \item \textbf{Members}(\underline{member\_id}, branch\_id (FK $\rightarrow$ Branches), user\_id (FK $\rightarrow$ Users, nullable), parent\_id (FK $\rightarrow$ Members, tự tham chiếu, nullable), full\_name, dob, dod, gender)
+  \item \textbf{Marriages}(\underline{marriage\_id}, member\_id\_1 (FK $\rightarrow$ Members), member\_id\_2 (FK $\rightarrow$ Members), marriage\_date)
+  \item \textbf{CareerProfiles}(\underline{profile\_id}, member\_id (FK $\rightarrow$ Members), education\_level, school\_name, occupation, company, start\_date, end\_date)
+\end{itemize}
 
-    \item \textbf{Branch} (\underline{branch\_id}, branch\_name, generation\_level,
-          description, family\_id\textsuperscript{FK})\\
-          \textit{Ánh xạ từ:} Thực thể \texttt{CHI\_TOC} (quan hệ 1--N từ FamilyTree).
+\subsection{Lược đồ các bảng phân hệ Tương tác, Sự kiện \& Di sản}
+\label{subsec:2_2_3_tuongtac_sukien_disan}
 
-    \item \textbf{MemberProfile} (\underline{member\_id}, first\_name, last\_name, gender,
-          birth\_date, death\_date, is\_alive, bio, occupation, education\_level,
-          current\_location, user\_id\textsuperscript{FK}, branch\_id\textsuperscript{FK})\\
-          \textit{Ánh xạ từ:} Thực thể \texttt{THANH\_VIEN} (quan hệ 1--1 với Users, N--1 với Branch).
+% Danh sách bảng: Posts, Comments, Albums, Events, EventParticipants,
+% HeritageItems, NotableMembers
+% Ánh xạ từ nhóm chức năng "Cộng đồng & Tương tác" và "Quản lý Sự kiện".
+% Posts (1) - Comments (n): một bài đăng nhận nhiều bình luận.
+% Events (1) - Albums (n): thư viện ảnh gắn theo từng sự kiện (nullable
+% nếu album thuộc chung dòng họ, không gắn sự kiện cụ thể).
+% Events - Users: quan hệ n-n qua bảng liên kết EventParticipants
+% (chức năng RSVP), khóa chính kép (event_id, user_id).
+% HeritageItems: tài liệu/di sản số gắn với Clans theo quan hệ 1-n.
+% NotableMembers: bảng mở rộng thuộc tính cho thành viên tiêu biểu,
+% quan hệ 1-1 tùy chọn với Members (chuyên biệt hóa một phần).
 
-    \item \textbf{ParentChildRelation} (\underline{parent\_id\textsuperscript{FK},
-          child\_id\textsuperscript{FK}}, relation\_type)\\
-          \textit{Ánh xạ từ:} Mối quan hệ đệ quy \texttt{CHA\_ME\_CON} (N--M đệ quy trên MemberProfile).
+\begin{itemize}
+  \item \textbf{Posts}(\underline{post\_id}, user\_id (FK $\rightarrow$ Users), clan\_id (FK $\rightarrow$ Clans), content, created\_at)
+  \item \textbf{Comments}(\underline{comment\_id}, post\_id (FK $\rightarrow$ Posts), user\_id (FK $\rightarrow$ Users), content, created\_at)
+  \item \textbf{Albums}(\underline{album\_id}, event\_id (FK $\rightarrow$ Events, nullable), clan\_id (FK $\rightarrow$ Clans), title, created\_at)
+  \item \textbf{Events}(\underline{event\_id}, clan\_id (FK $\rightarrow$ Clans), name, event\_date, location, created\_by (FK $\rightarrow$ Users))
+  \item \textbf{EventParticipants}(\underline{event\_id} (FK $\rightarrow$ Events), \underline{user\_id} (FK $\rightarrow$ Users), status)
+  \item \textbf{HeritageItems}(\underline{item\_id}, clan\_id (FK $\rightarrow$ Clans), title, description, file\_url, created\_at)
+  \item \textbf{NotableMembers}(\underline{notable\_id}, member\_id (FK $\rightarrow$ Members), achievement, description)
+\end{itemize}
 
-    \item \textbf{MarriageRelation} (\underline{marriage\_id}, husband\_id\textsuperscript{FK},
-          wife\_id\textsuperscript{FK}, marriage\_date, divorce\_date, status)\\
-          \textit{Ánh xạ từ:} Mối quan hệ đệ quy \texttt{HON\_NHAN} (dạng lịch sử, N--M theo thời gian).
-\end{enumerate}
+\subsection{Lược đồ các bảng phân hệ Thông báo (Notifications)}
+\label{subsec:2_2_4_thongbao}
 
-\subsection{Phân hệ Cộng đồng \& Sự kiện (Community \& Events)}
-\label{subsec:2_2_3_community_events}
+% Danh sách bảng: Notifications, NotificationSettings
+% Ánh xạ từ chức năng "Nhắc lịch giỗ/sự kiện" và "Thông báo tương tác mới".
+% Users (1) - Notifications (n): một người dùng nhận nhiều thông báo.
+% NotificationSettings lưu tùy chọn bật/tắt từng loại thông báo theo
+% từng người dùng -> quan hệ n-n giữa Users và "loại thông báo",
+% hiện thực qua bảng có khóa chính kép (user_id, notification_type).
 
-\begin{enumerate}[resume, label=\textbf{\arabic*.}]
-    \item \textbf{Post} (\underline{post\_id}, title, content, visibility\_scope, created\_at,
-          author\_member\_id\textsuperscript{FK}, family\_id\textsuperscript{FK})\\
-          \textit{Ánh xạ từ:} Thực thể \texttt{BAI\_VIET} (quan hệ N--1 với MemberProfile và FamilyTree).
+\begin{itemize}
+  \item \textbf{Notifications}(\underline{notification\_id}, user\_id (FK $\rightarrow$ Users), type, content, related\_table, related\_id, is\_read, created\_at)
+  \item \textbf{NotificationSettings}(\underline{user\_id} (FK $\rightarrow$ Users), \underline{notification\_type}, is\_enabled)
+\end{itemize}
 
-    \item \textbf{PostInteraction} (\underline{interaction\_id}, post\_id\textsuperscript{FK},
-          member\_id\textsuperscript{FK}, reaction\_type, comment\_text, created\_at)\\
-          \textit{Ánh xạ từ:} Mối quan hệ N--M \texttt{TUONG\_TAC} (MemberProfile $\leftrightarrow$ Post).
+\subsection{Lược đồ bảng phân hệ Tệp tin dùng chung (Media)}
+\label{subsec:2_2_5_media}
 
-    \item \textbf{Event} (\underline{event\_id}, event\_title, event\_description, start\_time,
-          end\_time, location, event\_type, family\_id\textsuperscript{FK},
-          organizer\_member\_id\textsuperscript{FK})\\
-          \textit{Ánh xạ từ:} Thực thể \texttt{SU\_KIEN}.
+% Danh sách bảng: MediaFiles
+% Bảng dùng chung để lưu trữ tệp tin (ảnh, video, tài liệu) có thể đính
+% kèm cho nhiều loại đối tượng khác nhau (Posts, Comments, Members,...).
+% Đây là quan hệ đa hình (polymorphic association): related_table xác
+% định bảng đích, related_id xác định bản ghi cụ thể trong bảng đó,
+% thay vì tạo khóa ngoại riêng cho từng bảng liên quan.
 
-    \item \textbf{EventRSVP} (\underline{event\_id\textsuperscript{FK},
-          member\_id\textsuperscript{FK}}, rsvp\_status, updated\_at)\\
-          \textit{Ánh xạ từ:} Mối quan hệ N--M \texttt{THAM\_GIA} (MemberProfile $\leftrightarrow$ Event).
-\end{enumerate}
+\begin{itemize}
+  \item \textbf{MediaFiles}(\underline{media\_id}, file\_url, file\_type, file\_size, uploaded\_by (FK $\rightarrow$ Users), related\_table, related\_id, created\_at)
+\end{itemize}
 
-\subsection{Phân hệ Di sản \& AI (Heritage \& AI Services)}
-\label{subsec:2_2_4_heritage_ai}
+\subsection{Lược đồ các bảng phân hệ Quỹ \& Đóng góp (Donation)}
+\label{subsec:2_2_6_quy_donggop}
 
-\begin{enumerate}[resume, label=\textbf{\arabic*.}]
-    \item \textbf{HeritageDocument} (\underline{document\_id}, title, document\_type,
-          file\_path, historical\_period, summary,
-          uploaded\_by\_member\_id\textsuperscript{FK}, family\_id\textsuperscript{FK})\\
-          \textit{Ánh xạ từ:} Thực thể \texttt{TAI\_LIEU\_DI\_SAN}.
+% Danh sách bảng: Funds, Donations, Expenses
+% Ánh xạ từ chức năng "Quản lý quỹ họ tộc / đóng góp / chi tiêu".
+% Clans (1) - Funds (n): một dòng họ có thể quản lý nhiều quỹ (quỹ
+% chung, quỹ xây từ đường, quỹ khuyến học,...).
+% Funds (1) - Donations (n): một quỹ nhận nhiều khoản đóng góp.
+% Members (1) - Donations (n): một thành viên có thể đóng góp nhiều lần.
+% Funds (1) - Expenses (n): một quỹ phát sinh nhiều khoản chi.
 
-    \item \textbf{AIAssistantLog} (\underline{log\_id}, member\_id\textsuperscript{FK},
-          prompt\_query, response\_summary, vector\_embedding\_id, logged\_at)\\
-          \textit{Ánh xạ từ:} Thực thể yếu \texttt{NHAT\_KY\_TRO\_LY\_AI}.
-\end{enumerate}
+\begin{itemize}
+  \item \textbf{Funds}(\underline{fund\_id}, clan\_id (FK $\rightarrow$ Clans), fund\_name, balance, description, created\_at)
+  \item \textbf{Donations}(\underline{donation\_id}, fund\_id (FK $\rightarrow$ Funds), member\_id (FK $\rightarrow$ Members), amount, donation\_date, note)
+  \item \textbf{Expenses}(\underline{expense\_id}, fund\_id (FK $\rightarrow$ Funds), amount, expense\_date, description, created\_by (FK $\rightarrow$ Users))
+\end{itemize}
 
-\subsection{Bảng tổng hợp Lược đồ Quan hệ Logic}
-\label{subsec:2_2_5_tong_hop}
+\subsection{Lược đồ bảng phân hệ Cấu hình hệ thống (Settings)}
+\label{subsec:2_2_7_caihinh}
 
-\begin{table}[htbp]
-\centering
-\small
-\caption{Danh mục 13 lược đồ quan hệ logic của hệ thống FamilyConnect.}
-\label{tab:relational_schemas}
-\begin{tabularx}{\textwidth}{c l Y Y}
-\toprule
-\textbf{STT} & \textbf{Tên bảng} & \textbf{Khóa chính (PK)} & \textbf{Phân hệ} \\
-\midrule
-1  & Users                & user\_id          & User \& Security \\
-2  & AuditLog             & audit\_id         & User \& Security \\
-3  & FamilyTree           & family\_id        & Family \& Genealogy \\
-4  & Branch               & branch\_id        & Family \& Genealogy \\
-5  & MemberProfile        & member\_id        & Family \& Genealogy \\
-6  & ParentChildRelation  & (parent\_id, child\_id) & Family \& Genealogy \\
-7  & MarriageRelation     & marriage\_id      & Family \& Genealogy \\
-8  & Post                 & post\_id          & Community \& Events \\
-9  & PostInteraction      & interaction\_id   & Community \& Events \\
-10 & Event                & event\_id         & Community \& Events \\
-11 & EventRSVP            & (event\_id, member\_id) & Community \& Events \\
-12 & HeritageDocument     & document\_id      & Heritage \& AI \\
-13 & AIAssistantLog       & log\_id           & Heritage \& AI \\
-\bottomrule
-\end{tabularx}
-\end{table}
+% Danh sách bảng: SystemSettings, ClanSettings
+% SystemSettings: cấu hình chung áp dụng toàn hệ thống (ví dụ: giới hạn
+% dung lượng upload, ngôn ngữ mặc định), lưu dạng key-value.
+% Clans (1) - ClanSettings (n): mỗi dòng họ có thể tùy chỉnh cấu hình
+% riêng (ví dụ: quyền riêng tư gia phả, giao diện trang họ), cũng lưu
+% dạng key-value với khóa chính kép (clan_id, setting_key).
+
+\begin{itemize}
+  \item \textbf{SystemSettings}(\underline{setting\_key}, setting\_value, description, updated\_at)
+  \item \textbf{ClanSettings}(\underline{clan\_id} (FK $\rightarrow$ Clans), \underline{setting\_key}, setting\_value)
+\end{itemize}
