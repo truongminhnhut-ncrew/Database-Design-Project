@@ -39,7 +39,7 @@
 % ==============================================================================
 % GÓI ĐỒ HỌA, TOÁN HỌC, BẢNG BIỂU & MÃ NGUỒN
 % ==============================================================================
-\usepackage{amsmath, amssymb, amsfonts}
+\usepackage{amsmath, amssymb, amsfonts, amsthm}
 \usepackage{graphicx}
 \usepackage{xcolor}
 \usepackage{colortbl}
@@ -102,6 +102,12 @@
 \definecolor{erdline}{RGB}{70, 80, 95}
 \definecolor{pkcolor}{RGB}{185, 30, 30}
 \definecolor{fkcolor}{RGB}{30, 100, 175}
+\colorlet{primaryblue}{blue}
+
+% Cấu hình Định nghĩa và Ví dụ
+\theoremstyle{definition}
+\newtheorem{definition}{Định nghĩa}[chapter]
+\newtheorem{example}{Ví dụ}[chapter]
 
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
 \newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
