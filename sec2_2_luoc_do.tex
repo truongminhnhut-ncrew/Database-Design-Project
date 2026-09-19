@@ -1,0 +1,1004 @@
+% !TEX root = ../../main.tex
+\section{Danh sách các lược đồ quan hệ (Relational Schemas)}
+\label{sec:2_2_luoc_do_quan_he}
+
+Trên cơ sở các quy tắc chuyển đổi từ mô hình Thực thể -- Liên kết (ER/EER) sang mô hình dữ liệu quan hệ (Relational Data Model) cùng các ràng buộc nghiệp vụ đã được xác lập ở Chương~\ref{chap:quan_niem}, phần này trình bày danh sách chi tiết các lược đồ quan hệ chuẩn hóa của nền tảng \textbf{FamilyConnect}.
+
+Hệ thống được thiết kế gồm \textbf{18 lược đồ quan hệ} phân bổ theo 3 phân hệ chức năng cốt lõi:
+\begin{enumerate}[noitemsep,topsep=2pt]
+    \item \textbf{Phân hệ Người dùng \& Bảo mật (User \& Security Subsystem):} Gồm 6 bảng (\texttt{Users}, \texttt{Roles}, \texttt{Permissions}, \texttt{UserRoles}, \texttt{RolePermissions}, \texttt{AuditLogs}).
+    \item \textbf{Phân hệ Gia tộc \& Phả hệ (Clan \& Genealogy Subsystem):} Gồm 5 bảng (\texttt{Clans}, \texttt{Branches}, \texttt{Members}, \texttt{Marriages}, \texttt{CareerProfiles}).
+    \item \textbf{Phân hệ Tương tác, Sự kiện \& Di sản (Community, Events \& Heritage Subsystem):} Gồm 7 bảng (\texttt{Posts}, \texttt{Comments}, \texttt{Albums}, \texttt{Events}, \texttt{EventParticipants}, \texttt{HeritageItems}, \texttt{NotableMembers}).
+\end{enumerate}
+
+\paragraph{Quy ước ký hiệu trong lược đồ hình thức và bảng thuộc tính:}
+\begin{itemize}[noitemsep,topsep=2pt]
+    \item $\underline{\textbf{TênThuộcTính}}$: Thuộc tính thuộc \textbf{Khóa chính} (\textit{Primary Key} -- PK).
+    \item $\textbf{TênThuộcTính}^*$: Thuộc tính là \textbf{Khóa ngoại} (\textit{Foreign Key} -- FK) tham chiếu đến bảng khác.
+    \item \textbf{UQ} (\textit{Unique Key}): Ràng buộc giá trị duy nhất trên toàn bảng.
+    \item \textbf{NN} (\textit{Not Null}): Thuộc tính bắt buộc phải có giá trị khi khởi tạo/cập nhật bộ dữ liệu.
+\end{itemize}
+
+% ==============================================================================
+% 2.2.1. PHÂN HỆ NGƯỜI DÙNG & BẢO MẬT
+% ==============================================================================
+\subsection{Lược đồ các bảng phân hệ Người dùng \& Bảo mật}
+\label{subsec:luoc_do_security}
+
+Phân hệ này chịu trách nhiệm quản lý tài khoản xác thực, phân quyền truy cập theo mô hình kiểm soát truy cập dựa trên vai trò (Role-Based Access Control -- RBAC) và lưu vết kiểm toán hệ thống.
+
+% --- BẢNG 1: Users ---
+\subsubsection{Lược đồ quan hệ bảng Users (Tài khoản người dùng)}
+Tương ứng với thực thể \texttt{NGUOI\_DUNG}. Bảng này đại diện cho các tài khoản đăng nhập vào ứng dụng Web/Mobile. Mỗi tài khoản có thể liên kết xác thực với duy nhất một hồ sơ thành viên trong gia tộc (\texttt{member\_id}) theo quan hệ $1:1$ (tuân thủ RB08).
+
+\paragraph{Biểu diễn hình thức:}
+\[
+\begin{aligned}
+\textbf{Users}\big(
+&\underline{\textbf{user\_id}}, \text{email}, \text{phone\_number}, \text{password\_hash}, \text{status}, \\
+&\text{last\_login\_at}, \textbf{member\_id}^*, \text{created\_at}, \text{updated\_at}
+\big)
+\end{aligned}
+\]
+
+\begin{table}[H]
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\textwidth}{p{3.0cm} p{2.6cm} c c X}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Kiểu logic}} & \textcolor{white}{\textbf{Khóa}} & \textcolor{white}{\textbf{Null?}} & \textcolor{white}{\textbf{Diễn giải \& Ràng buộc tham chiếu}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{user\_id} & VARCHAR(36) & \textcolor{pkcolor}{\textbf{PK}} & No & Mã định danh duy nhất của người dùng (UUIDv4). \\
+        \texttt{email} & VARCHAR(100) & \textbf{UQ} & No & Địa chỉ thư điện tử dùng để đăng nhập và gửi thông báo. \\
+        \rowcolor{tablerowalt}
+        \texttt{phone\_number} & VARCHAR(15) & \textbf{UQ} & No & Số điện thoại dùng xác thực 2 bước (OTP). \\
+        \texttt{password\_hash} & VARCHAR(255) & -- & No & Chuỗi băm mật khẩu bảo mật (Argon2id hoặc Bcrypt). \\
+        \rowcolor{tablerowalt}
+        \texttt{status} & VARCHAR(20) & -- & No & Trạng thái tài khoản: \texttt{ACTIVE}, \texttt{PENDING}, \texttt{LOCKED}. \\
+        \texttt{last\_login\_at} & TIMESTAMP & -- & Yes & Thời điểm đăng nhập gần nhất vào hệ thống. \\
+        \rowcolor{tablerowalt}
+        \texttt{member\_id} & VARCHAR(36) & \textcolor{fkcolor}{\textbf{FK}}, \textbf{UQ} & Yes & Khóa ngoại tham chiếu \texttt{Members(member\_id)} (RB08). \\
+        \texttt{created\_at} & TIMESTAMP & -- & No & Thời điểm khởi tạo tài khoản (\texttt{CURRENT\_TIMESTAMP}). \\
+        \rowcolor{tablerowalt}
+        \texttt{updated\_at} & TIMESTAMP & -- & No & Thời điểm cập nhật thông tin tài khoản gần nhất. \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Cấu trúc lược đồ quan hệ bảng Users}
+    \label{tab:schema_users}
+\end{table}
+
+\noindent\textbf{Ràng buộc toàn vẹn và hành vi tham chiếu:}
+\begin{itemize}[noitemsep,topsep=2pt]
+    \item \textbf{Khóa chính (PK):} \texttt{user\_id}.
+    \item \textbf{Khóa duy nhất (UQ):} \texttt{email}, \texttt{phone\_number}, \texttt{member\_id}.
+    \item \textbf{Khóa ngoại (FK):} \texttt{member\_id} $\rightarrow$ \texttt{Members(member\_id)}. Hành vi: \texttt{ON DELETE SET NULL}, \texttt{ON UPDATE CASCADE}. Khi một bản ghi thành viên bị xóa, tài khoản người dùng tương ứng chỉ bị hủy liên kết chứ không bị xóa tài khoản.
+\end{itemize}
+
+% --- BẢNG 2: Roles ---
+\subsubsection{Lược đồ quan hệ bảng Roles (Vai trò người dùng)}
+Tương ứng với thực thể \texttt{VAI\_TRO}. Xác định nhóm quyền hạn và vị trí quản trị trong dòng họ (ví dụ: Quản trị viên hệ thống, Trưởng ban liên lạc dòng họ, Trưởng chi họ, Thành viên).
+
+\paragraph{Biểu diễn hình thức:}
+\[
+\textbf{Roles}\big(
+\underline{\textbf{role\_id}}, \text{role\_name}, \text{description}, \text{created\_at}
+\big)
+\]
+
+\begin{table}[H]
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\textwidth}{p{3.0cm} p{2.6cm} c c X}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Kiểu logic}} & \textcolor{white}{\textbf{Khóa}} & \textcolor{white}{\textbf{Null?}} & \textcolor{white}{\textbf{Diễn giải \& Ràng buộc tham chiếu}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{role\_id} & VARCHAR(30) & \textcolor{pkcolor}{\textbf{PK}} & No & Mã vai trò hệ thống (\texttt{SUPER\_ADMIN}, \texttt{CLAN\_ADMIN},...). \\
+        \texttt{role\_name} & VARCHAR(50) & \textbf{UQ} & No & Tên hiển thị vai trò (Trưởng họ, Trưởng chi, Thành viên). \\
+        \rowcolor{tablerowalt}
+        \texttt{description} & VARCHAR(255) & -- & Yes & Mô tả chi tiết trách nhiệm và phạm vi quyền hạn. \\
+        \texttt{created\_at} & TIMESTAMP & -- & No & Thời điểm thiết lập vai trò trong hệ thống. \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Cấu trúc lược đồ quan hệ bảng Roles}
+    \label{tab:schema_roles}
+\end{table}
+
+\noindent\textbf{Ràng buộc toàn vẹn:} \textbf{Khóa chính (PK):} \texttt{role\_id}; \textbf{Khóa duy nhất (UQ):} \texttt{role\_name}.
+
+% --- BẢNG 3: Permissions ---
+\subsubsection{Lược đồ quan hệ bảng Permissions (Quyền hạn chức năng)}
+Tương ứng với thực thể \texttt{QUYEN}. Quy định danh mục các hành vi nguyên tử được phép thực hiện trên từng tài nguyên hệ thống.
+
+\paragraph{Biểu diễn hình thức:}
+\[
+\textbf{Permissions}\big(
+\underline{\textbf{permission\_id}}, \text{permission\_name}, \text{module\_group}, \text{description}
+\big)
+\]
+
+\begin{table}[H]
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\textwidth}{p{3.0cm} p{2.6cm} c c X}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Kiểu logic}} & \textcolor{white}{\textbf{Khóa}} & \textcolor{white}{\textbf{Null?}} & \textcolor{white}{\textbf{Diễn giải \& Ràng buộc tham chiếu}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{permission\_id} & VARCHAR(50) & \textcolor{pkcolor}{\textbf{PK}} & No & Mã quyền hạn duy nhất (\texttt{genealogy.edit}, \texttt{post.approve}). \\
+        \texttt{permission\_name} & VARCHAR(100) & -- & No & Tên hiển thị hành động nghiệp vụ. \\
+        \rowcolor{tablerowalt}
+        \texttt{module\_group} & VARCHAR(50) & -- & No & Phân hệ chức năng (\texttt{Genealogy}, \texttt{Community}, \texttt{Heritage}). \\
+        \texttt{description} & VARCHAR(255) & -- & Yes & Mô tả chi tiết hành động được cấp phép thực hiện. \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Cấu trúc lược đồ quan hệ bảng Permissions}
+    \label{tab:schema_permissions}
+\end{table}
+
+\noindent\textbf{Ràng buộc toàn vẹn:} \textbf{Khóa chính (PK):} \texttt{permission\_id}.
+
+% --- BẢNG 4: UserRoles ---
+\subsubsection{Lược đồ quan hệ bảng UserRoles (Gán vai trò cho người dùng)}
+Thực thể hóa mối quan hệ kết hợp $N:M$ giữa thực thể \texttt{Users} và \texttt{Roles}. Một người dùng có thể kiêm nhiệm nhiều vai trò (ví dụ: vừa là Trưởng ban liên lạc dòng họ vừa là Trưởng một chi họ cụ thể).
+
+\paragraph{Biểu diễn hình thức:}
+\[
+\textbf{UserRoles}\big(
+\underline{\textbf{user\_id}}^*, \underline{\textbf{role\_id}}^*, \text{assigned\_at}, \textbf{assigned\_by}^*
+\big)
+\]
+
+\begin{table}[H]
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\textwidth}{p{3.0cm} p{2.6cm} c c X}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Kiểu logic}} & \textcolor{white}{\textbf{Khóa}} & \textcolor{white}{\textbf{Null?}} & \textcolor{white}{\textbf{Diễn giải \& Ràng buộc tham chiếu}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{user\_id} & VARCHAR(36) & \textcolor{pkcolor}{\textbf{PK}}, \textcolor{fkcolor}{\textbf{FK}} & No & Khóa ngoại tham chiếu \texttt{Users(user\_id)}. \\
+        \texttt{role\_id} & VARCHAR(30) & \textcolor{pkcolor}{\textbf{PK}}, \textcolor{fkcolor}{\textbf{FK}} & No & Khóa ngoại tham chiếu \texttt{Roles(role\_id)}. \\
+        \rowcolor{tablerowalt}
+        \texttt{assigned\_at} & TIMESTAMP & -- & No & Thời điểm cấp phát vai trò cho tài khoản. \\
+        \texttt{assigned\_by} & VARCHAR(36) & \textcolor{fkcolor}{\textbf{FK}} & Yes & Khóa ngoại tham chiếu \texttt{Users(user\_id)} (Người cấp quyền). \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Cấu trúc lược đồ quan hệ bảng UserRoles}
+    \label{tab:schema_user_roles}
+\end{table}
+
+\noindent\textbf{Ràng buộc toàn vẹn và hành vi tham chiếu:}
+\begin{itemize}[noitemsep,topsep=2pt]
+    \item \textbf{Khóa chính phức hợp (PK):} (\texttt{user\_id}, \texttt{role\_id}).
+    \item \textbf{Khóa ngoại (FK):}
+    \begin{itemize}[noitemsep]
+        \item \texttt{user\_id} $\rightarrow$ \texttt{Users(user\_id)}: \texttt{ON DELETE CASCADE, ON UPDATE CASCADE}.
+        \item \texttt{role\_id} $\rightarrow$ \texttt{Roles(role\_id)}: \texttt{ON DELETE CASCADE, ON UPDATE CASCADE}.
+        \item \texttt{assigned\_by} $\rightarrow$ \texttt{Users(user\_id)}: \texttt{ON DELETE SET NULL, ON UPDATE CASCADE}.
+    \end{itemize}
+\end{itemize}
+
+% --- BẢNG 5: RolePermissions ---
+\subsubsection{Lược đồ quan hệ bảng RolePermissions (Ma trận quyền hạn vai trò)}
+Thực thể hóa mối quan hệ kết hợp $N:M$ giữa \texttt{Roles} và \texttt{Permissions}, thiết lập ma trận kiểm soát truy cập phân cấp (RBAC Matrix).
+
+\paragraph{Biểu diễn hình thức:}
+\[
+\textbf{RolePermissions}\big(
+\underline{\textbf{role\_id}}^*, \underline{\textbf{permission\_id}}^*, \text{granted\_at}
+\big)
+\]
+
+\begin{table}[H]
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\textwidth}{p{3.0cm} p{2.6cm} c c X}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Kiểu logic}} & \textcolor{white}{\textbf{Khóa}} & \textcolor{white}{\textbf{Null?}} & \textcolor{white}{\textbf{Diễn giải \& Ràng buộc tham chiếu}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{role\_id} & VARCHAR(30) & \textcolor{pkcolor}{\textbf{PK}}, \textcolor{fkcolor}{\textbf{FK}} & No & Khóa ngoại tham chiếu \texttt{Roles(role\_id)}. \\
+        \texttt{permission\_id} & VARCHAR(50) & \textcolor{pkcolor}{\textbf{PK}}, \textcolor{fkcolor}{\textbf{FK}} & No & Khóa ngoại tham chiếu \texttt{Permissions(permission\_id)}. \\
+        \rowcolor{tablerowalt}
+        \texttt{granted\_at} & TIMESTAMP & -- & No & Thời điểm gán quyền cho nhóm vai trò. \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Cấu trúc lược đồ quan hệ bảng RolePermissions}
+    \label{tab:schema_role_permissions}
+\end{table}
+
+\noindent\textbf{Ràng buộc toàn vẹn và hành vi tham chiếu:}
+\begin{itemize}[noitemsep,topsep=2pt]
+    \item \textbf{Khóa chính phức hợp (PK):} (\texttt{role\_id}, \texttt{permission\_id}).
+    \item \textbf{Khóa ngoại (FK):}
+    \begin{itemize}[noitemsep]
+        \item \texttt{role\_id} $\rightarrow$ \texttt{Roles(role\_id)}: \texttt{ON DELETE CASCADE, ON UPDATE CASCADE}.
+        \item \texttt{permission\_id} $\rightarrow$ \texttt{Permissions(permission\_id)}: \texttt{ON DELETE CASCADE, ON UPDATE CASCADE}.
+    \end{itemize}
+\end{itemize}
+
+% --- BẢNG 6: AuditLogs ---
+\subsubsection{Lược đồ quan hệ bảng AuditLogs (Nhật ký kiểm toán hệ thống)}
+Tương ứng với thực thể \texttt{NHAT\_KY\_HE\_THONG}. Lưu vết toàn bộ các thao tác nhạy cảm liên quan đến dữ liệu phả hệ, phân quyền và duyệt nội dung, hỗ trợ kiểm tra tính toàn vẹn và đối soát an ninh thông tin.
+
+\paragraph{Biểu diễn hình thức:}
+\[
+\begin{aligned}
+\textbf{AuditLogs}\big(
+&\underline{\textbf{log\_id}}, \textbf{user\_id}^*, \text{action}, \text{target\_entity}, \text{target\_id}, \\
+&\text{old\_values}, \text{new\_values}, \text{ip\_address}, \text{user\_agent}, \text{created\_at}
+\big)
+\end{aligned}
+\]
+
+\begin{table}[H]
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\textwidth}{p{3.0cm} p{2.6cm} c c X}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Kiểu logic}} & \textcolor{white}{\textbf{Khóa}} & \textcolor{white}{\textbf{Null?}} & \textcolor{white}{\textbf{Diễn giải \& Ràng buộc tham chiếu}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{log\_id} & BIGINT & \textcolor{pkcolor}{\textbf{PK}} & No & Khóa chính định danh bản ghi nhật ký (Tự tăng / Identity). \\
+        \texttt{user\_id} & VARCHAR(36) & \textcolor{fkcolor}{\textbf{FK}} & Yes & Khóa ngoại tham chiếu \texttt{Users(user\_id)} (Người thao tác). \\
+        \rowcolor{tablerowalt}
+        \texttt{action} & VARCHAR(50) & -- & No & Loại thao tác: \texttt{CREATE}, \texttt{UPDATE}, \texttt{DELETE}, \texttt{CLAIM}. \\
+        \texttt{target\_entity} & VARCHAR(50) & -- & No & Tên bảng hoặc thực thể bị tác động (\texttt{Members}, \texttt{Posts},...). \\
+        \rowcolor{tablerowalt}
+        \texttt{target\_id} & VARCHAR(50) & -- & Yes & Khóa định danh của bản ghi dữ liệu bị thay đổi. \\
+        \texttt{old\_values} & JSON / TEXT & -- & Yes & Snapshot dữ liệu trước khi thay đổi (JSON formatted). \\
+        \rowcolor{tablerowalt}
+        \texttt{new\_values} & JSON / TEXT & -- & Yes & Snapshot dữ liệu mới sau khi cập nhật thành công. \\
+        \texttt{ip\_address} & VARCHAR(45) & -- & Yes & Địa chỉ IPv4 hoặc IPv6 của thiết bị thao tác. \\
+        \rowcolor{tablerowalt}
+        \texttt{user\_agent} & VARCHAR(255) & -- & Yes & Thông tin thiết bị, trình duyệt và nền tảng client. \\
+        \texttt{created\_at} & TIMESTAMP & -- & No & Thời điểm ghi nhận vết thao tác kiểm toán. \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Cấu trúc lược đồ quan hệ bảng AuditLogs}
+    \label{tab:schema_audit_logs}
+\end{table}
+
+\noindent\textbf{Ràng buộc toàn vẹn và hành vi tham chiếu:}
+\begin{itemize}[noitemsep,topsep=2pt]
+    \item \textbf{Khóa chính (PK):} \texttt{log\_id}.
+    \item \textbf{Khóa ngoại (FK):} \texttt{user\_id} $\rightarrow$ \texttt{Users(user\_id)}. Hành vi: \texttt{ON DELETE SET NULL, ON UPDATE CASCADE}. Bảo toàn dữ liệu lịch sử kiểm toán ngay cả khi tài khoản thao tác bị xóa khỏi hệ thống.
+\end{itemize}
+
+% ==============================================================================
+% 2.2.2. PHÂN HỆ GIA TỘC & PHẢ HỆ
+% ==============================================================================
+\subsection{Lược đồ các bảng phân hệ Gia tộc \& Phả hệ}
+\label{subsec:luoc_do_genealogy}
+
+Phân hệ Gia tộc \& Phả hệ là hạt nhân trung tâm của nền tảng \textbf{FamilyConnect}, chịu trách nhiệm mô hình hóa đồ thị cây phả hệ, quan hệ huyết thống đa thế hệ, quan hệ hôn nhân và hồ sơ thành viên danh bạ gia tộc.
+
+% --- BẢNG 7: Clans ---
+\subsubsection{Lược đồ quan hệ bảng Clans (Đại dòng họ / Gia tộc)}
+Tương ứng với thực thể \texttt{DONG\_HO}. Đại diện cho toàn bộ một đại tộc, lưu giữ các thông tin cội nguồn, Thủy tổ, từ đường và ngày giỗ tổ chung.
+
+\paragraph{Biểu diễn hình thức:}
+\[
+\begin{aligned}
+\textbf{Clans}\big(
+&\underline{\textbf{clan\_id}}, \text{clan\_name}, \text{founding\_ancestor}, \text{origin\_place}, \text{ancestral\_temple}, \\
+&\text{anniversary\_lunar}, \text{history\_summary}, \text{created\_at}, \text{updated\_at}
+\big)
+\end{aligned}
+\]
+
+\begin{table}[H]
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\textwidth}{p{3.4cm} p{2.6cm} c c X}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Kiểu logic}} & \textcolor{white}{\textbf{Khóa}} & \textcolor{white}{\textbf{Null?}} & \textcolor{white}{\textbf{Diễn giải \& Ràng buộc tham chiếu}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{clan\_id} & VARCHAR(36) & \textcolor{pkcolor}{\textbf{PK}} & No & Mã định danh duy nhất của dòng họ (UUIDv4). \\
+        \texttt{clan\_name} & VARCHAR(100) & -- & No & Tên gọi dòng họ ("Họ Nguyễn Cảnh", "Họ Trần"). \\
+        \rowcolor{tablerowalt}
+        \texttt{founding\_ancestor} & VARCHAR(100) & -- & Yes & Tên cụ Thủy tổ / Khởi tổ dòng họ. \\
+        \texttt{origin\_place} & VARCHAR(255) & -- & No & Nơi phát tích cội nguồn / Quê gốc của dòng họ. \\
+        \rowcolor{tablerowalt}
+        \texttt{ancestral\_temple} & VARCHAR(255) & -- & Yes & Địa chỉ hoặc tọa độ nhà thờ tổ đại tôn. \\
+        \texttt{anniversary\_lunar} & VARCHAR(50) & -- & Yes & Ngày giỗ tổ chung hàng năm (theo Âm lịch). \\
+        \rowcolor{tablerowalt}
+        \texttt{history\_summary} & TEXT & -- & Yes & Tóm tắt lịch sử phát triển, niên biểu truyền thừa. \\
+        \texttt{created\_at} & TIMESTAMP & -- & No & Thời điểm khởi tạo bản ghi dòng họ. \\
+        \rowcolor{tablerowalt}
+        \texttt{updated\_at} & TIMESTAMP & -- & No & Thời điểm cập nhật dữ liệu dòng họ gần nhất. \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Cấu trúc lược đồ quan hệ bảng Clans}
+    \label{tab:schema_clans}
+\end{table}
+
+\noindent\textbf{Ràng buộc toàn vẹn:} \textbf{Khóa chính (PK):} \texttt{clan\_id}.
+
+% --- BẢNG 8: Branches ---
+\subsubsection{Lược đồ quan hệ bảng Branches (Chi tộc / Phái họ)}
+Tương ứng với thực thể \texttt{CHI\_TOC}. Biểu diễn các nhánh phái được phân tách từ dòng họ chính qua các thế hệ nối tiếp nhau.
+
+\paragraph{Biểu diễn hình thức:}
+\[
+\textbf{Branches}\big(
+\underline{\textbf{branch\_id}}, \textbf{clan\_id}^*, \text{branch\_name}, \text{generation\_order}, \text{main\_residence}, \text{notes}, \text{created\_at}
+\big)
+\]
+
+\begin{table}[H]
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\textwidth}{p{3.2cm} p{2.6cm} c c X}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Kiểu logic}} & \textcolor{white}{\textbf{Khóa}} & \textcolor{white}{\textbf{Null?}} & \textcolor{white}{\textbf{Diễn giải \& Ràng buộc tham chiếu}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{branch\_id} & VARCHAR(36) & \textcolor{pkcolor}{\textbf{PK}} & No & Mã định danh chi tộc (UUIDv4). \\
+        \texttt{clan\_id} & VARCHAR(36) & \textcolor{fkcolor}{\textbf{FK}} & No & Khóa ngoại tham chiếu dòng họ \texttt{Clans(clan\_id)}. \\
+        \rowcolor{tablerowalt}
+        \texttt{branch\_name} & VARCHAR(100) & -- & No & Tên gọi của chi họ ("Chi Trưởng", "Chi Hai"). \\
+        \texttt{generation\_order} & INT & -- & No & Đời phân tách: Bắt đầu tách nhánh từ đời thứ mấy. \\
+        \rowcolor{tablerowalt}
+        \texttt{main\_residence} & VARCHAR(255) & -- & Yes & Địa bàn sinh sống, cư trú tập trung hiện tại. \\
+        \texttt{notes} & TEXT & -- & Yes & Ghi chú lịch sử di cư hoặc đặc trưng chi phái. \\
+        \rowcolor{tablerowalt}
+        \texttt{created\_at} & TIMESTAMP & -- & No & Thời điểm tạo bản ghi chi tộc. \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Cấu trúc lược đồ quan hệ bảng Branches}
+    \label{tab:schema_branches}
+\end{table}
+
+\noindent\textbf{Ràng buộc toàn vẹn và hành vi tham chiếu:}
+\begin{itemize}[noitemsep,topsep=2pt]
+    \item \textbf{Khóa chính (PK):} \texttt{branch\_id}.
+    \item \textbf{Khóa ngoại (FK):} \texttt{clan\_id} $\rightarrow$ \texttt{Clans(clan\_id)}. Hành vi: \texttt{ON DELETE RESTRICT, ON UPDATE CASCADE}. Không cho phép xóa dòng họ khi vẫn còn chi tộc tồn tại trực thuộc.
+\end{itemize}
+
+% --- BẢNG 9: Members ---
+\subsubsection{Lược đồ quan hệ bảng Members (Thành viên phả hệ)}
+Tương ứng với thực thể \texttt{THANH\_VIEN}. Đây là bảng dữ liệu trọng tâm của toàn bộ hệ thống, mô tả một cá nhân trong cây gia phả. Cấu trúc bảng hiện thực hóa quan hệ đệ quy phụ mẫu trực tiếp thông qua hai khóa ngoại tự tham chiếu \texttt{father\_id} và \texttt{mother\_id} (tuân thủ các ràng buộc sinh học RB01, RB02, RB03, RB04 và RB10).
+
+\paragraph{Biểu diễn hình thức:}
+\[
+\begin{aligned}
+\textbf{Members}\big(
+&\underline{\textbf{member\_id}}, \textbf{branch\_id}^*, \text{full\_name}, \text{nickname}, \text{gender}, \\
+&\text{solar\_birth\_date}, \text{lunar\_birth\_date}, \text{generation\_number}, \text{birth\_order}, \\
+&\text{vital\_status}, \text{death\_date}, \text{burial\_location}, \text{current\_residence}, \text{avatar\_url}, \\
+&\textbf{father\_id}^*, \textbf{mother\_id}^*, \text{created\_at}, \text{updated\_at}
+\big)
+\end{aligned}
+\]
+
+\begin{table}[H]
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\textwidth}{p{3.4cm} p{2.4cm} c c X}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Kiểu logic}} & \textcolor{white}{\textbf{Khóa}} & \textcolor{white}{\textbf{Null?}} & \textcolor{white}{\textbf{Diễn giải \& Ràng buộc tham chiếu}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{member\_id} & VARCHAR(36) & \textcolor{pkcolor}{\textbf{PK}} & No & Mã định danh duy nhất của thành viên (UUIDv4). \\
+        \texttt{branch\_id} & VARCHAR(36) & \textcolor{fkcolor}{\textbf{FK}} & No & Khóa ngoại tham chiếu \texttt{Branches(branch\_id)}. \\
+        \rowcolor{tablerowalt}
+        \texttt{full\_name} & VARCHAR(100) & -- & No & Họ và tên đầy đủ của thành viên. \\
+        \texttt{nickname} & VARCHAR(50) & -- & Yes & Tên tự, biệt danh, tên gọi ở nhà. \\
+        \rowcolor{tablerowalt}
+        \texttt{gender} & VARCHAR(10) & -- & No & Giới tính sinh học: \texttt{Nam}, \texttt{Nữ}, \texttt{Khác}. \\
+        \texttt{solar\_birth\_date} & DATE & -- & Yes & Ngày sinh theo Dương lịch. \\
+        \rowcolor{tablerowalt}
+        \texttt{lunar\_birth\_date} & VARCHAR(50) & -- & Yes & Ngày sinh theo Âm lịch (Canh/Tháng/Năm Âm). \\
+        \texttt{generation\_number} & INT & -- & No & Đời thứ mấy tính từ cụ Thủy tổ (RB04). \\
+        \rowcolor{tablerowalt}
+        \texttt{birth\_order} & INT & -- & Yes & Thứ bậc sinh trong gia đình (Con thứ mấy). \\
+        \texttt{vital\_status} & VARCHAR(20) & -- & No & Tình trạng sinh học: \texttt{ALIVE} (Còn sống), \texttt{DECEASED} (Đã mất). \\
+        \rowcolor{tablerowalt}
+        \texttt{death\_date} & DATE & -- & Yes & Ngày mất (Bắt buộc thỏa RB10 nếu đã mất). \\
+        \texttt{burial\_location} & VARCHAR(255) & -- & Yes & Nơi an táng, vị trí mộ phần gia tộc. \\
+        \rowcolor{tablerowalt}
+        \texttt{current\_residence} & VARCHAR(255) & -- & Yes & Địa chỉ nơi ở, thường trú hiện tại. \\
+        \texttt{avatar\_url} & VARCHAR(255) & -- & Yes & Đường dẫn URL lưu trữ ảnh chân dung. \\
+        \rowcolor{tablerowalt}
+        \texttt{father\_id} & VARCHAR(36) & \textcolor{fkcolor}{\textbf{FK}} & Yes & Khóa ngoại tự tham chiếu Cha ruột \texttt{Members(member\_id)}. \\
+        \texttt{mother\_id} & VARCHAR(36) & \textcolor{fkcolor}{\textbf{FK}} & Yes & Khóa ngoại tự tham chiếu Mẹ ruột \texttt{Members(member\_id)}. \\
+        \rowcolor{tablerowalt}
+        \texttt{created\_at} & TIMESTAMP & -- & No & Thời điểm tạo hồ sơ thành viên. \\
+        \texttt{updated\_at} & TIMESTAMP & -- & No & Thời điểm sửa đổi hồ sơ phả hệ. \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Cấu trúc lược đồ quan hệ bảng Members}
+    \label{tab:schema_members}
+\end{table}
+
+\noindent\textbf{Ràng buộc toàn vẹn và hành vi tham chiếu:}
+\begin{itemize}[noitemsep,topsep=2pt]
+    \item \textbf{Khóa chính (PK):} \texttt{member\_id}.
+    \item \textbf{Khóa ngoại (FK):}
+    \begin{itemize}[noitemsep]
+        \item \texttt{branch\_id} $\rightarrow$ \texttt{Branches(branch\_id)}: \texttt{ON DELETE RESTRICT, ON UPDATE CASCADE}.
+        \item \texttt{father\_id} $\rightarrow$ \texttt{Members(member\_id)}: \texttt{ON DELETE SET NULL, ON UPDATE CASCADE}.
+        \item \texttt{mother\_id} $\rightarrow$ \texttt{Members(member\_id)}: \texttt{ON DELETE SET NULL, ON UPDATE CASCADE}.
+    \end{itemize}
+    \item \textbf{Ràng buộc kiểm tra nghiệp vụ (CHECK Constraints):}
+    \begin{itemize}[noitemsep]
+        \item \texttt{CHECK (father\_id <> member\_id AND mother\_id <> member\_id)} (Không tự tham chiếu chính mình).
+        \item \texttt{CHECK (death\_date IS NULL OR death\_date >= solar\_birth\_date)} (RB10: Ngày mất không thể trước ngày sinh).
+        \item \texttt{CHECK (generation\_number >= 1)} (Bậc thế hệ nguyên dương).
+    \end{itemize}
+\end{itemize}
+
+% --- BẢNG 10: Marriages ---
+\subsubsection{Lược đồ quan hệ bảng Marriages (Quan hệ hôn nhân / Vợ chồng)}
+Thực thể hóa mối liên kết hôn phối giữa hai cá nhân trong cây gia phả. Việc tách thành bảng riêng cho phép ghi nhận lịch sử hôn nhân phức hợp qua nhiều thời kỳ, hỗ trợ lưu trữ tình trạng hôn nhân (kết hôn, ly hôn, góa bụa) và tuân thủ chặt chẽ ràng buộc cấm cận huyết RB05.
+
+\paragraph{Biểu diễn hình thức:}
+\[
+\begin{aligned}
+\textbf{Marriages}\big(
+&\underline{\textbf{marriage\_id}}, \textbf{husband\_id}^*, \textbf{wife\_id}^*, \text{marriage\_date}, \\
+&\text{divorce\_date}, \text{status}, \text{notes}, \text{created\_at}
+\big)
+\end{aligned}
+\]
+
+\begin{table}[H]
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\textwidth}{p{3.2cm} p{2.6cm} c c X}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Kiểu logic}} & \textcolor{white}{\textbf{Khóa}} & \textcolor{white}{\textbf{Null?}} & \textcolor{white}{\textbf{Diễn giải \& Ràng buộc tham chiếu}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{marriage\_id} & VARCHAR(36) & \textcolor{pkcolor}{\textbf{PK}} & No & Mã định danh mối quan hệ hôn nhân (UUIDv4). \\
+        \texttt{husband\_id} & VARCHAR(36) & \textcolor{fkcolor}{\textbf{FK}} & No & Khóa ngoại tham chiếu Chồng \texttt{Members(member\_id)}. \\
+        \rowcolor{tablerowalt}
+        \texttt{wife\_id} & VARCHAR(36) & \textcolor{fkcolor}{\textbf{FK}} & No & Khóa ngoại tham chiếu Vợ \texttt{Members(member\_id)}. \\
+        \texttt{marriage\_date} & DATE & -- & Yes & Ngày kết hôn. \\
+        \rowcolor{tablerowalt}
+        \texttt{divorce\_date} & DATE & -- & Yes & Ngày ly hôn (nếu có). \\
+        \texttt{status} & VARCHAR(20) & -- & No & Trạng thái: \texttt{MARRIED}, \texttt{DIVORCED}, \texttt{WIDOWED}. \\
+        \rowcolor{tablerowalt}
+        \texttt{notes} & VARCHAR(255) & -- & Yes & Ghi chú thêm về hôn phối. \\
+        \texttt{created\_at} & TIMESTAMP & -- & No & Thời điểm ghi nhận bản ghi hôn nhân. \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Cấu trúc lược đồ quan hệ bảng Marriages}
+    \label{tab:schema_marriages}
+\end{table}
+
+\noindent\textbf{Ràng buộc toàn vẹn và hành vi tham chiếu:}
+\begin{itemize}[noitemsep,topsep=2pt]
+    \item \textbf{Khóa chính (PK):} \texttt{marriage\_id}.
+    \item \textbf{Khóa duy nhất logic (UQ):} (\texttt{husband\_id}, \texttt{wife\_id}, \texttt{marriage\_date}).
+    \item \textbf{Khóa ngoại (FK):}
+    \begin{itemize}[noitemsep]
+        \item \texttt{husband\_id} $\rightarrow$ \texttt{Members(member\_id)}: \texttt{ON DELETE CASCADE, ON UPDATE CASCADE}.
+        \item \texttt{wife\_id} $\rightarrow$ \texttt{Members(member\_id)}: \texttt{ON DELETE CASCADE, ON UPDATE CASCADE}.
+    \end{itemize}
+    \item \textbf{Ràng buộc kiểm tra nghiệp vụ:} \texttt{CHECK (husband\_id <> wife\_id)} và \texttt{CHECK (divorce\_date IS NULL OR divorce\_date >= marriage\_date)}.
+\end{itemize}
+
+% --- BẢNG 11: CareerProfiles ---
+\subsubsection{Lược đồ quan hệ bảng CareerProfiles (Hồ sơ học vấn \& Nghề nghiệp)}
+Tương ứng với thực thể \texttt{HO\_SO\_NGHE\_NGHIEP}. Bảng này mở rộng thông tin cho \texttt{Members} theo quan hệ $1:1$, đóng vai trò cung cấp dữ liệu cho tính năng Danh bạ gia đình (Family Directory) và tương trợ hướng nghiệp giữa các thế hệ.
+
+\paragraph{Biểu diễn hình thức:}
+\[
+\begin{aligned}
+\textbf{CareerProfiles}\big(
+&\underline{\textbf{profile\_id}}, \textbf{member\_id}^*, \text{education\_level}, \text{specialization}, \text{occupation}, \\
+&\text{workplace}, \text{business\_field}, \text{mentorship\_support}, \text{updated\_at}
+\big)
+\end{aligned}
+\]
+
+\begin{table}[H]
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\textwidth}{p{3.4cm} p{2.6cm} c c X}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Kiểu logic}} & \textcolor{white}{\textbf{Khóa}} & \textcolor{white}{\textbf{Null?}} & \textcolor{white}{\textbf{Diễn giải \& Ràng buộc tham chiếu}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{profile\_id} & VARCHAR(36) & \textcolor{pkcolor}{\textbf{PK}} & No & Mã định danh hồ sơ nghề nghiệp (UUIDv4). \\
+        \texttt{member\_id} & VARCHAR(36) & \textcolor{fkcolor}{\textbf{FK}}, \textbf{UQ} & No & Khóa ngoại tham chiếu \texttt{Members(member\_id)} (1:1). \\
+        \rowcolor{tablerowalt}
+        \texttt{education\_level} & VARCHAR(50) & -- & Yes & Trình độ học vấn cao nhất (Cử nhân, Thạc sĩ, Tiến sĩ). \\
+        \texttt{specialization} & VARCHAR(100) & -- & Yes & Chuyên ngành đào tạo chuyên sâu. \\
+        \rowcolor{tablerowalt}
+        \texttt{occupation} & VARCHAR(100) & -- & Yes & Chức danh nghề nghiệp hiện tại. \\
+        \texttt{workplace} & VARCHAR(150) & -- & Yes & Cơ quan, viện nghiên cứu hoặc doanh nghiệp công tác. \\
+        \rowcolor{tablerowalt}
+        \texttt{business\_field} & VARCHAR(100) & -- & Yes & Lĩnh vực kinh doanh, ngành hàng hoạt động. \\
+        \texttt{mentorship\_support} & TEXT & -- & Yes & Lĩnh vực có khả năng tư vấn, hỗ trợ kết nối con cháu. \\
+        \rowcolor{tablerowalt}
+        \texttt{updated\_at} & TIMESTAMP & -- & No & Thời điểm cập nhật hồ sơ danh bạ gần nhất. \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Cấu trúc lược đồ quan hệ bảng CareerProfiles}
+    \label{tab:schema_career_profiles}
+\end{table}
+
+\noindent\textbf{Ràng buộc toàn vẹn và hành vi tham chiếu:}
+\begin{itemize}[noitemsep,topsep=2pt]
+    \item \textbf{Khóa chính (PK):} \texttt{profile\_id}.
+    \item \textbf{Khóa duy nhất (UQ):} \texttt{member\_id} (Đảm bảo bản số $1:1$ tuyệt đối).
+    \item \textbf{Khóa ngoại (FK):} \texttt{member\_id} $\rightarrow$ \texttt{Members(member\_id)}. Hành vi: \texttt{ON DELETE CASCADE, ON UPDATE CASCADE}. Khi thành viên bị xóa thì hồ sơ nghề nghiệp liên kết tự động bị hủy theo.
+\end{itemize}
+
+% ==============================================================================
+% 2.2.3. PHÂN HỆ TƯƠNG TÁC, SỰ KIỆN & DI SẢN
+% ==============================================================================
+\subsection{Lược đồ các bảng phân hệ Tương tác, Sự kiện \& Di sản}
+\label{subsec:luoc_do_community_events_heritage}
+
+Phân hệ này xây dựng không gian mạng xã hội gia đình lành mạnh, tạo điều kiện cho các thành viên trao đổi tin tức, tương tác bài viết, đăng ký sự kiện và lưu trữ di sản số phục vụ cho Trợ lý Trí tuệ Nhân tạo (AI Assistant) tra cứu.
+
+% --- BẢNG 12: Posts ---
+\subsubsection{Lược đồ quan hệ bảng Posts (Bài viết cộng đồng)}
+Tương ứng với thực thể \texttt{BAI\_VIET}. Cho phép thành viên chia sẻ các bản tin hỷ, hiếu, thông báo họp họ và các câu chuyện gia đình trên bảng tin cộng đồng.
+
+\paragraph{Biểu diễn hình thức:}
+\[
+\begin{aligned}
+\textbf{Posts}\big(
+&\underline{\textbf{post\_id}}, \textbf{author\_id}^*, \textbf{clan\_id}^*, \text{title}, \text{content}, \\
+&\text{visibility\_scope}, \text{post\_type}, \text{status}, \text{published\_at}, \text{created\_at}, \text{updated\_at}
+\big)
+\end{aligned}
+\]
+
+\begin{table}[H]
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\textwidth}{p{3.2cm} p{2.6cm} c c X}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Kiểu logic}} & \textcolor{white}{\textbf{Khóa}} & \textcolor{white}{\textbf{Null?}} & \textcolor{white}{\textbf{Diễn giải \& Ràng buộc tham chiếu}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{post\_id} & VARCHAR(36) & \textcolor{pkcolor}{\textbf{PK}} & No & Mã định danh bài viết (UUIDv4). \\
+        \texttt{author\_id} & VARCHAR(36) & \textcolor{fkcolor}{\textbf{FK}} & No & Tác giả bài viết, tham chiếu \texttt{Members(member\_id)}. \\
+        \rowcolor{tablerowalt}
+        \texttt{clan\_id} & VARCHAR(36) & \textcolor{fkcolor}{\textbf{FK}} & No & Dòng họ sở hữu bài đăng \texttt{Clans(clan\_id)} (RB06). \\
+        \texttt{title} & VARCHAR(200) & -- & No & Tiêu đề bài viết bản tin. \\
+        \rowcolor{tablerowalt}
+        \texttt{content} & TEXT & -- & No & Nội dung chi tiết bài viết (Hỗ trợ Markdown/RichText). \\
+        \texttt{visibility\_scope} & VARCHAR(20) & -- & No & Phạm vi: \texttt{PUBLIC}, \texttt{CLAN}, \texttt{BRANCH}. \\
+        \rowcolor{tablerowalt}
+        \texttt{post\_type} & VARCHAR(30) & -- & No & Loại tin: \texttt{ANNOUNCEMENT}, \texttt{GOOD\_NEWS}, \texttt{CONDOLENCE}. \\
+        \texttt{status} & VARCHAR(20) & -- & No & Trạng thái duyệt: \texttt{PENDING}, \texttt{APPROVED}, \texttt{REJECTED}. \\
+        \rowcolor{tablerowalt}
+        \texttt{published\_at} & TIMESTAMP & -- & Yes & Thời điểm bài viết được duyệt công khai. \\
+        \texttt{created\_at} & TIMESTAMP & -- & No & Thời điểm tác giả gửi bài viết. \\
+        \rowcolor{tablerowalt}
+        \texttt{updated\_at} & TIMESTAMP & -- & No & Thời điểm chỉnh sửa nội dung bài viết gần nhất. \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Cấu trúc lược đồ quan hệ bảng Posts}
+    \label{tab:schema_posts}
+\end{table}
+
+\noindent\textbf{Ràng buộc toàn vẹn và hành vi tham chiếu:}
+\begin{itemize}[noitemsep,topsep=2pt]
+    \item \textbf{Khóa chính (PK):} \texttt{post\_id}.
+    \item \textbf{Khóa ngoại (FK):}
+    \begin{itemize}[noitemsep]
+        \item \texttt{author\_id} $\rightarrow$ \texttt{Members(member\_id)}: \texttt{ON DELETE RESTRICT, ON UPDATE CASCADE}.
+        \item \texttt{clan\_id} $\rightarrow$ \texttt{Clans(clan\_id)}: \texttt{ON DELETE CASCADE, ON UPDATE CASCADE}.
+    \end{itemize}
+\end{itemize}
+
+% --- BẢNG 13: Comments ---
+\subsubsection{Lược đồ quan hệ bảng Comments (Bình luận tương tác)}
+Tương ứng với thực thể \texttt{BINH\_LUAN}. Lưu các phản hồi, trao đổi của thành viên dưới mỗi bài viết, đồng thời hỗ trợ phân cấp đệ quy (\textit{Nested comments}) thông qua khóa ngoại tự tham chiếu \texttt{parent\_comment\_id}.
+
+\paragraph{Biểu diễn hình thức:}
+\[
+\textbf{Comments}\big(
+\underline{\textbf{comment\_id}}, \textbf{post\_id}^*, \textbf{author\_id}^*, \textbf{parent\_comment\_id}^*, \text{content}, \text{status}, \text{created\_at}
+\big)
+\]
+
+\begin{table}[H]
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\textwidth}{p{3.4cm} p{2.6cm} c c X}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Kiểu logic}} & \textcolor{white}{\textbf{Khóa}} & \textcolor{white}{\textbf{Null?}} & \textcolor{white}{\textbf{Diễn giải \& Ràng buộc tham chiếu}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{comment\_id} & VARCHAR(36) & \textcolor{pkcolor}{\textbf{PK}} & No & Mã định danh bình luận (UUIDv4). \\
+        \texttt{post\_id} & VARCHAR(36) & \textcolor{fkcolor}{\textbf{FK}} & No & Khóa ngoại tham chiếu bài viết \texttt{Posts(post\_id)}. \\
+        \rowcolor{tablerowalt}
+        \texttt{author\_id} & VARCHAR(36) & \textcolor{fkcolor}{\textbf{FK}} & No & Thành viên gửi bình luận \texttt{Members(member\_id)}. \\
+        \texttt{parent\_comment\_id} & VARCHAR(36) & \textcolor{fkcolor}{\textbf{FK}} & Yes & Bình luận cha cấp trên \texttt{Comments(comment\_id)}. \\
+        \rowcolor{tablerowalt}
+        \texttt{content} & TEXT & -- & No & Nội dung bình luận trao đổi. \\
+        \texttt{status} & VARCHAR(20) & -- & No & Trạng thái hiển thị: \texttt{VISIBLE}, \texttt{HIDDEN}. \\
+        \rowcolor{tablerowalt}
+        \texttt{created\_at} & TIMESTAMP & -- & No & Thời điểm gửi bình luận vào hệ thống. \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Cấu trúc lược đồ quan hệ bảng Comments}
+    \label{tab:schema_comments}
+\end{table}
+
+\noindent\textbf{Ràng buộc toàn vẹn và hành vi tham chiếu:}
+\begin{itemize}[noitemsep,topsep=2pt]
+    \item \textbf{Khóa chính (PK):} \texttt{comment\_id}.
+    \item \textbf{Khóa ngoại (FK):}
+    \begin{itemize}[noitemsep]
+        \item \texttt{post\_id} $\rightarrow$ \texttt{Posts(post\_id)}: \texttt{ON DELETE CASCADE, ON UPDATE CASCADE}.
+        \item \texttt{author\_id} $\rightarrow$ \texttt{Members(member\_id)}: \texttt{ON DELETE CASCADE, ON UPDATE CASCADE}.
+        \item \texttt{parent\_comment\_id} $\rightarrow$ \texttt{Comments(comment\_id)}: \texttt{ON DELETE CASCADE, ON UPDATE CASCADE}.
+    \end{itemize}
+\end{itemize}
+
+% --- BẢNG 14: Albums ---
+\subsubsection{Lược đồ quan hệ bảng Albums (Kho lưu trữ Album ảnh \& Tư liệu)}
+Tương ứng với thực thể \texttt{ALBUM\_ANH}. Lưu giữ các bộ sưu tập hình ảnh sự kiện, lễ giỗ họ, tư liệu gia đình qua các mốc thời gian.
+
+\paragraph{Biểu diễn hình thức:}
+\[
+\textbf{Albums}\big(
+\underline{\textbf{album\_id}}, \textbf{clan\_id}^*, \textbf{created\_by}^*, \text{title}, \text{description}, \text{cover\_image\_url}, \text{created\_at}
+\big)
+\]
+
+\begin{table}[H]
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\textwidth}{p{3.2cm} p{2.6cm} c c X}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Kiểu logic}} & \textcolor{white}{\textbf{Khóa}} & \textcolor{white}{\textbf{Null?}} & \textcolor{white}{\textbf{Diễn giải \& Ràng buộc tham chiếu}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{album\_id} & VARCHAR(36) & \textcolor{pkcolor}{\textbf{PK}} & No & Mã định danh bộ sưu tập ảnh (UUIDv4). \\
+        \texttt{clan\_id} & VARCHAR(36) & \textcolor{fkcolor}{\textbf{FK}} & No & Khóa ngoại tham chiếu dòng họ \texttt{Clans(clan\_id)}. \\
+        \rowcolor{tablerowalt}
+        \texttt{created\_by} & VARCHAR(36) & \textcolor{fkcolor}{\textbf{FK}} & No & Người tạo album \texttt{Members(member\_id)}. \\
+        \texttt{title} & VARCHAR(150) & -- & No & Tên bộ sưu tập ("Lễ Giỗ tổ 2026", "Họp mặt đầu xuân"). \\
+        \rowcolor{tablerowalt}
+        \texttt{description} & TEXT & -- & Yes & Tóm tắt bối cảnh và ý nghĩa bộ ảnh. \\
+        \texttt{cover\_image\_url} & VARCHAR(255) & -- & Yes & Đường dẫn ảnh đại diện tiêu biểu của album. \\
+        \rowcolor{tablerowalt}
+        \texttt{created\_at} & TIMESTAMP & -- & No & Thời điểm khởi tạo album. \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Cấu trúc lược đồ quan hệ bảng Albums}
+    \label{tab:schema_albums}
+\end{table}
+
+\noindent\textbf{Ràng buộc toàn vẹn và hành vi tham chiếu:}
+\begin{itemize}[noitemsep,topsep=2pt]
+    \item \textbf{Khóa chính (PK):} \texttt{album\_id}.
+    \item \textbf{Khóa ngoại (FK):}
+    \begin{itemize}[noitemsep]
+        \item \texttt{clan\_id} $\rightarrow$ \texttt{Clans(clan\_id)}: \texttt{ON DELETE CASCADE, ON UPDATE CASCADE}.
+        \item \texttt{created\_by} $\rightarrow$ \texttt{Members(member\_id)}: \texttt{ON DELETE RESTRICT, ON UPDATE CASCADE}.
+    \end{itemize}
+\end{itemize}
+
+% --- BẢNG 15: Events ---
+\subsubsection{Lược đồ quan hệ bảng Events (Sự kiện \& Lễ giỗ dòng họ)}
+Tương ứng với thực thể \texttt{SU\_KIEN}. Điều phối tổ chức các buổi lễ dâng hương, giỗ tổ, lễ mừng thọ, trao học bổng khuyến học của gia tộc (tuân thủ ràng buộc mốc thời gian RB09).
+
+\paragraph{Biểu diễn hình thức:}
+\[
+\begin{aligned}
+\textbf{Events}\big(
+&\underline{\textbf{event\_id}}, \textbf{clan\_id}^*, \textbf{organizer\_id}^*, \text{title}, \text{description}, \\
+&\text{start\_time}, \text{end\_time}, \text{location}, \text{estimated\_budget}, \text{status}, \text{created\_at}
+\big)
+\end{aligned}
+\]
+
+\begin{table}[H]
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\textwidth}{p{3.2cm} p{2.6cm} c c X}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Kiểu logic}} & \textcolor{white}{\textbf{Khóa}} & \textcolor{white}{\textbf{Null?}} & \textcolor{white}{\textbf{Diễn giải \& Ràng buộc tham chiếu}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{event\_id} & VARCHAR(36) & \textcolor{pkcolor}{\textbf{PK}} & No & Mã định danh sự kiện (UUIDv4). \\
+        \texttt{clan\_id} & VARCHAR(36) & \textcolor{fkcolor}{\textbf{FK}} & No & Khóa ngoại tham chiếu dòng họ \texttt{Clans(clan\_id)}. \\
+        \rowcolor{tablerowalt}
+        \texttt{organizer\_id} & VARCHAR(36) & \textcolor{fkcolor}{\textbf{FK}} & No & Trưởng ban tổ chức sự kiện \texttt{Members(member\_id)}. \\
+        \texttt{title} & VARCHAR(150) & -- & No & Tên sự kiện ("Lễ Giỗ tổ Thủy tổ năm 2026"). \\
+        \rowcolor{tablerowalt}
+        \texttt{description} & TEXT & -- & Yes & Chi tiết chương trình, kịch bản buổi lễ. \\
+        \texttt{start\_time} & TIMESTAMP & -- & No & Thời điểm bắt đầu diễn ra sự kiện. \\
+        \rowcolor{tablerowalt}
+        \texttt{end\_time} & TIMESTAMP & -- & Yes & Thời điểm kết thúc (Thỏa RB09: $t_{\text{end}} > t_{\text{start}}$). \\
+        \texttt{location} & VARCHAR(255) & -- & No & Địa điểm tổ chức (Trực tiếp tại từ đường / Trực tuyến). \\
+        \rowcolor{tablerowalt}
+        \texttt{estimated\_budget} & DECIMAL(15,2) & -- & Yes & Dự toán kinh phí tổ chức sự kiện (VNĐ). \\
+        \texttt{status} & VARCHAR(20) & -- & No & Trạng thái: \texttt{UPCOMING}, \texttt{ONGOING}, \texttt{COMPLETED}. \\
+        \rowcolor{tablerowalt}
+        \texttt{created\_at} & TIMESTAMP & -- & No & Thời điểm lập lịch sự kiện. \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Cấu trúc lược đồ quan hệ bảng Events}
+    \label{tab:schema_events}
+\end{table}
+
+\noindent\textbf{Ràng buộc toàn vẹn và hành vi tham chiếu:}
+\begin{itemize}[noitemsep,topsep=2pt]
+    \item \textbf{Khóa chính (PK):} \texttt{event\_id}.
+    \item \textbf{Khóa ngoại (FK):}
+    \begin{itemize}[noitemsep]
+        \item \texttt{clan\_id} $\rightarrow$ \texttt{Clans(clan\_id)}: \texttt{ON DELETE CASCADE, ON UPDATE CASCADE}.
+        \item \texttt{organizer\_id} $\rightarrow$ \texttt{Members(member\_id)}: \texttt{ON DELETE RESTRICT, ON UPDATE CASCADE}.
+    \end{itemize}
+    \item \textbf{Ràng buộc kiểm tra nghiệp vụ:} \texttt{CHECK (end\_time IS NULL OR end\_time > start\_time)} (RB09).
+\end{itemize}
+
+% --- BẢNG 16: EventParticipants ---
+\subsubsection{Lược đồ quan hệ bảng EventParticipants (Đăng ký tham gia sự kiện - RSVP)}
+Tương ứng với thực thể \texttt{DANG\_KY\_SU\_KIEN}, hiện thực hóa mối kết hợp $N:M$ giữa \texttt{Members} và \texttt{Events}. Giúp Ban tổ chức nắm bắt chính xác quân số tham dự và chuẩn bị hậu cần chu đáo.
+
+\paragraph{Biểu diễn hình thức:}
+\[
+\begin{aligned}
+\textbf{EventParticipants}\big(
+&\underline{\textbf{participant\_id}}, \textbf{event\_id}^*, \textbf{member\_id}^*, \text{rsvp\_status}, \\
+&\text{accompanying\_persons}, \text{notes}, \text{responded\_at}
+\big)
+\end{aligned}
+\]
+
+\begin{table}[H]
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\textwidth}{p{3.8cm} p{2.4cm} c c X}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Kiểu logic}} & \textcolor{white}{\textbf{Khóa}} & \textcolor{white}{\textbf{Null?}} & \textcolor{white}{\textbf{Diễn giải \& Ràng buộc tham chiếu}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{participant\_id} & VARCHAR(36) & \textcolor{pkcolor}{\textbf{PK}} & No & Mã bản ghi xác nhận tham gia RSVP (UUIDv4). \\
+        \texttt{event\_id} & VARCHAR(36) & \textcolor{fkcolor}{\textbf{FK}} & No & Khóa ngoại tham chiếu sự kiện \texttt{Events(event\_id)}. \\
+        \rowcolor{tablerowalt}
+        \texttt{member\_id} & VARCHAR(36) & \textcolor{fkcolor}{\textbf{FK}} & No & Thành viên phản hồi \texttt{Members(member\_id)}. \\
+        \texttt{rsvp\_status} & VARCHAR(20) & -- & No & Phản hồi: \texttt{ATTENDING}, \texttt{DECLINED}, \texttt{TENTATIVE}. \\
+        \rowcolor{tablerowalt}
+        \texttt{accompanying\_persons} & INT & -- & No & Số người đi cùng gia đình (Mặc định: 0). \\
+        \texttt{notes} & VARCHAR(255) & -- & Yes & Lời nhắn ban tổ chức (ví dụ: cần xe đón người cao tuổi). \\
+        \rowcolor{tablerowalt}
+        \texttt{responded\_at} & TIMESTAMP & -- & No & Thời điểm gửi xác nhận tham dự. \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Cấu trúc lược đồ quan hệ bảng EventParticipants}
+    \label{tab:schema_event_participants}
+\end{table}
+
+\noindent\textbf{Ràng buộc toàn vẹn và hành vi tham chiếu:}
+\begin{itemize}[noitemsep,topsep=2pt]
+    \item \textbf{Khóa chính (PK):} \texttt{participant\_id}.
+    \item \textbf{Khóa duy nhất logic (UQ):} (\texttt{event\_id}, \texttt{member\_id}) (Mỗi thành viên chỉ phản hồi một lần cho mỗi sự kiện).
+    \item \textbf{Khóa ngoại (FK):}
+    \begin{itemize}[noitemsep]
+        \item \texttt{event\_id} $\rightarrow$ \texttt{Events(event\_id)}: \texttt{ON DELETE CASCADE, ON UPDATE CASCADE}.
+        \item \texttt{member\_id} $\rightarrow$ \texttt{Members(member\_id)}: \texttt{ON DELETE CASCADE, ON UPDATE CASCADE}.
+    \end{itemize}
+    \item \textbf{Ràng buộc kiểm tra:} \texttt{CHECK (accompanying\_persons >= 0)}.
+\end{itemize}
+
+% --- BẢNG 17: HeritageItems ---
+\subsubsection{Lược đồ quan hệ bảng HeritageItems (Di sản số \& Tài liệu lịch sử)}
+Tương ứng với thực thể \texttt{DI\_SAN\_LICH\_SU}. Lưu trữ kho văn bản cổ, sắc phong triều đình, gia phả Hán -- Nôm, văn tự và các bài vị số hóa. Dữ liệu trường \texttt{ai\_summary} là đầu vào phục vụ Trợ lý AI tìm kiếm và giải thích kiến thức phả hệ cho con cháu.
+
+\paragraph{Biểu diễn hình thức:}
+\[
+\begin{aligned}
+\textbf{HeritageItems}\big(
+&\underline{\textbf{heritage\_id}}, \textbf{clan\_id}^*, \textbf{contributed\_by}^*, \text{title}, \text{category}, \\
+&\text{historical\_period}, \text{translated\_text}, \text{file\_url}, \text{ai\_summary}, \\
+&\text{cultural\_value}, \text{created\_at}
+\big)
+\end{aligned}
+\]
+
+\begin{table}[H]
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\textwidth}{p{3.2cm} p{2.6cm} c c X}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Kiểu logic}} & \textcolor{white}{\textbf{Khóa}} & \textcolor{white}{\textbf{Null?}} & \textcolor{white}{\textbf{Diễn giải \& Ràng buộc tham chiếu}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{heritage\_id} & VARCHAR(36) & \textcolor{pkcolor}{\textbf{PK}} & No & Mã định danh di sản tư liệu (UUIDv4). \\
+        \texttt{clan\_id} & VARCHAR(36) & \textcolor{fkcolor}{\textbf{FK}} & No & Dòng họ sở hữu di sản \texttt{Clans(clan\_id)}. \\
+        \rowcolor{tablerowalt}
+        \texttt{contributed\_by} & VARCHAR(36) & \textcolor{fkcolor}{\textbf{FK}} & No & Người đóng góp / số hóa \texttt{Members(member\_id)}. \\
+        \texttt{title} & VARCHAR(200) & -- & No & Tên gọi tư liệu ("Sắc phong thời Cảnh Hưng 1783"). \\
+        \rowcolor{tablerowalt}
+        \texttt{category} & VARCHAR(50) & -- & No & Thể loại: Sắc phong, Hương ước, Gia phả cổ, Câu đối. \\
+        \texttt{historical\_period} & VARCHAR(100) & -- & Yes & Niên đại hoặc thời kỳ lịch sử xuất hiện tư liệu. \\
+        \rowcolor{tablerowalt}
+        \texttt{translated\_text} & TEXT & -- & Yes & Bản phiên âm chữ Hán/Nôm và dịch Quốc ngữ. \\
+        \texttt{file\_url} & VARCHAR(255) & -- & No & Đường dẫn tệp số hóa chất lượng cao (PDF/Image). \\
+        \rowcolor{tablerowalt}
+        \texttt{ai\_summary} & TEXT & -- & Yes & Đoạn tóm tắt nội dung tự động tạo bởi mô hình AI. \\
+        \texttt{cultural\_value} & TEXT & -- & Yes & Ý nghĩa giáo dục, giá trị văn hóa và lịch sử. \\
+        \rowcolor{tablerowalt}
+        \texttt{created\_at} & TIMESTAMP & -- & No & Thời điểm tải lên hệ thống lưu trữ số. \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Cấu trúc lược đồ quan hệ bảng HeritageItems}
+    \label{tab:schema_heritage_items}
+\end{table}
+
+\noindent\textbf{Ràng buộc toàn vẹn và hành vi tham chiếu:}
+\begin{itemize}[noitemsep,topsep=2pt]
+    \item \textbf{Khóa chính (PK):} \texttt{heritage\_id}.
+    \item \textbf{Khóa ngoại (FK):}
+    \begin{itemize}[noitemsep]
+        \item \texttt{clan\_id} $\rightarrow$ \texttt{Clans(clan\_id)}: \texttt{ON DELETE CASCADE, ON UPDATE CASCADE}.
+        \item \texttt{contributed\_by} $\rightarrow$ \texttt{Members(member\_id)}: \texttt{ON DELETE RESTRICT, ON UPDATE CASCADE}.
+    \end{itemize}
+\end{itemize}
+
+% --- BẢNG 18: NotableMembers ---
+\subsubsection{Lược đồ quan hệ bảng NotableMembers (Nhân vật tiêu biểu vinh danh)}
+Tương ứng với thực thể \texttt{NHAN\_VAT\_TIEU\_BIEU}. Kết nối theo quan hệ $1:1$ với \texttt{Members}, vinh danh những bậc tiền nhân đỗ đạt khoa bảng, anh hùng liệt sĩ, danh nhân có công lớn với dòng họ và đất nước.
+
+\paragraph{Biểu diễn hình thức:}
+\[
+\begin{aligned}
+\textbf{NotableMembers}\big(
+&\underline{\textbf{notable\_id}}, \textbf{member\_id}^*, \text{honored\_title}, \text{detailed\_biography}, \\
+&\text{clan\_contributions}, \text{social\_contributions}, \text{reference\_sources}, \text{created\_at}
+\big)
+\end{aligned}
+\]
+
+\begin{table}[H]
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\textwidth}{p{3.4cm} p{2.6cm} c c X}
+        \toprule
+        \rowcolor{tableheader}\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Kiểu logic}} & \textcolor{white}{\textbf{Khóa}} & \textcolor{white}{\textbf{Null?}} & \textcolor{white}{\textbf{Diễn giải \& Ràng buộc tham chiếu}} \\
+        \midrule
+        \rowcolor{tablerowalt}
+        \texttt{notable\_id} & VARCHAR(36) & \textcolor{pkcolor}{\textbf{PK}} & No & Mã hồ sơ vinh danh danh nhân (UUIDv4). \\
+        \texttt{member\_id} & VARCHAR(36) & \textcolor{fkcolor}{\textbf{FK}}, \textbf{UQ} & No & Khóa ngoại tham chiếu thành viên \texttt{Members(member\_id)} (1:1). \\
+        \rowcolor{tablerowalt}
+        \texttt{honored\_title} & VARCHAR(150) & -- & No & Danh hiệu ("Tiến sĩ khoa Canh Thìn 1460", "Anh hùng"). \\
+        \texttt{detailed\_biography} & TEXT & -- & No & Tiểu sử chi tiết bối cảnh cuộc đời và sự nghiệp. \\
+        \rowcolor{tablerowalt}
+        \texttt{clan\_contributions} & TEXT & -- & Yes & Công lao, đóng góp đặc biệt với sự phát triển của dòng họ. \\
+        \texttt{social\_contributions} & TEXT & -- & Yes & Cống hiến to lớn đối với quê hương, dân tộc và xã hội. \\
+        \rowcolor{tablerowalt}
+        \texttt{reference\_sources} & VARCHAR(255) & -- & Yes & Nguồn tư liệu trích dẫn (Sử quán, văn bia, gia phả). \\
+        \texttt{created\_at} & TIMESTAMP & -- & No & Thời điểm khởi tạo hồ sơ vinh danh. \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Cấu trúc lược đồ quan hệ bảng NotableMembers}
+    \label{tab:schema_notable_members}
+\end{table}
+
+\noindent\textbf{Ràng buộc toàn vẹn và hành vi tham chiếu:}
+\begin{itemize}[noitemsep,topsep=2pt]
+    \item \textbf{Khóa chính (PK):} \texttt{notable\_id}.
+    \item \textbf{Khóa duy nhất (UQ):} \texttt{member\_id} (Mỗi cá nhân phả hệ có tối đa 1 hồ sơ tôn vinh chính thức).
+    \item \textbf{Khóa ngoại (FK):} \texttt{member\_id} $\rightarrow$ \texttt{Members(member\_id)}. Hành vi: \texttt{ON DELETE CASCADE, ON UPDATE CASCADE}.
+\end{itemize}
+
+% ==============================================================================
+% 2.2.4. MA TRẬN TOÀN VẸN THAM CHIẾU VÀ KHÓA NGOẠI
+% ==============================================================================
+\subsection{Ma trận tổng hợp khóa ngoại và quan hệ toàn vẹn tham chiếu}
+\label{subsec:ma_tran_khoa_ngoai}
+
+Bảng~\ref{tab:foreign_key_dependency_matrix} tổng hợp toàn cảnh 18 lược đồ quan hệ mức logic trong hệ thống \textbf{FamilyConnect}, chỉ rõ các mối liên kết khóa ngoại, bảng cha -- con tương ứng và chính sách toàn vẹn dữ liệu khi thực thi các thao tác xóa (\texttt{ON DELETE}) và cập nhật (\texttt{ON UPDATE}):
+
+\begin{table}[H]
+    \centering
+    \footnotesize
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\textwidth}{|l|l|l|l|X|}
+        \hline
+        \rowcolor{tableheader}
+        \textcolor{white}{\textbf{Bảng nguồn (Con)}} &
+        \textcolor{white}{\textbf{Cột khóa ngoại}} &
+        \textcolor{white}{\textbf{Bảng đích (Cha)}} &
+        \textcolor{white}{\textbf{Hành vi xóa / sửa}} &
+        \textcolor{white}{\textbf{Ý nghĩa nghiệp vụ bảo toàn}} \\
+        \hline
+        \rowcolor{tablerowalt}
+        \texttt{Users} & \texttt{member\_id} & \texttt{Members} & SET NULL / CASCADE & Hủy claim nếu hồ sơ bị xóa, giữ tài khoản. \\
+        \hline
+        \texttt{UserRoles} & \texttt{user\_id} & \texttt{Users} & CASCADE / CASCADE & Xóa tài khoản thì thu hồi phân quyền. \\
+        \rowcolor{tablerowalt}
+        \texttt{UserRoles} & \texttt{role\_id} & \texttt{Roles} & CASCADE / CASCADE & Xóa vai trò thì hủy phân quyền liên quan. \\
+        \hline
+        \texttt{UserRoles} & \texttt{assigned\_by} & \texttt{Users} & SET NULL / CASCADE & Giữ vết cấp quyền dù admin bị xóa. \\
+        \hline
+        \rowcolor{tablerowalt}
+        \texttt{RolePermissions} & \texttt{role\_id} & \texttt{Roles} & CASCADE / CASCADE & Xóa vai trò thì xóa ma trận quyền. \\
+        \hline
+        \texttt{RolePermissions} & \texttt{permission\_id} & \texttt{Permissions} & CASCADE / CASCADE & Xóa quyền chức năng khỏi mọi vai trò. \\
+        \hline
+        \rowcolor{tablerowalt}
+        \texttt{AuditLogs} & \texttt{user\_id} & \texttt{Users} & SET NULL / CASCADE & Bảo toàn lịch sử kiểm toán hệ thống. \\
+        \hline
+        \texttt{Branches} & \texttt{clan\_id} & \texttt{Clans} & RESTRICT / CASCADE & Không xóa dòng họ khi còn chi nhánh. \\
+        \hline
+        \rowcolor{tablerowalt}
+        \texttt{Members} & \texttt{branch\_id} & \texttt{Branches} & RESTRICT / CASCADE & Không xóa chi họ khi còn nhân khẩu. \\
+        \hline
+        \texttt{Members} & \texttt{father\_id} & \texttt{Members} & SET NULL / CASCADE & Quan hệ đệ quy cha--con (RB01). \\
+        \hline
+        \rowcolor{tablerowalt}
+        \texttt{Members} & \texttt{mother\_id} & \texttt{Members} & SET NULL / CASCADE & Quan hệ đệ quy mẹ--con (RB01). \\
+        \hline
+        \texttt{Marriages} & \texttt{husband\_id} & \texttt{Members} & CASCADE / CASCADE & Xóa hồ sơ thì hủy quan hệ hôn nhân. \\
+        \hline
+        \rowcolor{tablerowalt}
+        \texttt{Marriages} & \texttt{wife\_id} & \texttt{Members} & CASCADE / CASCADE & Xóa hồ sơ thì hủy quan hệ hôn nhân. \\
+        \hline
+        \texttt{CareerProfiles} & \texttt{member\_id} & \texttt{Members} & CASCADE / CASCADE & Quan hệ 1:1, xóa thành viên hủy hồ sơ. \\
+        \hline
+        \rowcolor{tablerowalt}
+        \texttt{Posts} & \texttt{author\_id} & \texttt{Members} & RESTRICT / CASCADE & Giữ bài viết bản tin dòng họ. \\
+        \hline
+        \texttt{Posts} & \texttt{clan\_id} & \texttt{Clans} & CASCADE / CASCADE & Bài viết thuộc không gian dòng họ (RB06). \\
+        \hline
+        \rowcolor{tablerowalt}
+        \texttt{Comments} & \texttt{post\_id} & \texttt{Posts} & CASCADE / CASCADE & Xóa bài viết tự động xóa mọi bình luận. \\
+        \hline
+        \texttt{Comments} & \texttt{author\_id} & \texttt{Members} & CASCADE / CASCADE & Xóa thành viên thì dọn dẹp bình luận. \\
+        \hline
+        \rowcolor{tablerowalt}
+        \texttt{Comments} & \texttt{parent\_comment\_id} & \texttt{Comments} & CASCADE / CASCADE & Xóa bình luận cha xóa các phản hồi con. \\
+        \hline
+        \texttt{Albums} & \texttt{clan\_id} & \texttt{Clans} & CASCADE / CASCADE & Kho album ảnh gắn liền với dòng họ. \\
+        \hline
+        \rowcolor{tablerowalt}
+        \texttt{Albums} & \texttt{created\_by} & \texttt{Members} & RESTRICT / CASCADE & Giữ album ảnh dù tác giả thay đổi. \\
+        \hline
+        \texttt{Events} & \texttt{clan\_id} & \texttt{Clans} & CASCADE / CASCADE & Sự kiện gắn liền với dòng họ tổ chức. \\
+        \hline
+        \rowcolor{tablerowalt}
+        \texttt{Events} & \texttt{organizer\_id} & \texttt{Members} & RESTRICT / CASCADE & Giữ sự kiện dù người tạo thay đổi. \\
+        \hline
+        \texttt{EventParticipants} & \texttt{event\_id} & \texttt{Events} & CASCADE / CASCADE & Hủy sự kiện thì xóa danh sách đăng ký. \\
+        \hline
+        \rowcolor{tablerowalt}
+        \texttt{EventParticipants} & \texttt{member\_id} & \texttt{Members} & CASCADE / CASCADE & Xóa thành viên thì hủy đăng ký sự kiện. \\
+        \hline
+        \texttt{HeritageItems} & \texttt{clan\_id} & \texttt{Clans} & CASCADE / CASCADE & Di sản văn hóa gắn với dòng họ. \\
+        \hline
+        \rowcolor{tablerowalt}
+        \texttt{HeritageItems} & \texttt{contributed\_by} & \texttt{Members} & RESTRICT / CASCADE & Bảo tồn hiện vật di sản quý giá. \\
+        \hline
+        \texttt{NotableMembers} & \texttt{member\_id} & \texttt{Members} & CASCADE / CASCADE & Quan hệ 1:1, xóa thành viên hủy hồ sơ danh nhân. \\
+        \hline
+    \end{tabularx}
+    \caption{Ma trận phụ thuộc khóa ngoại và chính sách toàn vẹn tham chiếu}
+    \label{tab:foreign_key_dependency_matrix}
+\end{table}
