@@ -2,8 +2,134 @@
 \section{Chuẩn hóa dữ liệu (Normalization)}
 \label{sec:2_3_chuan_hoa_du_lieu}
 
-\subsection{Phân tích phụ thuộc hàm (Functional Dependencies)}
-% Nội dung phân tích phụ thuộc hàm cho các bảng chính
+Chuẩn hóa là quá trình tổ chức lại lược đồ quan hệ nhằm loại bỏ sự dư thừa dữ liệu và các bất thường cập nhật (thêm, sửa, xóa). Trong phần này, chúng ta áp dụng lý thuyết \textbf{Phụ thuộc hàm (Functional Dependency -- FD)} để phân tích 3 quan hệ trọng yếu của hệ thống FamilyConnect, xác định khóa ứng viên và đánh giá mức độ chuẩn hóa.
 
-\subsection{Đánh giá các dạng chuẩn (1NF, 2NF, 3NF, BCNF)}
-% Đánh giá và chuẩn hóa các quan hệ đạt dạng chuẩn 1NF, 2NF, 3NF/BCNF
+\subsection{Phân tích Phụ thuộc hàm (Functional Dependencies)}
+\label{subsec:2_3_1_phu_thuoc_ham}
+
+\subsubsection{Quan hệ MemberProfile}
+
+\begin{example}[Phân tích FD cho MemberProfile trước khi phân rã]
+Xét lược đồ \emph{trước khi tách} quan hệ \texttt{Branch}: \\
+$MemberProfile\_raw(M, U, E, B, BN, G)$, trong đó:
+\begin{itemize}[noitemsep]
+    \item $M$ = member\_id, $U$ = user\_id, $E$ = email (từ Users)
+    \item $B$ = branch\_id, $BN$ = branch\_name, $G$ = generation\_level
+\end{itemize}
+Tập phụ thuộc hàm $F_1$:
+\begin{align*}
+    f_1: & \quad M \rightarrow \{U, B, BN, G\} \\
+    f_2: & \quad U \rightarrow E \\
+    f_3: & \quad B \rightarrow \{BN, G\}
+\end{align*}
+
+\textbf{Tính bao đóng khóa:} $\{M\}^+ = \{M\} \xrightarrow{f_1} \{M,U,B,BN,G\} \xrightarrow{f_2} \{M,U,B,BN,G,E\} = U_{\text{all}}$. \\
+Vậy $K_1 = \{M\}$ là \textbf{Khóa ứng viên duy nhất}.
+
+\textbf{Vi phạm BCNF:} $f_3: B \rightarrow \{BN, G\}$ nhưng $B$ không phải siêu khóa. \\
+$\implies$ Tồn tại phụ thuộc bắc cầu $M \rightarrow B \rightarrow \{BN,G\}$, vi phạm \textbf{3NF và BCNF}.
+\end{example}
+
+\subsubsection{Quan hệ Users}
+
+\begin{example}[Phân tích FD cho Users]
+$Users(U, UN, EM, PH, FN, CA, IA, RC)$, trong đó $U$ = user\_id, $UN$ = username, $EM$ = email, $PH$ = phone\_number, $FN$ = full\_name, $CA$ = created\_at, $IA$ = is\_active, $RC$ = role\_code.
+
+Tập phụ thuộc hàm $F_2$:
+\begin{align*}
+    g_1: & \quad U \rightarrow \{UN, EM, PH, FN, CA, IA, RC\} \\
+    g_2: & \quad UN \rightarrow U \quad (\text{unique constraint}) \\
+    g_3: & \quad EM \rightarrow U \quad (\text{unique constraint})
+\end{align*}
+
+\textbf{Khóa ứng viên:} $K = \{U\}$, $K' = \{UN\}$, $K'' = \{EM\}$. \\
+Vì mọi phụ thuộc hàm đều xuất phát từ siêu khóa, lược đồ \textbf{đạt BCNF}.
+\end{example}
+
+\subsubsection{Quan hệ MarriageRelation}
+
+\begin{example}[Phân tích FD cho MarriageRelation]
+$MarriageRelation(MID, HID, WID, MD, DD, ST)$, trong đó $MID$ = marriage\_id, $HID$ = husband\_id, $WID$ = wife\_id, $MD$ = marriage\_date, $DD$ = divorce\_date, $ST$ = status.
+
+Tập phụ thuộc hàm $F_3$:
+\begin{align*}
+    h_1: & \quad MID \rightarrow \{HID, WID, MD, DD, ST\} \\
+    h_2: & \quad (HID, WID, MD) \rightarrow MID
+\end{align*}
+
+\textbf{Khóa ứng viên:} $K = \{MID\}$ và $K' = \{HID, WID, MD\}$. \\
+Không có phụ thuộc một phần hay bắc cầu, lược đồ \textbf{đạt BCNF}.
+\end{example}
+
+\subsection{Đánh giá các Dạng chuẩn (1NF, 2NF, 3NF, BCNF)}
+\label{subsec:2_3_2_danh_gia_dang_chuan}
+
+\subsubsection{Tiêu chí từng dạng chuẩn}
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Tiêu chí đánh giá các dạng chuẩn.}
+\label{tab:dang_chuan_tieu_chi}
+\begin{tabularx}{\textwidth}{l Y Y}
+\toprule
+\textbf{Dạng chuẩn} & \textbf{Yêu cầu} & \textbf{Loại bỏ} \\
+\midrule
+1NF & Mọi thuộc tính là nguyên tử, không có nhóm lặp & Thuộc tính đa trị / hợp thành \\
+2NF & Đạt 1NF + không có phụ thuộc hàm một phần vào khóa & Phụ thuộc một phần (partial FD) \\
+3NF & Đạt 2NF + không có phụ thuộc bắc cầu qua thuộc tính không khóa & Phụ thuộc bắc cầu (transitive FD) \\
+BCNF & Mọi vế trái của FD đều phải là siêu khóa & Vi phạm BCNF còn sót sau 3NF \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsubsection{Kết quả đánh giá các lược đồ FamilyConnect}
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Đánh giá mức độ chuẩn hóa các lược đồ quan hệ chính của FamilyConnect.}
+\label{tab:so_sanh_dang_chuan}
+\begin{tabularx}{\textwidth}{l c c c c Y}
+\toprule
+\textbf{Lược đồ} & \textbf{1NF} & \textbf{2NF} & \textbf{3NF} & \textbf{BCNF} & \textbf{Ghi chú} \\
+\midrule
+Users                & \checkmark & \checkmark & \checkmark & \checkmark & Đạt BCNF \\
+FamilyTree           & \checkmark & \checkmark & \checkmark & \checkmark & Đạt BCNF \\
+Branch               & \checkmark & \checkmark & \checkmark & \checkmark & Đạt BCNF \\
+MemberProfile (sau)  & \checkmark & \checkmark & \checkmark & \checkmark & Đạt BCNF sau phân rã \\
+ParentChildRelation  & \checkmark & \checkmark & \checkmark & \checkmark & Khóa hợp phần, đạt BCNF \\
+MarriageRelation     & \checkmark & \checkmark & \checkmark & \checkmark & 2 khóa ứng viên, đạt BCNF \\
+Post                 & \checkmark & \checkmark & \checkmark & \checkmark & Đạt BCNF \\
+PostInteraction      & \checkmark & \checkmark & \checkmark & \checkmark & Đạt BCNF \\
+Event                & \checkmark & \checkmark & \checkmark & \checkmark & Đạt BCNF \\
+EventRSVP            & \checkmark & \checkmark & \checkmark & \checkmark & Đạt BCNF \\
+HeritageDocument     & \checkmark & \checkmark & \checkmark & \checkmark & Đạt BCNF \\
+AIAssistantLog       & \checkmark & \checkmark & \checkmark & \checkmark & Đạt BCNF \\
+AuditLog             & \checkmark & \checkmark & \checkmark & \checkmark & Đạt BCNF \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsubsection{Phân rã lược đồ MemberProfile đạt BCNF}
+
+Lược đồ \texttt{MemberProfile\_raw} vi phạm BCNF do $f_3: B \rightarrow \{BN,G\}$ với $B$ không là siêu khóa. Áp dụng \textbf{thuật toán phân rã BCNF (lossless-join decomposition)}:
+
+\begin{enumerate}[label=\arabic*.]
+    \item Tách phụ thuộc vi phạm $f_3$ ra thành lược đồ con:
+    \[
+    \textbf{Branch}(\underline{branch\_id}, branch\_name, generation\_level)
+    \quad \text{với } F_B = \{B \rightarrow \{BN, G\}\} \quad \text{đạt BCNF}
+    \]
+    \item Lược đồ còn lại sau khi tách:
+    \[
+    \textbf{MemberProfile}(\underline{member\_id}, user\_id, branch\_id^{FK}, \ldots)
+    \quad \text{với } F_M = \{M \rightarrow \{U,B\},\; U \rightarrow E\} \quad \text{đạt BCNF}
+    \]
+\end{enumerate}
+
+\textbf{Kiểm tra tính chất bảo toàn:}
+\begin{itemize}[noitemsep]
+    \item \textbf{Lossless-join:} $Branch \bowtie MemberProfile$ khôi phục đầy đủ quan hệ gốc vì $Branch \cap MemberProfile = \{branch\_id\}$ là siêu khóa của Branch. $\checkmark$
+    \item \textbf{Dependency preservation:} $F_B \cup F_M$ bao phủ đầy đủ $F_1$. $\checkmark$
+\end{itemize}
