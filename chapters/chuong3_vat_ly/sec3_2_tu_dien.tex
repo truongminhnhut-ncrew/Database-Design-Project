@@ -2,4 +2,471 @@
 \section{Từ điển dữ liệu chi tiết (Data Dictionary)}
 \label{sec:3_2_tu_dien_du_lieu}
 
-% Bảng mô tả chi tiết từng cột: Tên trường, Kiểu dữ liệu vật lý (UUID, VARCHAR, TIMESTAMP, JSON,...), Null?, Default, Mô tả ý nghĩa.
+Từ điển dữ liệu (Data Dictionary) đóng vai trò là tài liệu kỹ thuật chuẩn xác, mô tả chi tiết toàn bộ các trường dữ liệu, kiểu dữ liệu vật lý (tương thích PostgreSQL 16+), các ràng buộc toàn vẹn (\textit{Primary Key, Foreign Key, Unique, Not Null, Default}) và ý nghĩa nghiệp vụ cụ thể của 22 bảng trong hệ thống \textbf{FamilyConnect}.
+
+\subsection{Phân hệ Người dùng \& Bảo mật (User \& Security Module)}
+
+\subsubsection{Bảng NGUOI\_DUNG (Người dùng hệ thống)}
+Bảng lưu trữ thông tin định danh và tài khoản đăng nhập của người dùng.
+\begin{table}[H]
+\centering\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash\bfseries}p{3.2cm}|>{\raggedright\arraybackslash}p{2.3cm}|>{\raggedright\arraybackslash}p{3.2cm}|>{\raggedright\arraybackslash}X|}
+\hline
+\rowcolor{tableheader}
+\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Kiểu vật lý}} & \textcolor{white}{\textbf{Ràng buộc}} & \textcolor{white}{\textbf{Ý nghĩa nghiệp vụ}} \\
+\hline
+MaNguoiDung & uuid & PK, Default gen\_uuid & Định danh tài khoản người dùng duy nhất \\
+\hline
+Email & varchar & UNIQUE, NOT NULL & Địa chỉ thư điện tử dùng để đăng nhập \\
+\hline
+SoDienThoai & varchar & NOT NULL & Số điện thoại liên hệ xác thực OTP \\
+\hline
+MatKhauHash & varchar & NOT NULL & Chuỗi băm mật khẩu an toàn (Bcrypt/Argon2) \\
+\hline
+TrangThai & varchar & NOT NULL & Trạng thái tài khoản (Active, Suspended,...) \\
+\hline
+LanDangNhapCuoi & datetime & NULL & Mốc thời gian lần đăng nhập gần nhất \\
+\hline
+NgayTao & datetime & NOT NULL, DEFAULT NOW & Mốc thời gian khởi tạo tài khoản \\
+\hline
+\end{tabularx}
+\caption{Từ điển dữ liệu bảng NGUOI\_DUNG}
+\label{tab:dict_nguoi_dung}
+\end{table}
+
+\subsubsection{Bảng VAI\_TRO và Bảng QUYEN (Vai trò \& Quyền hạn RBAC)}
+Hai bảng cốt lõi định nghĩa mô hình kiểm soát truy cập dựa trên vai trò.
+\begin{table}[H]
+\centering\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash\bfseries}p{3.2cm}|>{\raggedright\arraybackslash}p{2.3cm}|>{\raggedright\arraybackslash}p{3.2cm}|>{\raggedright\arraybackslash}X|}
+\hline
+\rowcolor{tableheader}
+\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Kiểu vật lý}} & \textcolor{white}{\textbf{Ràng buộc}} & \textcolor{white}{\textbf{Ý nghĩa nghiệp vụ}} \\
+\hline
+\multicolumn{4}{|l|}{\cellcolor{softblue}\textbf{Bảng VAI\_TRO (Vai trò người dùng)}} \\
+\hline
+MaVaiTro & uuid & PK, Default gen\_uuid & Định danh vai trò (Admin, Trưởng tộc, Thành viên) \\
+\hline
+TenVaiTro & varchar & NOT NULL & Tên gọi định danh vai trò \\
+\hline
+MoTa & varchar & NULL & Mô tả phạm vi chức năng của vai trò \\
+\hline
+\multicolumn{4}{|l|}{\cellcolor{softblue}\textbf{Bảng QUYEN (Quyền hạn hành động)}} \\
+\hline
+MaQuyen & uuid & PK, Default gen\_uuid & Định danh quyền hạn hành động cụ thể \\
+\hline
+TenQuyen & varchar & NOT NULL & Tên quyền (VD: EDIT\_MEMBER, APPROVE\_POST) \\
+\hline
+NhomChucNang & varchar & NOT NULL & Phân nhóm tính năng (Phả hệ, Bài viết, Hệ thống) \\
+\hline
+\end{tabularx}
+\caption{Từ điển dữ liệu bảng VAI\_TRO và QUYEN}
+\label{tab:dict_vai_tro_quyen}
+\end{table}
+
+\subsubsection{Bảng NGUOI\_DUNG\_VAI\_TRO và VAI\_TRO\_QUYEN (Liên kết RBAC)}
+Bảng trung gian hiện thực hóa quan hệ nhiều--nhiều ($M:N$) giữa người dùng, vai trò và quyền.
+\begin{table}[H]
+\centering\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash\bfseries}p{3.2cm}|>{\raggedright\arraybackslash}p{2.3cm}|>{\raggedright\arraybackslash}p{3.2cm}|>{\raggedright\arraybackslash}X|}
+\hline
+\rowcolor{tableheader}
+\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Kiểu vật lý}} & \textcolor{white}{\textbf{Ràng buộc}} & \textcolor{white}{\textbf{Ý nghĩa nghiệp vụ}} \\
+\hline
+\multicolumn{4}{|l|}{\cellcolor{softblue}\textbf{Bảng NGUOI\_DUNG\_VAI\_TRO}} \\
+\hline
+MaNguoiDung & uuid & PK, FK $\to$ NGUOI\_DUNG & Khóa ngoại tham chiếu người dùng được cấp vai trò \\
+\hline
+MaVaiTro & uuid & PK, FK $\to$ VAI\_TRO & Khóa ngoại tham chiếu vai trò được gán \\
+\hline
+NgayCap & datetime & DEFAULT NOW & Thời điểm người dùng được gán vai trò \\
+\hline
+\multicolumn{4}{|l|}{\cellcolor{softblue}\textbf{Bảng VAI\_TRO\_QUYEN}} \\
+\hline
+MaVaiTro & uuid & PK, FK $\to$ VAI\_TRO & Khóa ngoại tham chiếu vai trò \\
+\hline
+MaQuyen & uuid & PK, FK $\to$ QUYEN & Khóa ngoại tham chiếu quyền năng gán cho vai trò \\
+\hline
+\end{tabularx}
+\caption{Từ điển dữ liệu bảng liên kết RBAC}
+\label{tab:dict_rbac_junction}
+\end{table}
+
+\subsubsection{Bảng NHAT\_KY\_HE\_THONG (Nhật ký kiểm toán)}
+\begin{table}[H]
+\centering\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash\bfseries}p{3.2cm}|>{\raggedright\arraybackslash}p{2.3cm}|>{\raggedright\arraybackslash}p{3.2cm}|>{\raggedright\arraybackslash}X|}
+\hline
+\rowcolor{tableheader}
+\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Kiểu vật lý}} & \textcolor{white}{\textbf{Ràng buộc}} & \textcolor{white}{\textbf{Ý nghĩa nghiệp vụ}} \\
+\hline
+MaNhatKy & uuid & PK, Default gen\_uuid & Định danh bản ghi nhật ký kiểm toán \\
+\hline
+MaNguoiDung & uuid & FK $\to$ NGUOI\_DUNG, NOT NULL & Định danh tài khoản thực hiện thao tác \\
+\hline
+ThoiDiem & datetime & NOT NULL, DEFAULT NOW & Mốc thời gian chính xác phát sinh thao tác \\
+\hline
+HanhDong & varchar & NOT NULL & Loại hành động (INSERT, UPDATE, DELETE, LOGIN) \\
+\hline
+DoiTuongTacDong & varchar & NOT NULL & Tên bảng hoặc tài nguyên bị can thiệp \\
+\hline
+DuLieuCu & text & NULL & Snapshot trạng thái dữ liệu trước thay đổi \\
+\hline
+DuLieuMoi & text & NULL & Snapshot trạng thái dữ liệu sau khi cập nhật \\
+\hline
+DiaChiIP & varchar & NULL & Địa chỉ IP nguồn của phiên kết nối \\
+\hline
+\end{tabularx}
+\caption{Từ điển dữ liệu bảng NHAT\_KY\_HE\_THONG}
+\label{tab:dict_nhat_ky}
+\end{table}
+
+\subsection{Phân hệ Phả hệ, Dòng họ \& Thành viên (Genealogy \& Member Module)}
+
+\subsubsection{Bảng DONG\_HO và CHI\_TOC}
+\begin{table}[H]
+\centering\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash\bfseries}p{3.2cm}|>{\raggedright\arraybackslash}p{2.3cm}|>{\raggedright\arraybackslash}p{3.2cm}|>{\raggedright\arraybackslash}X|}
+\hline
+\rowcolor{tableheader}
+\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Kiểu vật lý}} & \textcolor{white}{\textbf{Ràng buộc}} & \textcolor{white}{\textbf{Ý nghĩa nghiệp vụ}} \\
+\hline
+\multicolumn{4}{|l|}{\cellcolor{softblue}\textbf{Bảng DONG\_HO (Dòng họ)}} \\
+\hline
+MaDongHo & uuid & PK, Default gen\_uuid & Định danh duy nhất dòng họ \\
+\hline
+TenDongHo & varchar & NOT NULL & Tên dòng tộc (VD: Dòng họ Nguyễn Cảnh) \\
+\hline
+ThuyTo & varchar & NULL & Danh tính Thủy tổ khai sinh dòng họ \\
+\hline
+QueQuan & varchar & NOT NULL & Quê quán phát tích nguyên quán \\
+\hline
+NhaThoTo & varchar & NULL & Địa chỉ hoặc thông tin Từ đường/Nhà thờ họ \\
+\hline
+NgayGioTo & varchar & NULL & Ngày lễ giỗ tổ truyền thống hàng năm \\
+\hline
+LichSuHinhThanh & text & NULL & Bản ghi lược sử, nguồn gốc hình thành dòng tộc \\
+\hline
+\multicolumn{4}{|l|}{\cellcolor{softblue}\textbf{Bảng CHI\_TOC (Chi họ / Phái)}} \\
+\hline
+MaChiToc & uuid & PK, Default gen\_uuid & Định danh chi họ / nhánh tộc \\
+\hline
+MaDongHo & uuid & FK $\to$ DONG\_HO, NOT NULL & Tham chiếu dòng họ chủ quản \\
+\hline
+TenChiToc & varchar & NOT NULL & Tên gọi chi họ (VD: Chi Giáp, Chi Đệ Nhất) \\
+\hline
+DoiThu & int & NOT NULL & Thứ tự đời khởi lập chi trong gia phả \\
+\hline
+DiaBanChinh & varchar & NULL & Địa bàn định cư chính của chi tộc hiện nay \\
+\hline
+GhiChu & varchar & NULL & Ghi chú bổ sung về chi phái \\
+\hline
+\end{tabularx}
+\caption{Từ điển dữ liệu bảng DONG\_HO và CHI\_TOC}
+\label{tab:dict_dong_ho_chi_toc}
+\end{table}
+
+\subsubsection{Bảng THANH\_VIEN (Thực thể trung tâm Cây gia phả)}
+\begin{table}[H]
+\centering\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash\bfseries}p{3.4cm}|>{\raggedright\arraybackslash}p{2.2cm}|>{\raggedright\arraybackslash}p{3.4cm}|>{\raggedright\arraybackslash}X|}
+\hline
+\rowcolor{tableheader}
+\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Kiểu vật lý}} & \textcolor{white}{\textbf{Ràng buộc}} & \textcolor{white}{\textbf{Ý nghĩa nghiệp vụ}} \\
+\hline
+MaThanhVien & uuid & PK, Default gen\_uuid & Định danh thành viên duy nhất \\
+\hline
+MaChiToc & uuid & FK $\to$ CHI\_TOC, NOT NULL & Tham chiếu chi tộc trực thuộc \\
+\hline
+MaNguoiDung & uuid & FK $\to$ NGUOI\_DUNG, UNIQUE & Liên kết $1:1$ với tài khoản hệ thống (nếu có) \\
+\hline
+MaCha & uuid & FK $\to$ THANH\_VIEN & Tự tham chiếu đệ quy đến hồ sơ người Cha \\
+\hline
+MaMe & uuid & FK $\to$ THANH\_VIEN & Tự tham chiếu đệ quy đến hồ sơ người Mẹ \\
+\hline
+HoVaTen & varchar & NOT NULL & Họ và tên đầy đủ theo giấy khai sinh \\
+\hline
+TenThuongGoi & varchar & NULL & Tên gọi ở nhà, biệt danh, tên chữ \\
+\hline
+GioiTinh & varchar & NOT NULL & Giới tính sinh học (Nam, Nữ) \\
+\hline
+NgaySinhDuongLich & date & NULL & Ngày tháng năm sinh dương lịch \\
+\hline
+NgaySinhAmLich & varchar & NULL & Ngày tháng năm sinh âm lịch \\
+\hline
+TheHe & int & NOT NULL & Thứ bậc đời/thế hệ tính từ Thủy tổ \\
+\hline
+ConThu & int & NULL & Thứ tự sinh trong số các anh chị em (Con thứ) \\
+\hline
+TinhTrang & varchar & NOT NULL & Tình trạng sinh tử (Còn sống, Đã mất) \\
+\hline
+NgayMat & date & NULL & Ngày mất dương lịch (nếu đã qua đời) \\
+\hline
+NoiAnTang & varchar & NULL & Vị trí mộ phần, nghĩa trang an táng \\
+\hline
+DiaChiHienTai & varchar & NULL & Nơi cư trú hoặc sinh sống hiện nay \\
+\hline
+AnhDaiDien & varchar & NULL & Đường dẫn URI lưu ảnh chân dung \\
+\hline
+\end{tabularx}
+\caption{Từ điển dữ liệu bảng THANH\_VIEN}
+\label{tab:dict_thanh_vien}
+\end{table}
+
+\subsubsection{Bảng HO\_SO\_NGHE\_NGHIEP, QUAN\_HE\_HON\_NHAN, NỘI TỘC \& DÂU RỂ}
+\begin{table}[H]
+\centering\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash\bfseries}p{3.2cm}|>{\raggedright\arraybackslash}p{2.3cm}|>{\raggedright\arraybackslash}p{3.2cm}|>{\raggedright\arraybackslash}X|}
+\hline
+\rowcolor{tableheader}
+\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Kiểu vật lý}} & \textcolor{white}{\textbf{Ràng buộc}} & \textcolor{white}{\textbf{Ý nghĩa nghiệp vụ}} \\
+\hline
+\multicolumn{4}{|l|}{\cellcolor{softblue}\textbf{Bảng HO\_SO\_NGHE\_NGHIEP (Hồ sơ sự nghiệp - Quan hệ $1:1$)}} \\
+\hline
+MaHoSo & uuid & PK, Default gen\_uuid & Định danh hồ sơ nghề nghiệp \\
+\hline
+MaThanhVien & uuid & FK $\to$ THANH\_VIEN, UNIQUE, NOT NULL & Tham chiếu thành viên sở hữu hồ sơ \\
+\hline
+TrinhDoHocVan & varchar & NULL & Trình độ học vấn cao nhất đạt được \\
+\hline
+ChuyenNganh & varchar & NULL & Chuyên ngành đào tạo chuyên môn \\
+\hline
+NgheNghiep & varchar & NULL & Nghề nghiệp, lĩnh vực công tác hiện tại \\
+\hline
+CoQuanCongTac & varchar & NULL & Tên tổ chức, đơn vị hoặc doanh nghiệp \\
+\hline
+LinhVucKinhDoanh & varchar & NULL & Lĩnh vực thương mại, kinh doanh chuyên sâu \\
+\hline
+KhaNangHoTro & varchar & NULL & Năng lực tài trợ, tư vấn hỗ trợ dòng tộc \\
+\hline
+\multicolumn{4}{|l|}{\cellcolor{softblue}\textbf{Bảng QUAN\_HE\_HON\_NHAN (Hôn phối lịch sử - Quan hệ $M:N$)}} \\
+\hline
+MaHonNhan & uuid & PK, Default gen\_uuid & Định danh quan hệ hôn phối \\
+\hline
+MaNguoi1 & uuid & FK $\to$ THANH\_VIEN, NOT NULL & Khóa ngoại trỏ đến thành viên thứ nhất \\
+\hline
+MaNguoi2 & uuid & FK $\to$ THANH\_VIEN, NOT NULL & Khóa ngoại trỏ đến thành viên thứ hai \\
+\hline
+NgayKetHon & date & NULL & Ngày đăng ký kết hôn hoặc tổ chức đám cưới \\
+\hline
+TrangThai & varchar & NOT NULL & Tình trạng hôn nhân (Đang kết hôn, Ly hôn, Góa) \\
+\hline
+\multicolumn{4}{|l|}{\cellcolor{softblue}\textbf{Bảng THANH\_VIEN\_NOI\_TOC (Phân cấp kế thừa thực thể con $1:1$)}} \\
+\hline
+MaThanhVien & uuid & PK, FK $\to$ THANH\_VIEN & Khóa chính kiêm khóa ngoại trỏ về thành viên \\
+\hline
+DoiThu & int & NULL & Đời thứ nội tộc tính theo dòng cha \\
+\hline
+ThuocChi & varchar & NULL & Phân nhánh chi tộc nội \\
+\hline
+\multicolumn{4}{|l|}{\cellcolor{softblue}\textbf{Bảng THANH\_VIEN\_DAU\_RE (Phân cấp kế thừa thực thể con $1:1$)}} \\
+\hline
+MaThanhVien & uuid & PK, FK $\to$ THANH\_VIEN & Khóa chính kiêm khóa ngoại trỏ về thành viên \\
+\hline
+GiaTocGoc & varchar & NULL & Họ tên nguồn gốc của gia tộc bên dâu/rể \\
+\hline
+NgayVeLamDauRe & date & NULL & Mốc thời gian chính thức về làm dâu hoặc làm rể \\
+\hline
+\end{tabularx}
+\caption{Từ điển dữ liệu các bảng mở rộng thành viên}
+\label{tab:dict_member_extensions}
+\end{table}
+
+\subsection{Phân hệ Mạng xã hội, Sự kiện \& Truyền thông (Social \& Events Module)}
+
+\subsubsection{Bảng BAI\_VIET, BINH\_LUAN và TUONG\_TAC}
+\begin{table}[H]
+\centering\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash\bfseries}p{3.2cm}|>{\raggedright\arraybackslash}p{2.3cm}|>{\raggedright\arraybackslash}p{3.2cm}|>{\raggedright\arraybackslash}X|}
+\hline
+\rowcolor{tableheader}
+\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Kiểu vật lý}} & \textcolor{white}{\textbf{Ràng buộc}} & \textcolor{white}{\textbf{Ý nghĩa nghiệp vụ}} \\
+\hline
+\multicolumn{4}{|l|}{\cellcolor{softblue}\textbf{Bảng BAI\_VIET (Bài đăng cộng đồng dòng họ)}} \\
+\hline
+MaBaiViet & uuid & PK, Default gen\_uuid & Định danh bài viết duy nhất \\
+\hline
+MaNguoiTao & uuid & FK $\to$ NGUOI\_DUNG, NOT NULL & Định danh tài khoản người tạo nội dung \\
+\hline
+TieuDe & varchar & NOT NULL & Tiêu đề bài viết bản tin \\
+\hline
+NoiDung & text & NOT NULL & Thân nội dung bài viết \\
+\hline
+PhamViChiaSe & varchar & NOT NULL & Phạm vi hiển thị (Toàn họ, Nội bộ chi, Riêng tư) \\
+\hline
+LoaiBaiViet & varchar & NOT NULL & Thể loại (Thông báo, Chúc mừng, Tin buồn,...) \\
+\hline
+ThoiGianDang & datetime & NOT NULL, DEFAULT NOW & Mốc thời gian đăng tải \\
+\hline
+TrangThaiDuyet & varchar & NOT NULL & Trạng thái duyệt bài (Approved, Pending, Rejected) \\
+\hline
+\multicolumn{4}{|l|}{\cellcolor{softblue}\textbf{Bảng BINH\_LUAN (Ý kiến thảo luận)}} \\
+\hline
+MaBinhLuan & uuid & PK, Default gen\_uuid & Định danh bình luận \\
+\hline
+MaBaiViet & uuid & FK $\to$ BAI\_VIET, NOT NULL & Khóa ngoại trỏ đến bài viết được phản hồi \\
+\hline
+MaThanhVien & uuid & FK $\to$ THANH\_VIEN, NULL & Thành viên gửi bình luận (nếu đã liên kết) \\
+\hline
+NoiDung & text & NOT NULL & Nội dung thảo luận \\
+\hline
+ThoiGianTao & datetime & NOT NULL, DEFAULT NOW & Thời điểm đăng phản hồi \\
+\hline
+TrangThai & varchar & NOT NULL & Trạng thái hiển thị (Visible, Hidden) \\
+\hline
+\multicolumn{4}{|l|}{\cellcolor{softblue}\textbf{Bảng TUONG\_TAC (Cảm xúc bài viết)}} \\
+\hline
+MaTuongTac & uuid & PK, Default gen\_uuid & Định danh lượt tương tác cảm xúc \\
+\hline
+MaBaiViet & uuid & FK $\to$ BAI\_VIET, NOT NULL & Tham chiếu bài viết nhận tương tác \\
+\hline
+MaThanhVien & uuid & FK $\to$ THANH\_VIEN, NOT NULL & Thành viên thực hiện tương tác \\
+\hline
+LoaiTuongTac & varchar & NOT NULL & Loại biểu cảm (Thích, Yêu thích, Chúc mừng,...) \\
+\hline
+ThoiDiem & datetime & NOT NULL, DEFAULT NOW & Mốc thời gian tương tác phát sinh \\
+\hline
+\end{tabularx}
+\caption{Từ điển dữ liệu các bảng tương tác xã hội}
+\label{tab:dict_social}
+\end{table}
+
+\subsubsection{Bảng ALBUM\_ANH, SU\_KIEN, DANG\_KY\_SU\_KIEN và THONG\_BAO}
+\begin{table}[H]
+\centering\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash\bfseries}p{3.2cm}|>{\raggedright\arraybackslash}p{2.3cm}|>{\raggedright\arraybackslash}p{3.2cm}|>{\raggedright\arraybackslash}X|}
+\hline
+\rowcolor{tableheader}
+\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Kiểu vật lý}} & \textcolor{white}{\textbf{Ràng buộc}} & \textcolor{white}{\textbf{Ý nghĩa nghiệp vụ}} \\
+\hline
+\multicolumn{4}{|l|}{\cellcolor{softblue}\textbf{Bảng ALBUM\_ANH (Kho ảnh gia tộc)}} \\
+\hline
+MaAlbum & uuid & PK, Default gen\_uuid & Định danh album kỷ niệm \\
+\hline
+MaThanhVien & uuid & FK $\to$ THANH\_VIEN, NOT NULL & Người phụ trách tạo và quản lý album \\
+\hline
+TenAlbum & varchar & NOT NULL & Tên bộ ảnh (VD: Họp mặt đầu xuân 2026) \\
+\hline
+MoTa & varchar & NULL & Mô tả nội dung bộ ảnh \\
+\hline
+NgayTao & datetime & NOT NULL, DEFAULT NOW & Ngày thành lập bộ sưu tập \\
+\hline
+\multicolumn{4}{|l|}{\cellcolor{softblue}\textbf{Bảng SU\_KIEN (Sự kiện dòng họ)}} \\
+\hline
+MaSuKien & uuid & PK, Default gen\_uuid & Định danh sự kiện \\
+\hline
+MaNguoiTao & uuid & FK $\to$ NGUOI\_DUNG, NOT NULL & Tài khoản khởi tạo lịch trình sự kiện \\
+\hline
+TenSuKien & varchar & NOT NULL & Tên sự kiện (Lễ Giỗ tổ, Đại hội dòng họ) \\
+\hline
+MoTa & text & NULL & Chi tiết kế hoạch, chương trình sự kiện \\
+\hline
+ThoiGianBatDau & datetime & NOT NULL & Thời điểm bắt đầu diễn ra sự kiện \\
+\hline
+ThoiGianKetThuc & datetime & NULL & Thời điểm kết thúc dự kiến \\
+\hline
+DiaDiem & varchar & NOT NULL & Địa chỉ tổ chức (Từ đường, Trung tâm hội nghị) \\
+\hline
+NganSachDuKien & decimal & NULL & Dự toán chi phí thực hiện sự kiện \\
+\hline
+TrangThai & varchar & NOT NULL & Trạng thái sự kiện (Planned, Ongoing, Finished) \\
+\hline
+\multicolumn{4}{|l|}{\cellcolor{softblue}\textbf{Bảng DANG\_KY\_SU\_KIEN (RSVP đăng ký tham gia)}} \\
+\hline
+MaDangKy & uuid & PK, Default gen\_uuid & Định danh lượt đăng ký tham dự \\
+\hline
+MaThanhVien & uuid & FK $\to$ THANH\_VIEN, NOT NULL & Thành viên xác nhận tham gia \\
+\hline
+MaSuKien & uuid & FK $\to$ SU\_KIEN, NOT NULL & Sự kiện được đăng ký \\
+\hline
+TrangThaiThamGia & varchar & NOT NULL & Xác nhận (Tham gia, Vắng mặt, Chưa chắc chắn) \\
+\hline
+SoNguoiDiCung & int & NOT NULL, DEFAULT 0 & Số lượng thân nhân đi cùng \\
+\hline
+GhiChu & varchar & NULL & Ghi chú ẩm thực hoặc yêu cầu di chuyển \\
+\hline
+ThoiDiemPhanHoi & datetime & NOT NULL, DEFAULT NOW & Thời điểm người dùng gửi phản hồi \\
+\hline
+\multicolumn{4}{|l|}{\cellcolor{softblue}\textbf{Bảng THONG\_BAO (Thông báo đa kênh)}} \\
+\hline
+MaThongBao & uuid & PK, Default gen\_uuid & Định danh tin thông báo \\
+\hline
+MaNguoiDung & uuid & FK $\to$ NGUOI\_DUNG, NOT NULL & Tài khoản người nhận thông báo \\
+\hline
+TieuDe & varchar & NOT NULL & Tiêu đề thông báo nhanh \\
+\hline
+NoiDung & text & NOT NULL & Chi tiết thông điệp thông báo \\
+\hline
+LoaiThongBao & varchar & NOT NULL & Phân loại (Sự kiện, Bài viết, Lời mời gia nhập) \\
+\hline
+DaDoc & boolean & NOT NULL, DEFAULT FALSE & Cờ đánh dấu trạng thái đã xem của người dùng \\
+\hline
+ThoiDiemTao & datetime & NOT NULL, DEFAULT NOW & Thời gian tạo phát sinh thông báo \\
+\hline
+LienKetDieuHuong & varchar & NULL & Đường dẫn URI để điều hướng nhanh người dùng \\
+\hline
+\end{tabularx}
+\caption{Từ điển dữ liệu Album ảnh, Sự kiện và Thông báo}
+\label{tab:dict_events_notify}
+\end{table}
+
+\subsection{Phân hệ Di sản lịch sử \& Danh nhân tiêu biểu (Heritage Module)}
+
+\subsubsection{Bảng DI\_SAN\_LICH\_SU và NHAN\_VAT\_TIEU\_BIEU}
+\begin{table}[H]
+\centering\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash\bfseries}p{3.2cm}|>{\raggedright\arraybackslash}p{2.3cm}|>{\raggedright\arraybackslash}p{3.2cm}|>{\raggedright\arraybackslash}X|}
+\hline
+\rowcolor{tableheader}
+\textcolor{white}{\textbf{Tên thuộc tính}} & \textcolor{white}{\textbf{Kiểu vật lý}} & \textcolor{white}{\textbf{Ràng buộc}} & \textcolor{white}{\textbf{Ý nghĩa nghiệp vụ}} \\
+\hline
+\multicolumn{4}{|l|}{\cellcolor{softblue}\textbf{Bảng DI\_SAN\_LICH\_SU (Văn tự cổ, Sắc phong, Di vật)}} \\
+\hline
+MaDiSan & uuid & PK, Default gen\_uuid & Định danh hồ sơ di sản \\
+\hline
+MaThanhVien & uuid & FK $\to$ THANH\_VIEN, NOT NULL & Thành viên đăng tải, bảo quản tư liệu số \\
+\hline
+TieuDe & varchar & NOT NULL & Tên hiện vật, tư liệu văn hiến \\
+\hline
+LoaiDiSan & varchar & NOT NULL & Loại hình (Sắc phong, Gia phả Hán--Nôm, Văn bia) \\
+\hline
+NienDai & varchar & NULL & Thời kỳ lịch sử / Triều đại ra đời di vật \\
+\hline
+NoiDungDichNghia & text & NULL & Bản phiên âm dịch nghĩa chữ Hán sang Quốc ngữ \\
+\hline
+DuongDanTepTin & varchar & NOT NULL & URI lưu trữ tệp scan độ phân giải cao trên S3 \\
+\hline
+TomTatAI & text & NULL & Bản tóm lược nội dung tự động tạo bởi mô hình AI \\
+\hline
+GiaTriLichSu & text & NULL & Đánh giá ý nghĩa văn hóa, lịch sử đối với dòng họ \\
+\hline
+\multicolumn{4}{|l|}{\cellcolor{softblue}\textbf{Bảng NHAN\_VAT\_TIEU\_BIEU (Ghi danh công đức)}} \\
+\hline
+MaNhanVat & uuid & PK, Default gen\_uuid & Định danh hồ sơ nhân vật tiêu biểu \\
+\hline
+MaThanhVien & uuid & FK $\to$ THANH\_VIEN, UNIQUE, NOT NULL & Tham chiếu liên kết $1:1$ với thành viên \\
+\hline
+DanhHieu & varchar & NOT NULL & Danh hiệu, tước vị, phẩm hàm (Trạng nguyên, Anh hùng) \\
+\hline
+TieuSuChiTiet & text & NOT NULL & Toàn văn tiểu sử sự nghiệp và hành trạng \\
+\hline
+CongLaoDongHo & text & NULL & Những cống hiến lớn đối với sự hưng thịnh gia tộc \\
+\hline
+CongHienXaHoi & text & NULL & Đóng góp đối với đất nước, dân tộc và nhân loại \\
+\hline
+TaiLieuThamKhao & text & NULL & Nguồn sử liệu trích dẫn xác minh danh tính \\
+\hline
+\end{tabularx}
+\caption{Từ điển dữ liệu Di sản lịch sử và Nhân vật tiêu biểu}
+\label{tab:dict_heritage}
+\end{table}
