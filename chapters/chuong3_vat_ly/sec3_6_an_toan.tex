@@ -2,11 +2,103 @@
 \section{An toàn dữ liệu \& Chiến lược sao lưu}
 \label{sec:3_6_an_toan_sao_luu}
 
-\subsection{Phân quyền truy cập tầng Cơ sở dữ liệu (Roles / Grants)}
-% Nội dung phân quyền truy cập CSDL
+Cơ sở dữ liệu phả hệ và thông tin gia tộc chứa đựng nhiều dữ liệu nhân thân nhạy cảm, lịch sử hôn nhân và tư liệu di sản quý giá. Do đó, việc thiết lập chiến lược an toàn nhiều lớp (Defense-in-Depth) tại tầng DBMS và quy trình sao lưu -- phục hồi sau thảm họa đóng vai trò sống còn đối với sự vận hành bền vững của \textbf{FamilyConnect}.
+
+Toàn bộ mã nguồn thiết lập an toàn, phân quyền RBAC, chính sách RLS và trigger kiểm toán được lưu trữ độc lập tại tệp:
+\begin{center}
+    \texttt{sql/security.sql}
+\end{center}
+
+\subsection{Phân quyền truy cập tầng Cơ sở dữ liệu (Database Roles \& Grants)}
+
+Tuân thủ nguyên tắc đặc quyền tối thiểu (\textit{Principle of Least Privilege}), hệ thống tách bạch người dùng kết nối CSDL thành các vai trò quản trị và khai thác riêng biệt, tuyệt đối không dùng tài khoản siêu quản trị (\texttt{postgres}) cho các ứng dụng kết nối trực tiếp:
+
+\begin{lstlisting}[language=SQL, caption={Cài đặt phân quyền người dùng và vai trò trong PostgreSQL}, label={lst:security_roles}]
+-- 1. Tao Role danh cho Backend API Application (ket noi qua Connection Pool)
+CREATE ROLE app_backend WITH LOGIN PASSWORD 'Secr3t_App_Pass!2026';
+
+-- Cap quyen thao tac CRUD tren toan bo bang nghiep vu
+GRANT CONNECT ON DATABASE "familyconnect_db" TO app_backend;
+GRANT USAGE ON SCHEMA public TO app_backend;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO app_backend;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO app_backend;
+
+-- Thu hoi quyen can thiep cau truc DDL cua ung dung
+REVOKE CREATE ON SCHEMA public FROM app_backend;
+
+-- 2. Tao Role chi doc phuc vu bao cao (BI / Reporting Analyst)
+CREATE ROLE bi_readonly WITH LOGIN PASSWORD 'Report_ReadOnly_2026';
+GRANT CONNECT ON DATABASE "familyconnect_db" TO bi_readonly;
+GRANT USAGE ON SCHEMA public TO bi_readonly;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO bi_readonly;
+\end{lstlisting}
+
+\subsubsection{Kiểm soát truy cập cấp hàng (Row Level Security -- RLS)}
+PostgreSQL hỗ trợ tính năng \textbf{Row Level Security (RLS)} mạnh mẽ, cho phép lọc bản ghi trực tiếp tại nhân CSDL dựa trên danh tính người dùng hiện tại, ngăn ngừa triệt để nguy cơ rò rỉ dữ liệu giữa các dòng họ khác nhau:
+
+\begin{lstlisting}[language=SQL, caption={Kích hoạt Row Level Security kiểm soát hiển thị bài viết}, label={lst:security_rls}]
+-- Kich hoat RLS tren bang BAI_VIET
+ALTER TABLE "BAI_VIET" ENABLE ROW LEVEL SECURITY;
+
+-- Chinh sach: Thanh vien chi xem bai viet Cong khai hoac cua chinh minh
+CREATE POLICY policy_xem_bai_viet ON "BAI_VIET"
+FOR SELECT
+USING (
+    "PhamViChiaSe" = 'CongKhai' 
+    OR "MaNguoiTao" = CURRENT_SETTING('app.current_user_id', true)::uuid
+);
+\end{lstlisting}
 
 \subsection{Chiến lược Ghi nhật ký kiểm toán (Audit Logging)}
-% Nội dung Audit Logging
 
-\subsection{Chiến lược Sao lưu và Phục hồi (Backup \& Disaster Recovery)}
-% Nội dung sao lưu và phục hồi định kỳ
+Mọi thao tác sửa đổi dữ liệu trọng yếu (cập nhật mối quan hệ cha mẹ, điều chỉnh phân quyền, thay đổi ngày sinh/ngày mất) đều phải được truy vết đầy đủ phục vụ thanh tra và giải quyết khiếu nại trong dòng họ. Bảng \texttt{NHAT\_KY\_HE\_THONG} được tự động kích hoạt ghi nhận qua Trigger kiểm toán:
+
+\begin{lstlisting}[language=SQL, caption={Trigger tự động ghi nhật ký kiểm toán biến động thành viên}, label={lst:security_audit}]
+CREATE OR REPLACE FUNCTION fn_audit_thanh_vien()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO "NHAT_KY_HE_THONG" (
+        "MaNhatKy", "MaNguoiDung", "ThoiDiem", "HanhDong", 
+        "DoiTuongTacDong", "DuLieuCu", "DuLieuMoi", "DiaChiIP"
+    ) VALUES (
+        gen_random_uuid(),
+        COALESCE(CURRENT_SETTING('app.current_user_id', true)::uuid, '00000000-0000-0000-0000-000000000000'::uuid),
+        CURRENT_TIMESTAMP,
+        TG_OP,
+        'THANH_VIEN',
+        CASE WHEN TG_OP IN ('UPDATE', 'DELETE') THEN row_to_json(OLD)::text ELSE NULL END,
+        CASE WHEN TG_OP IN ('INSERT', 'UPDATE') THEN row_to_json(NEW)::text ELSE NULL END,
+        INET_CLIENT_ADDR()::varchar
+    );
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_audit_thanh_vien
+AFTER INSERT OR UPDATE OR DELETE ON "THANH_VIEN"
+FOR EACH ROW EXECUTE FUNCTION fn_audit_thanh_vien();
+\end{lstlisting}
+
+\subsection{Chiến lược Sao lưu và Phục hồi sau thảm họa (Backup \& Disaster Recovery)}
+
+Nhằm bảo toàn vẹn toàn bộ dữ liệu lịch sử dòng họ trước các sự cố phần cứng hoặc lỗi con người, hệ thống thiết lập mục tiêu cam kết mức độ dịch vụ:
+\begin{itemize}
+    \item \textbf{RPO (Recovery Point Objective) $\le$ 5 phút:} Lượng dữ liệu tối đa chấp nhận mất mát không vượt quá 5 phút ghi nhận.
+    \item \textbf{RTO (Recovery Time Objective) $\le$ 30 phút:} Thời gian tối đa để khôi phục toàn bộ CSDL hoạt động bình thường trở lại.
+\end{itemize}
+
+\subsubsection{1. Sao lưu logic định kỳ (Logical Backup)}
+Sử dụng công cụ \texttt{pg\_dump} để trích xuất cấu trúc và dữ liệu nén hàng ngày vào các khung giờ thấp điểm (02:00 AM):
+\begin{lstlisting}[language=bash, caption={Lệnh sao lưu logic toàn bộ CSDL định kỳ hàng ngày}, label={lst:backup_pgdump}]
+# Lenh thuc thi tren server Linux hoac Docker container
+pg_dump -h localhost -p 5432 -U postgres -F c -b -v \
+        -f "/backup/familyconnect_$(date +\%Y\%m\%d).dump" familyconnect_db
+\end{lstlisting}
+
+\subsubsection{2. Sao lưu vật lý liên tục \& Phục hồi thời điểm (PITR -- Point-in-Time Recovery)}
+Kết hợp công cụ \textbf{pgBackRest} hoặc \textbf{WAL-G} để đồng bộ liên tục các tệp nhật ký ghi trước (\textit{Write-Ahead Logs -- WAL}) sang hệ thống Cloud Object Storage (AWS S3 hoặc MinIO phân tán):
+\begin{itemize}
+    \item \textbf{Weekly Full Backup:} Tạo bản chụp toàn bộ khối dữ liệu đĩa vật lý vào sáng Chủ nhật hàng tuần.
+    \item \textbf{Daily Differential Backup:} Ghi nhận phần chênh lệch khối dữ liệu mỗi đêm.
+    \item \textbf{Continuous WAL Archiving:} Lưu trữ các phân đoạn WAL ngay khi sinh ra. Cho phép quản trị viên tua ngược trạng thái cơ sở dữ liệu về chính xác từng giây bất kỳ trước thời điểm xảy ra sự cố thao tác nhầm.
+\end{itemize}
