@@ -2,8 +2,33 @@
 \section{Lựa chọn Hệ quản trị CSDL và công nghệ}
 \label{sec:3_1_lua_chon_dbms}
 
-\subsection{Lựa chọn MySQL và lưu trữ quan hệ (ACID, CTE)}
-% Nội dung lý do lựa chọn MySQL
+Trong giai đoạn thiết kế vật lý cho nền tảng quản lý gia phả và kết nối dòng họ số \textbf{FamilyConnect}, việc lựa chọn Hệ quản trị cơ sở dữ liệu (DBMS) đóng vai trò nền tảng quyết định trực tiếp đến tính toàn vẹn dữ liệu, hiệu năng truy vấn phân cấp và khả năng mở rộng dịch vụ trong tương lai.
 
-\subsection{Công nghệ mở rộng (Vector DB, S3 / File Storage)}
-% Nội dung công nghệ mở rộng
+\subsection{Lựa chọn PostgreSQL và lưu trữ quan hệ (ACID, CTE, JSONB)}
+
+Sau quá trình so sánh và đánh giá các hệ quản trị CSDL quan hệ phổ biến (MySQL, PostgreSQL, SQL Server, Oracle), hệ thống lựa chọn \textbf{PostgreSQL} (phiên bản 16+) làm DBMS chính vì các ưu điểm kỹ thuật vượt trội:
+
+\begin{enumerate}
+    \item \textbf{Hỗ trợ kiểu dữ liệu UUID bản địa (Native UUID Type):}
+    Toàn bộ 22 bảng trong lược đồ quan hệ logic của FamilyConnect đều sử dụng khóa đại diện dạng UUID (v4) để hỗ trợ phân tán dữ liệu và chống đoán khóa ID. PostgreSQL tích hợp sẵn kiểu dữ liệu \texttt{UUID} nguyên bản (lưu trữ chính xác 16 bytes / 128 bits), tối ưu hơn vượt bậc so với kiểu chuỗi \texttt{VARCHAR(36)} (tốn 36 bytes) của một số DBMS khác, giúp giảm kích thước bảng và tăng tốc độ đánh chỉ mục B-Tree trên các cột khóa chính (PK) và khóa ngoại (FK).
+
+    \item \textbf{Xử lý truy vấn đệ quy cây phả hệ vượt trội (Recursive CTE):}
+    Cấu trúc cây phả hệ và quan hệ huyết thống phụ mẫu ($1:N$) là cấu trúc đồ thị phân cấp đệ quy phức tạp. PostgreSQL sở hữu bộ tối ưu hóa truy vấn (\textit{Query Planner \& Optimizer}) cực kỳ mạnh mẽ đối với các câu lệnh \texttt{WITH RECURSIVE}, cho phép duyệt cây gia phả qua hàng chục thế hệ, tính toán bậc họ hàng và phát hiện vòng lặp tổ tiên với độ trễ tối thiểu.
+
+    \item \textbf{Lưu trữ dữ liệu bán cấu trúc linh hoạt với \texttt{JSONB}:}
+    Các bảng như \texttt{nhat\_ky\_he\_thong} (lưu vết \texttt{du\_lieu\_cu} và \texttt{du\_lieu\_moi}) đòi hỏi khả năng lưu trữ linh hoạt các thay đổi cấu trúc bảng theo thời gian. PostgreSQL cung cấp định dạng nhị phân \texttt{JSONB} kết hợp chỉ mục \textbf{GIN (Generalized Inverted Index)}, cho phép truy vấn trực tiếp vào từng trường con bên trong tài liệu JSON với tốc độ tương đương dữ liệu bảng quan hệ.
+
+    \item \textbf{Tuân thủ nghiêm ngặt chuẩn SQL và bảo đảm ACID:}
+    PostgreSQL nổi tiếng với tính tuân thủ tiêu chuẩn ANSI SQL cao nhất trong các hệ quản trị mã nguồn mở, hỗ trợ đầy đủ các mức độ cô lập giao dịch (\textit{Transaction Isolation Levels}) và cơ chế kiểm soát tương tranh đa phiên bản (\textit{Multi-Version Concurrency Control -- MVCC}), đảm bảo dữ liệu gia tộc luôn nhất quán và an toàn tuyệt đối.
+
+    \item \textbf{Hỗ trợ mở rộng Trí tuệ nhân tạo (AI) với tiện ích \texttt{pgvector}:}
+    PostgreSQL cho phép cài đặt trực tiếp extension \texttt{pgvector}, giúp lưu trữ các vector embedding và thực hiện tìm kiếm tương đồng ngữ nghĩa (\textit{Cosine Similarity / L2 Distance}) phục vụ tìm kiếm di sản thông minh và tóm tắt tiểu sử bằng AI ngay trong lòng CSDL quan hệ mà không cần vận hành thêm một cụm Vector Database độc lập.
+\end{enumerate}
+
+\subsection{Công nghệ mở rộng (Object Storage S3 / CDN)}
+
+Bên cạnh hệ quản trị CSDL quan hệ PostgreSQL chịu trách nhiệm lưu trữ dữ liệu có cấu trúc và siêu dữ liệu (metadata), các dữ liệu nhị phân dung lượng lớn (\textit{Unstructured BLOB Data}) của nền tảng được định hướng tách biệt theo kiến trúc hiện đại:
+\begin{itemize}
+    \item \textbf{Lưu trữ hình ảnh, video và tài liệu số:} Tệp ảnh album (\texttt{album\_anh}), ảnh đại diện thành viên, tài liệu scan văn tự Hán--Nôm và sắc phong cổ (\texttt{di\_san\_lich\_su}) được lưu trữ trực tiếp trên dịch vụ \textbf{Cloud Object Storage (tương thích AWS S3 / MinIO)}.
+    \item \textbf{Tối ưu hóa đường dẫn:} Bảng CSDL chỉ lưu trữ chuỗi đường dẫn URI (\texttt{duong\_dan\_tep\_tin}) và mã băm checksum, kết hợp mạng phân phối nội dung (\textbf{CDN}) để tăng tốc độ tải tài liệu cho người dùng khắp nơi mà không làm phình to dung lượng ổ đĩa của máy chủ PostgreSQL.
+\end{itemize}
