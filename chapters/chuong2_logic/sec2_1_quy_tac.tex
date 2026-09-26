@@ -2,85 +2,463 @@
 \section{Quy tắc chuyển đổi từ mô hình ER sang mô hình quan hệ (Relational Model)}
 \label{sec:2_1_quy_tac_chuyen_doi}
 
-Chuyển đổi từ mô hình Thực thể -- Liên kết (ERD) sang Mô hình Quan hệ (Relational Model) là bước then chốt trong giai đoạn Thiết kế Logic (Logical Design). Quá trình này đảm bảo toàn bộ thông tin, ràng buộc dữ liệu và mối quan hệ giữa các đối tượng trong hệ thống Quản lý Gia phả được biểu diễn chính xác dưới dạng các lược đồ quan hệ (Relation schemas).
+Chuyển đổi từ mô hình Thực thể -- Liên kết mở rộng (ERD/EERD) sang Mô hình Quan hệ (Relational Model) là bước then chốt trong giai đoạn Thiết kế Logic (Logical Design). Quá trình này đảm bảo toàn bộ thông tin, ràng buộc dữ liệu và mối quan hệ giữa các đối tượng trong hệ thống \textbf{FamilyConnect} được biểu diễn chính xác, toàn vẹn dưới dạng các lược đồ quan hệ (Relation Schemas).
 
-\subsection{Chuyển đổi thực thể thông thường thành các bảng (Relation schemas)}
-\label{subsec:2_1_1_chuyen_doi_thuc_the}
-
-Mỗi thực thể mạnh trong mô hình ERD tương ứng với một bảng trong mô hình quan hệ. Các thuộc tính đơn trở thành các cột của bảng, và thuộc tính định danh được chọn làm Khóa chính (Primary Key -- PK).
-
-\begin{itemize}
-	\item \textbf{Thực thể Thành viên (\texttt{ThanhVien}):} Lưu trữ thông tin định danh và cá nhân của từng người trong gia tộc.
-	\begin{itemize}
-		\item Lược đồ quan hệ: \texttt{THANH\_VIEN}(\underline{\texttt{MaThanhVien}}, \texttt{HoTen}, \texttt{GioiTinh}, \texttt{NgaySinh}, \texttt{NgayMat}, \texttt{DiaChi}, \texttt{TrangThaiConSong}).
-		\item \textbf{PK:} \texttt{MaThanhVien}.
-	\end{itemize}
-	
-	\item \textbf{Thực thể Bài viết (\texttt{BaiViet}):} Lưu trữ tin tức, bài viết truyền thống của gia tộc.
-	\begin{itemize}
-		\item Lược đồ quan hệ: \texttt{BAI\_VIET}(\underline{\texttt{MaBaiViet}}, \texttt{TieuDe}, \texttt{NoiDung}, \texttt{ThoiGianDang}, \texttt{QuyenRiengTu}).
-		\item \textbf{PK:} \texttt{MaBaiViet}.
-	\end{itemize}
-	
-	\item \textbf{Thực thể Sự kiện (\texttt{SuKien}):} Lưu trữ thông tin ngày giỗ, họp mặt, giỗ tổ.
-	\begin{itemize}
-		\item Lược đồ quan hệ: \texttt{SU\_KIEN}(\underline{\texttt{MaSuKien}}, \texttt{TenSuKien}, \texttt{NgayAmLich}, \texttt{NgayDuongLich}, \texttt{DiaDiem}).
-		\item \textbf{PK:} \texttt{MaSuKien}.
-	\end{itemize}
-\end{itemize}
-
-\subsection{Chuyển đổi các mối quan hệ 1--1, 1--N, N--N và mối quan hệ đệ quy}
-\label{subsec:2_1_2_chuyen_doi_moi_quan_he}
-
-\subsubsection{Mối quan hệ 1--1 (One-to-One)}
-Được xử lý bằng cách đưa Khóa chính của một trong hai thực thể sang thực thể còn lại làm Khóa ngoại (Foreign Key -- FK).
-\begin{itemize}
-	\item \textbf{Tài khoản -- Thành viên (1--1):} Mỗi thành viên có thể được cấp một tài khoản đăng nhập hệ thống.
-	\item Lược đồ quan hệ: \texttt{TAI\_KHOAN}(\underline{\texttt{MaTaiKhoan}}, \texttt{TenDangNhap}, \texttt{MatKhau}, \texttt{VaiTro}, \texttt{MaThanhVien}\textsuperscript{FK}).
-\end{itemize}
-
-\subsubsection{Mối quan hệ 1--N (One-to-Many)}
-Khóa chính của bảng phía nhánh 1 được đưa sang làm Khóa ngoại ở bảng phía nhánh N.
-\begin{itemize}
-	\item \textbf{Tác giả bài viết (Thành viên -- Bài viết):} Một thành viên có thể đăng nhiều bài viết.
-	\item Lược đồ quan hệ: \texttt{BAI\_VIET}(\underline{\texttt{MaBaiViet}}, \texttt{TieuDe}, \texttt{NoiDung}, \texttt{ThoiGianDang}, \texttt{MaNguoiDang}\textsuperscript{FK}).
-\end{itemize}
-
-\subsubsection{Mối quan hệ N--N (Many-to-Many)}
-Tạo một bảng liên kết trung gian chứa Khóa chính của hai thực thể tham gia làm Khóa ngoại. Tập hợp hai khóa ngoại này hợp thành Khóa chính hợp phần.
-\begin{itemize}
-	\item \textbf{Tham gia sự kiện (Thành viên -- Sự kiện):}
-	\item Lược đồ quan hệ: \texttt{THAM\_GIA\_SU\_KIEN}(\underline{\texttt{MaThanhVien}}\textsuperscript{FK}, \underline{\texttt{MaSuKien}}\textsuperscript{FK}, \texttt{TrangThaiRSVP}, \texttt{GhiChu}).
-\end{itemize}
-
-\subsubsection{Mối quan hệ đệ quy (Recursive Relationships)}
-Áp dụng cho các mối quan hệ nội bộ giữa các đối tượng trong cùng thực thể \texttt{ThanhVien}:
-\begin{itemize}
-	\item \textbf{Mối quan hệ Cha/Mẹ -- Con (Đệ quy 1--N):} Mỗi thành viên có một cha và một mẹ (đều thuộc bảng \texttt{THANH\_VIEN}). Ta thêm hai thuộc tính khóa ngoại tự tham chiếu:
-	\begin{itemize}
-		\item Lược đồ quan hệ bổ sung: \texttt{THANH\_VIEN}(\dots, \texttt{MaCha}\textsuperscript{FK}, \texttt{MaMe}\textsuperscript{FK}).
-	\end{itemize}
-	\item \textbf{Mối quan hệ Hôn phối / Vợ -- Chồng (Đệ quy 1--1 hoặc N--N theo thời gian):} Để lưu lịch sử hôn nhân (kết hôn, ly hôn), tạo bảng liên kết đệ quy:
-	\begin{itemize}
-		\item Lược đồ quan hệ: \texttt{QUAN\_HE\_HON\_NHAN}(\underline{\texttt{MaChong}}\textsuperscript{FK}, \underline{\texttt{MaVo}}\textsuperscript{FK}, \texttt{NgayKetHon}, \texttt{TrangThai}).
-	\end{itemize}
-\end{itemize}
-
-\subsection{Xử lý quan hệ kế thừa hoặc phân loại}
-\label{subsec:2_1_3_xu_ly_ke_thua}
-
-Trong cây gia phả, thực thể \texttt{ThanhVien} được phân loại (kế thừa) thành hai nhóm: \textbf{Thành viên nội tộc (Ruột thịt)} và \textbf{Thành viên ngoại tộc (Dâu/Rể)}. 
-
-Áp dụng phương pháp \textbf{Biểu diễn lớp cha và các lớp con (Class Hierarchy Mapping)} để tránh dư thừa dữ liệu:
-
+Hệ thống chuyển đổi từ \textbf{17 thực thể nghiệp vụ quan niệm} sang tập hợp \textbf{22 lược đồ quan hệ logic} thông qua 4 quy tắc kỹ thuật chuẩn hóa:
 \begin{enumerate}
-	\item \textbf{Bảng lớp cha (\texttt{THANH\_VIEN}):} Chứa tất cả các thuộc tính chung (Họ tên, Ngày sinh, Giới tính, \dots).
-	\item \textbf{Bảng lớp con \texttt{THANH\_VIEN\_NOI\_TOC}:} Chứa thuộc tính riêng của người mang dòng máu gia tộc (Đời thứ mấy, Chi/Nhánh). Khóa chính \texttt{MaThanhVien} vừa là PK vừa là FK tham chiếu về \texttt{THANH\_VIEN}.
-	\item \textbf{Bảng lớp con \texttt{THANH\_VIEN\_DAU\_RE}:} Chứa thuộc tính riêng của dâu/rể (Gia tộc gốc, Ngày nhập tộc). Khóa chính \texttt{MaThanhVien} vừa là PK vừa là FK tham chiếu về \texttt{THANH\_VIEN}.
+    \item \textbf{10 Thực thể mạnh} $\longrightarrow$ \textbf{10 Bảng chính} (Primary Tables).
+    \item \textbf{5 Thực thể phụ thuộc tồn tại} $\longrightarrow$ \textbf{5 Bảng phụ} (Dependent Tables với FK \texttt{NOT NULL} và \texttt{ON DELETE CASCADE}).
+    \item \textbf{5 Mối kết hợp $M{:}N$} $\longrightarrow$ \textbf{5 Bảng trung gian} (Junction Tables).
+    \item \textbf{1 Phân cấp chuyên biệt hóa (EER)} $\longrightarrow$ \textbf{2 Bảng kế thừa thực thể con}\newline (\texttt{thanh\_vien\_noi\_toc}, \texttt{thanh\_vien\_dau\_re}).
 \end{enumerate}
 
-\textbf{Lược đồ chi tiết:}
+% Macro tự động co giãn nội dung nếu tràn ô trong bảng
+\newlength{\tblcellwd}
+\newcommand{\tblcellfit}[1]{%
+    \settowidth{\tblcellwd}{\small#1}%
+    \ifdim\tblcellwd>\linewidth
+        \resizebox{\linewidth}{!}{#1}%
+    \else
+        \small#1%
+    \fi
+}
+
+\subsection{Chuyển đổi thực thể mạnh thành Bảng chính}
+\label{subsec:2_1_1_chuyen_doi_thuc_the}
+
+Mỗi thực thể mạnh trong mô hình ERD tương ứng với một bảng chính trong mô hình quan hệ. Các thuộc tính đơn trở thành các cột của bảng, và thuộc tính định danh được chọn làm Khóa chính (Primary Key -- PK). Quy ước đặt tên bảng và cột theo chuẩn \texttt{snake\_case}.
+
+\setlength{\arrayrulewidth}{0.65pt}
+\renewcommand{\arraystretch}{1.55}
+
+\begin{longtable}{|c|p{2.8cm}|>{\raggedright\arraybackslash}p{3.5cm}|p{5.7cm}|}
+
+    \caption{Chuyển đổi 10 Thực thể mạnh thành Bảng chính}
+    \label{tab:2_1_1_thuc_the_manh}\\
+
+    \hline
+    \rowcolor{tableheader}
+    \centering\textcolor{white}{\textbf{STT}} &
+    \centering\textcolor{white}{\textbf{Thực thể (ERD)}} &
+    \centering\textcolor{white}{\textbf{Bảng CSDL (\texttt{snake\_case})}} &
+    \textcolor{white}{\textbf{Ghi chú thiết kế}}\tabularnewline
+    \hline
+    \endfirsthead
+    \multicolumn{4}{l}{\small\textit{(tiếp Bảng~\ref{tab:2_1_1_thuc_the_manh})}}\\[2pt]
+    \hline
+    \rowcolor{tableheader}
+    \centering\textcolor{white}{\textbf{STT}} &
+    \centering\textcolor{white}{\textbf{Thực thể (ERD)}} &
+    \centering\textcolor{white}{\textbf{Bảng CSDL (\texttt{snake\_case})}} &
+    \textcolor{white}{\textbf{Ghi chú thiết kế}}\tabularnewline
+    \hline
+    \endhead
+    \hline
+    \endlastfoot
+
+    % ---- Nhóm 1: User & Security ----
+    \multicolumn{4}{|l|}{\small\textit{\textbf{Phân hệ 1: Người dùng \& Bảo mật (User \& Security)}}}\\
+    \hline
+
+    1 &
+    \small NguoiDung &
+    \tblcellfit{\texttt{nguoi\_dung}} &
+    \small Khóa chính (PK): \texttt{ma\_nguoi\_dung} (UUID). Quản lý tài khoản đăng nhập hệ thống.\\
+    \hline
+
+    \rowcolor{tablerowalt}
+    2 &
+    \small VaiTro &
+    \tblcellfit{\texttt{vai\_tro}} &
+    \small Khóa chính (PK): \texttt{ma\_vai\_tro} (UUID). Định nghĩa các vai trò RBAC.\\
+    \hline
+
+    3 &
+    \small Quyen &
+    \tblcellfit{\texttt{quyen}} &
+    \small Khóa chính (PK): \texttt{ma\_quyen} (UUID). Danh mục các quyền thao tác nghiệp vụ.\\
+    \hline
+
+    % ---- Nhóm 2: Family & Genealogy ----
+    \multicolumn{4}{|l|}{\small\textit{\textbf{Phân hệ 2: Gia tộc \& Gia phả (Family \& Genealogy)}}}\\
+    \hline
+
+    4 &
+    \small DongHo &
+    \tblcellfit{\texttt{dong\_ho}} &
+    \small Khóa chính (PK): \texttt{ma\_dong\_ho} (UUID). Đại dòng họ, đỉnh cao nhất của phả hệ.\\
+    \hline
+
+    \rowcolor{tablerowalt}
+    5 &
+    \small ChiToc &
+    \tblcellfit{\texttt{chi\_toc}} &
+    \small Khóa chính (PK): \texttt{ma\_chi\_toc} (UUID). FK: \texttt{ma\_dong\_ho} tham chiếu \texttt{dong\_ho}.\\
+    \hline
+
+    6 &
+    \small ThanhVien &
+    \tblcellfit{\texttt{thanh\_vien}} &
+    \small Khóa chính (PK): \texttt{ma\_thanh\_vien} (UUID). FK: \texttt{ma\_chi\_toc}, \texttt{ma\_nguoi\_dung}, \texttt{ma\_cha}, \texttt{ma\_me}.\\
+    \hline
+
+    % ---- Nhóm 3: Community & Events ----
+    \multicolumn{4}{|l|}{\small\textit{\textbf{Phân hệ 3: Tương tác, Sự kiện \& Truyền thông (Community \& Events)}}}\\
+    \hline
+
+    \rowcolor{tablerowalt}
+    7 &
+    \small BaiViet &
+    \tblcellfit{\texttt{bai\_viet}} &
+    \small Khóa chính (PK): \texttt{ma\_bai\_viet} (UUID). FK: \texttt{ma\_nguoi\_tao} tham chiếu \texttt{nguoi\_dung}.\\
+    \hline
+
+    8 &
+    \small AlbumAnh &
+    \tblcellfit{\texttt{album\_anh}} &
+    \small Khóa chính (PK): \texttt{ma\_album} (UUID). FK: \texttt{ma\_thanh\_vien} tham chiếu \texttt{thanh\_vien}.\\
+    \hline
+
+    \rowcolor{tablerowalt}
+    9 &
+    \small SuKien &
+    \tblcellfit{\texttt{su\_kien}} &
+    \small Khóa chính (PK): \texttt{ma\_su\_kien} (UUID). FK: \texttt{ma\_nguoi\_tao} tham chiếu \texttt{nguoi\_dung}.\\
+    \hline
+    % ---- Nhóm 4: Heritage ----
+    \multicolumn{4}{|l|}{\small\textit{\textbf{Phân hệ 4: Di sản số (Family Heritage)}}}\\
+    \hline
+
+    10 &
+    \small DiSanLichSu &
+    \tblcellfit{\texttt{di\_san\_lich\_su}} &
+    \small Khóa chính (PK): \texttt{ma\_di\_san} (UUID). FK: \texttt{ma\_thanh\_vien} tham chiếu \texttt{thanh\_vien}.\\
+    \hline
+
+\end{longtable}
+
+\renewcommand{\arraystretch}{1.0}
+\setlength{\arrayrulewidth}{0.4pt}
+
+\subsection{Chuyển đổi thực thể phụ thuộc tồn tại thành Bảng phụ}
+\label{subsec:2_1_2_chuyen_doi_thuc_the_yeu}
+
+Thực thể phụ thuộc tồn tại (\textit{Existence-dependent Entities}) phụ thuộc chặt chẽ vào thực thể chủ. Nhằm đảm bảo hiệu năng và chuẩn hóa CSDL quan hệ hiện đại, các bảng phụ tương ứng được cấu hình:
 \begin{itemize}
-	\item \texttt{THANH\_VIEN\_NOI\_TOC}(\underline{\texttt{MaThanhVien}}\textsuperscript{PK, FK}, \texttt{DoiThu}, \texttt{ThuocChi}).
-	\item \texttt{THANH\_VIEN\_DAU\_RE}(\underline{\texttt{MaThanhVien}}\textsuperscript{PK, FK}, \texttt{GiaTocGoc}, \texttt{NgayVeLamDauRe}).
+    \item \textbf{Khóa chính đại diện (Surrogate PK):} Dùng kiểu UUID tự sinh để hỗ trợ liên kết nhanh và đánh chỉ mục độc lập.
+    \item \textbf{Khóa ngoại bắt buộc (FK \texttt{NOT NULL}):} Trỏ về bảng chính chủ. Đối với quan hệ $1:1$ (như Hồ sơ nghề nghiệp, Danh nhân), cột FK mang ràng buộc \texttt{UNIQUE}.
+    \item \textbf{Chính sách xóa thác lũ (\texttt{ON DELETE CASCADE}):} Khi bản ghi chủ bị xóa, các bản ghi phụ thuộc tự động bị loại bỏ để đảm bảo tính toàn vẹn tham chiếu.
 \end{itemize}
+
+\setlength{\arrayrulewidth}{0.65pt}
+\renewcommand{\arraystretch}{1.55}
+
+\begin{longtable}{|c|p{2.8cm}|>{\raggedright\arraybackslash}p{3.5cm}|p{5.7cm}|}
+
+    \caption{Chuyển đổi 5 Thực thể phụ thuộc tồn tại thành Bảng phụ}
+    \label{tab:2_1_2_thuc_the_yeu}\\
+
+    \hline
+    \rowcolor{tableheader}
+    \centering\textcolor{white}{\textbf{STT}} &
+    \centering\textcolor{white}{\textbf{Thực thể phụ thuộc}} &
+    \centering\textcolor{white}{\textbf{Bảng phụ (\texttt{snake\_case})}} &
+    \textcolor{white}{\textbf{Ghi chú thiết kế}}\tabularnewline
+    \hline
+    \endfirsthead
+    \multicolumn{4}{l}{\small\textit{(tiếp Bảng~\ref{tab:2_1_2_thuc_the_yeu})}}\\[2pt]
+    \hline
+    \rowcolor{tableheader}
+    \centering\textcolor{white}{\textbf{STT}} &
+    \centering\textcolor{white}{\textbf{Thực thể phụ thuộc}} &
+    \centering\textcolor{white}{\textbf{Bảng phụ (\texttt{snake\_case})}} &
+    \textcolor{white}{\textbf{Ghi chú thiết kế}}\tabularnewline
+    \hline
+    \endhead
+    \hline
+    \endlastfoot
+
+    1 &
+    \small NhatKyHeThong &
+    \tblcellfit{\texttt{nhat\_ky\_he\_thong}} &
+    \small PK: \texttt{ma\_nhat\_ky}. FK: \texttt{ma\_nguoi\_dung} $\to$ \texttt{nguoi\_dung} (\texttt{CASCADE}).\\
+    \hline
+
+    \rowcolor{tablerowalt}
+    2 &
+    \tblcellfit{HoSoNgheNghiep} &
+    \tblcellfit{\texttt{ho\_so\_nghe\_nghiep}} &
+    \small PK: \texttt{ma\_ho\_so}. FK: \texttt{ma\_thanh\_vien} $\to$ \texttt{thanh\_vien} (\texttt{CASCADE}, \texttt{UNIQUE} ép quan hệ 1:1).\\
+    \hline
+
+    3 &
+    \small BinhLuan &
+    \tblcellfit{\texttt{binh\_luan}} &
+    \small PK: \texttt{ma\_binh\_luan}. FK: \texttt{ma\_bai\_viet} $\to$ \texttt{bai\_viet} (\texttt{CASCADE}); FK: \texttt{ma\_thanh\_vien} $\to$ \texttt{thanh\_vien} (\texttt{SET NULL}).\\
+    \hline
+
+    \rowcolor{tablerowalt}
+    4 &
+    \small NhanVatTieuBieu &
+    \tblcellfit{\texttt{nhan\_vat\_tieu\_bieu}} &
+    \small PK: \texttt{ma\_nhan\_vat}. FK: \texttt{ma\_thanh\_vien} $\to$ \texttt{thanh\_vien} (\texttt{CASCADE}, \texttt{UNIQUE} ép quan hệ 1:1).\\
+    \hline
+
+    5 &
+    \small ThongBao &
+    \tblcellfit{\texttt{thong\_bao}} &
+    \small PK: \texttt{ma\_thong\_bao}. FK: \texttt{ma\_nguoi\_dung} $\to$ \texttt{nguoi\_dung} (\texttt{CASCADE}). Lưu thông báo hệ thống.\\
+    \hline
+
+\end{longtable}
+
+\renewcommand{\arraystretch}{1.0}
+\setlength{\arrayrulewidth}{0.4pt}
+
+\subsection{Chuyển đổi các mối quan hệ 1--1, 1--N, N--N và mối quan hệ đệ quy}
+\label{subsec:2_1_3_chuyen_doi_moi_quan_he}
+
+\subsubsection{Ánh xạ Quan hệ 1:1 và 1:N (Chèn Khóa ngoại FK)}
+
+Với quan hệ \textbf{1:1} và \textbf{1:N}, Khóa chính của bảng phía \textbf{1/Chính} được chèn vào bảng phía \textbf{N/Phụ} dưới dạng Khóa ngoại (FK). Riêng quan hệ 1:1 bắt buộc có ràng buộc \texttt{UNIQUE} trên cột FK để bảo đảm tính đơn nhất.
+
+\setlength{\arrayrulewidth}{0.65pt}
+\renewcommand{\arraystretch}{1.55}
+
+\begin{longtable}{|c|>{\raggedright\arraybackslash}p{3.2cm}|>{\raggedright\arraybackslash}p{3.0cm}|p{2.8cm}|p{2.2cm}|}
+
+    \caption{Ánh xạ Quan hệ 1:1 và 1:N -- Chèn Khóa ngoại FK}
+    \label{tab:2_1_3_fk_mapping}\\
+
+    \hline
+    \rowcolor{tableheader}
+    \centering\textcolor{white}{\textbf{STT}} &
+    \centering\textcolor{white}{\textbf{Bảng chứa FK (Phía N/Phụ)}} &
+    \centering\textcolor{white}{\textbf{Cột FK được chèn}} &
+    \centering\textcolor{white}{\textbf{Bảng đích (Phía 1/Chính)}} &
+    \textcolor{white}{\textbf{Loại quan hệ}}\tabularnewline
+    \hline
+    \endfirsthead
+    \multicolumn{5}{l}{\small\textit{(tiếp Bảng~\ref{tab:2_1_3_fk_mapping})}}\\[2pt]
+    \hline
+    \rowcolor{tableheader}
+    \centering\textcolor{white}{\textbf{STT}} &
+    \centering\textcolor{white}{\textbf{Bảng chứa FK (Phía N/Phụ)}} &
+    \centering\textcolor{white}{\textbf{Cột FK được chèn}} &
+    \centering\textcolor{white}{\textbf{Bảng đích (Phía 1/Chính)}} &
+    \textcolor{white}{\textbf{Loại quan hệ}}\tabularnewline
+    \hline
+    \endhead
+    \hline
+    \endlastfoot
+
+    1 &
+    \tblcellfit{\texttt{thanh\_vien}} &
+    \tblcellfit{\texttt{ma\_nguoi\_dung}} &
+    \tblcellfit{\texttt{nguoi\_dung}} &
+    \small 1:1 (\texttt{UNIQUE})\\
+    \hline
+
+    \rowcolor{tablerowalt}
+    2 &
+    \tblcellfit{\texttt{chi\_toc}} &
+    \tblcellfit{\texttt{ma\_dong\_ho}} &
+    \tblcellfit{\texttt{dong\_ho}} &
+    \small 1:N\\
+    \hline
+
+    3 &
+    \tblcellfit{\texttt{thanh\_vien}} &
+    \tblcellfit{\texttt{ma\_chi\_toc}} &
+    \tblcellfit{\texttt{chi\_toc}} &
+    \small 1:N\\
+    \hline
+
+    \rowcolor{tablerowalt}
+    4 &
+    \tblcellfit{\texttt{ho\_so\_nghe\_nghiep}} &
+    \tblcellfit{\texttt{ma\_thanh\_vien}} &
+    \tblcellfit{\texttt{thanh\_vien}} &
+    \small 1:1 (\texttt{UNIQUE})\\
+    \hline
+
+    5 &
+    \tblcellfit{\texttt{bai\_viet}} &
+    \tblcellfit{\texttt{ma\_nguoi\_tao}} &
+    \tblcellfit{\texttt{nguoi\_dung}} &
+    \small 1:N\\
+    \hline
+
+    \rowcolor{tablerowalt}
+    6 &
+    \tblcellfit{\texttt{binh\_luan}} &
+    \tblcellfit{\texttt{ma\_bai\_viet}} &
+    \tblcellfit{\texttt{bai\_viet}} &
+    \small 1:N\\
+    \hline
+
+    7 &
+    \tblcellfit{\texttt{binh\_luan}} &
+    \tblcellfit{\texttt{ma\_thanh\_vien}} &
+    \tblcellfit{\texttt{thanh\_vien}} &
+    \small 1:N (Nullable)\\
+    \hline
+
+    \rowcolor{tablerowalt}
+    8 &
+    \tblcellfit{\texttt{album\_anh}} &
+    \tblcellfit{\texttt{ma\_thanh\_vien}} &
+    \tblcellfit{\texttt{thanh\_vien}} &
+    \small 1:N\\
+    \hline
+
+    9 &
+    \tblcellfit{\texttt{su\_kien}} &
+    \tblcellfit{\texttt{ma\_nguoi\_tao}} &
+    \tblcellfit{\texttt{nguoi\_dung}} &
+    \small 1:N\\
+    \hline
+
+    \rowcolor{tablerowalt}
+    10 &
+    \tblcellfit{\texttt{thong\_bao}} &
+    \tblcellfit{\texttt{ma\_nguoi\_dung}} &
+    \tblcellfit{\texttt{nguoi\_dung}} &
+    \small 1:N\\
+    \hline
+
+    11 &
+    \tblcellfit{\texttt{di\_san\_lich\_su}} &
+    \tblcellfit{\texttt{ma\_thanh\_vien}} &
+    \tblcellfit{\texttt{thanh\_vien}} &
+    \small 1:N\\
+    \hline
+
+    \rowcolor{tablerowalt}
+    12 &
+    \tblcellfit{\texttt{nhan\_vat\_tieu\_bieu}} &
+    \tblcellfit{\texttt{ma\_thanh\_vien}} &
+    \tblcellfit{\texttt{thanh\_vien}} &
+    \small 1:1 (\texttt{UNIQUE})\\
+    \hline
+
+    13 &
+    \tblcellfit{\texttt{nhat\_ky\_he\_thong}} &
+    \tblcellfit{\texttt{ma\_nguoi\_dung}} &
+    \tblcellfit{\texttt{nguoi\_dung}} &
+    \small 1:N\\
+    \hline
+
+    % ---- Đệ quy ----
+    \multicolumn{5}{|l|}{\small\textit{\textbf{Quan hệ đệ quy huyết thống (Self-referencing) -- bảng \texttt{thanh\_vien}}}}\\
+    \hline
+
+    14 &
+    \tblcellfit{\texttt{thanh\_vien}} &
+    \tblcellfit{\texttt{ma\_cha}} &
+    \tblcellfit{\texttt{thanh\_vien}} &
+    \small 1:N (Nullable)\\
+    \hline
+
+    \rowcolor{tablerowalt}
+    15 &
+    \tblcellfit{\texttt{thanh\_vien}} &
+    \tblcellfit{\texttt{ma\_me}} &
+    \tblcellfit{\texttt{thanh\_vien}} &
+    \small 1:N (Nullable)\\
+    \hline
+
+\end{longtable}
+
+\renewcommand{\arraystretch}{1.0}
+\setlength{\arrayrulewidth}{0.4pt}
+
+\subsubsection{Chuyển đổi Mối kết hợp M:N thành Bảng trung gian}
+
+Với mỗi quan hệ \textbf{M:N}, tạo một bảng trung gian (Junction Table) chứa Khóa ngoại trỏ về hai bảng tham gia. Cặp khóa ngoại tạo thành Khóa chính hợp phần (Composite PK) hoặc sử dụng PK riêng kèm ràng buộc duy nhất \texttt{UNIQUE}.
+
+\setlength{\arrayrulewidth}{0.65pt}
+\renewcommand{\arraystretch}{1.55}
+
+\begin{longtable}{|c|>{\raggedright\arraybackslash}p{3.5cm}|p{2.3cm}|p{3.2cm}|p{3.2cm}|}
+
+    \caption{Chuyển đổi 5 Mối kết hợp M:N thành Bảng trung gian}
+    \label{tab:2_1_3_mn_junction}\\
+
+    \hline
+    \rowcolor{tableheader}
+    \centering\textcolor{white}{\textbf{STT}} &
+    \centering\textcolor{white}{\textbf{Bảng trung gian}} &
+    \centering\textcolor{white}{\textbf{Mối kết hợp}} &
+    \centering\textcolor{white}{\textbf{Danh sách Khóa ngoại (FK)}} &
+    \textcolor{white}{\textbf{Ghi chú}}\tabularnewline
+    \hline
+    \endfirsthead
+    \multicolumn{5}{l}{\small\textit{(tiếp Bảng~\ref{tab:2_1_3_mn_junction})}}\\[2pt]
+    \hline
+    \rowcolor{tableheader}
+    \centering\textcolor{white}{\textbf{STT}} &
+    \centering\textcolor{white}{\textbf{Bảng trung gian}} &
+    \centering\textcolor{white}{\textbf{Mối kết hợp}} &
+    \centering\textcolor{white}{\textbf{Danh sách Khóa ngoại (FK)}} &
+    \textcolor{white}{\textbf{Ghi chú}}\tabularnewline
+    \hline
+    \endhead
+    \hline
+    \endlastfoot
+
+    1 &
+    \tblcellfit{\texttt{nguoi\_dung\_vai\_tro}} &
+    \small\textit{gán vai trò} &
+    \small\texttt{ma\_nguoi\_dung},\newline\texttt{ma\_vai\_tro} &
+    \small Quan hệ $M:N$; có \texttt{ngay\_cap}\\
+    \hline
+
+    \rowcolor{tablerowalt}
+    2 &
+    \tblcellfit{\texttt{vai\_tro\_quyen}} &
+    \small\textit{có quyền} &
+    \small\texttt{ma\_vai\_tro},\newline\texttt{ma\_quyen} &
+    \small Quan hệ $M:N$\\
+    \hline
+
+    3 &
+    \tblcellfit{\texttt{dang\_ky\_su\_kien}} &
+    \small\textit{tham gia sự kiện} &
+    \small\texttt{ma\_thanh\_vien},\newline\texttt{ma\_su\_kien} &
+    \small Quan hệ $M:N$; có \tblcellfit{\texttt{trang\_thai\_tham\_gia}}, \tblcellfit{\texttt{so\_nguoi\_di\_cung}}\\
+    \hline
+
+    \rowcolor{tablerowalt}
+    4 &
+    \tblcellfit{\texttt{quan\_he\_hon\_nhan}} &
+    \small\textit{hôn phối} &
+    \small\texttt{ma\_chong},\newline\texttt{ma\_vo} &
+    \small Đệ quy $M:N$ trên \texttt{thanh\_vien}; có \texttt{ngay\_ket\_hon}, \texttt{trang\_thai}\\
+    \hline
+
+    5 &
+    \tblcellfit{\texttt{tuong\_tac\_bai\_viet}} &
+    \small\textit{bày tỏ cảm xúc} &
+    \small\texttt{ma\_thanh\_vien},\newline\texttt{ma\_bai\_viet} &
+    \small Quan hệ $M:N$; có \texttt{loai\_tuong\_tac}, \texttt{thoi\_diem}\\
+    \hline
+
+\end{longtable}
+
+\renewcommand{\arraystretch}{1.0}
+\setlength{\arrayrulewidth}{0.4pt}
+
+\subsection{Xử lý quan hệ kế thừa hoặc phân loại (EER Mapping)}
+\label{subsec:2_1_3_xu_ly_ke_thua}
+
+Trong cây gia phả, thực thể \texttt{THANH\_VIEN} được phân loại thành hai nhóm kế thừa chuyên biệt: \textbf{Thành viên nội tộc (Ruột thịt)} và \textbf{Thành viên ngoại tộc (Dâu/Rể)}. 
+
+Áp dụng phương pháp \textbf{Class Hierarchy Mapping (Biểu diễn bảng lớp cha và các bảng lớp con)}:
+\begin{enumerate}
+	\item \textbf{Bảng lớp cha (\texttt{thanh\_vien}):} Lưu giữ toàn bộ thuộc tính dùng chung (họ tên, ngày sinh, giới tính, thế hệ, chi tộc, cha mẹ).
+	\item \textbf{Bảng lớp con \texttt{thanh\_vien\_noi\_toc}:} Lưu thuộc tính riêng của người mang dòng máu gia tộc (đời thứ mấy, thuộc chi). Khóa chính \texttt{ma\_thanh\_vien} vừa là PK vừa là FK tham chiếu về \texttt{thanh\_vien} (\texttt{ON DELETE CASCADE}).
+	\item \textbf{Bảng lớp con \texttt{thanh\_vien\_dau\_re}:} Lưu thuộc tính riêng của dâu/rể (gia tộc gốc, ngày về làm dâu/rể). Khóa chính \texttt{ma\_thanh\_vien} vừa là PK vừa là FK tham chiếu về \texttt{thanh\_vien} (\texttt{ON DELETE CASCADE}).
+\end{enumerate}
+
+\noindent\textbf{Tổng kết quy tắc chuyển đổi:} Toàn bộ quá trình biến đổi tạo ra chính xác $\mathbf{22}$ lược đồ quan hệ lô-gíc hoàn chỉnh ($10\text{ bảng chính} + 5\text{ bảng phụ} + 5\text{ bảng trung gian } M{:}N + 2\text{ bảng kế thừa}$).
