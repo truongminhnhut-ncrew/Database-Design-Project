@@ -2,8 +2,96 @@
 \section{Chiến lược đánh chỉ mục (Indexing Strategy)}
 \label{sec:3_3_chien_luoc_index}
 
+Trong hệ quản trị cơ sở dữ liệu PostgreSQL, chỉ mục (Index) là cấu trúc phụ trợ cho phép bộ tối ưu hóa truy vấn (\textit{Query Planner}) định vị bản ghi nhanh chóng mà không cần quét toàn bộ bảng dữ liệu (\textit{Sequential Scan}). Hệ thống \textbf{FamilyConnect} được thiết kế với các chiến lược đánh chỉ mục đa tầng nhằm giải quyết hai thách thức lớn nhất: tối ưu hóa các phép nối bảng (\texttt{JOIN}) trên mô hình 22 quan hệ và tăng tốc duyệt cây phả hệ phân cấp đệ quy.
+
+Toàn bộ mã nguồn kịch bản tạo chỉ mục tối ưu hóa hiệu năng được lưu trữ độc lập tại tệp:
+\begin{center}
+    \texttt{sql/indexing.sql}
+\end{center}
+
 \subsection{Chỉ mục Khóa chính và Khóa ngoại (B-Tree Indexing)}
-% Nội dung đánh index cho PK, FK tối ưu JOIN
+
+\subsubsection{Cơ chế tự động của Khóa chính (PK)}
+Toàn bộ 22 bảng trong hệ thống đều sử dụng kiểu dữ liệu \texttt{uuid} (128-bit) làm khóa chính. Khi khởi tạo bảng với ràng buộc \texttt{PRIMARY KEY}, PostgreSQL tự động tạo một chỉ mục B-Tree độc nhất (\textit{Unique B-Tree Index}) tương ứng. Cấu trúc B-Tree trên khóa 16-byte mang lại chi phí tìm kiếm $O(\log N)$ cực kỳ nhỏ gọn và ổn định.
+
+\subsubsection{Chiến lược đánh chỉ mục trên Khóa ngoại (FK)}
+Khác với một số hệ quản trị khác, PostgreSQL \textbf{không tự động tạo chỉ mục trên các cột khóa ngoại}. Nếu không đánh chỉ mục cho FK, các thao tác \texttt{JOIN} hoặc kiểm tra khóa ngoại khi thực hiện \texttt{UPDATE / DELETE} ở bảng cha sẽ buộc PostgreSQL phải quét tuần tự toàn bộ bảng con, gây nghẽn hiệu năng nghiêm trọng. Do đó, hệ thống thiết lập chỉ mục B-Tree rõ ràng cho toàn bộ các trường FK trọng yếu:
+
+\begin{lstlisting}[language=SQL, caption={Kịch bản tạo chỉ mục B-Tree trên các Khóa ngoại}, label={lst:index_fk}]
+-- 1. Index FK phan he Gia toc va Cay pha he
+CREATE INDEX "idx_fk_chi_toc_dong_ho" ON "CHI_TOC" ("MaDongHo");
+CREATE INDEX "idx_fk_thanh_vien_chi_toc" ON "THANH_VIEN" ("MaChiToc");
+CREATE INDEX "idx_fk_thanh_vien_user" ON "THANH_VIEN" ("MaNguoiDung");
+CREATE INDEX "idx_fk_thanh_vien_cha" ON "THANH_VIEN" ("MaCha");
+CREATE INDEX "idx_fk_thanh_vien_me" ON "THANH_VIEN" ("MaMe");
+CREATE INDEX "idx_fk_hon_nhan_nguoi1" ON "QUAN_HE_HON_NHAN" ("MaNguoi1");
+CREATE INDEX "idx_fk_hon_nhan_nguoi2" ON "QUAN_HE_HON_NHAN" ("MaNguoi2");
+
+-- 2. Index FK phan he Nguoi dung va Phan quyen RBAC
+CREATE INDEX "idx_fk_user_role_user" ON "NGUOI_DUNG_VAI_TRO" ("MaNguoiDung");
+CREATE INDEX "idx_fk_user_role_role" ON "NGUOI_DUNG_VAI_TRO" ("MaVaiTro");
+CREATE INDEX "idx_fk_role_perm_role" ON "VAI_TRO_QUYEN" ("MaVaiTro");
+CREATE INDEX "idx_fk_role_perm_perm" ON "VAI_TRO_QUYEN" ("MaQuyen");
+CREATE INDEX "idx_fk_nhat_ky_user" ON "NHAT_KY_HE_THONG" ("MaNguoiDung");
+
+-- 3. Index FK phan he Tuong tac, Su kien va Di san
+CREATE INDEX "idx_fk_bai_viet_user" ON "BAI_VIET" ("MaNguoiTao");
+CREATE INDEX "idx_fk_binh_luan_post" ON "BINH_LUAN" ("MaBaiViet");
+CREATE INDEX "idx_fk_binh_luan_member" ON "BINH_LUAN" ("MaThanhVien");
+CREATE INDEX "idx_fk_tuong_tac_post" ON "TUONG_TAC" ("MaBaiViet");
+CREATE INDEX "idx_fk_tuong_tac_member" ON "TUONG_TAC" ("MaThanhVien");
+CREATE INDEX "idx_fk_su_kien_user" ON "SU_KIEN" ("MaNguoiTao");
+CREATE INDEX "idx_fk_rsvp_event" ON "DANG_KY_SU_KIEN" ("MaSuKien");
+CREATE INDEX "idx_fk_rsvp_member" ON "DANG_KY_SU_KIEN" ("MaThanhVien");
+CREATE INDEX "idx_fk_thong_bao_user" ON "THONG_BAO" ("MaNguoiDung");
+CREATE INDEX "idx_fk_di_san_member" ON "DI_SAN_LICH_SU" ("MaThanhVien");
+\end{lstlisting}
 
 \subsection{Chỉ mục tối ưu hóa Truy vấn Phả hệ và Tìm kiếm}
-% Nội dung chỉ mục cho clan_id, branch_id, created_at, họ tên, số điện thoại, duyệt cây
+
+\subsubsection{Chỉ mục tổ hợp đa cột (Composite Indexes)}
+Để phục vụ việc kết xuất cây gia phả phân nhánh theo chi tộc và sắp xếp thứ bậc chính xác theo thế hệ cùng thứ tự sinh, hệ thống cài đặt chỉ mục tổng hợp:
+
+\begin{lstlisting}[language=SQL, caption={Chỉ mục tổ hợp duyệt cây gia phả và dòng thời gian bài viết}, label={lst:index_composite}]
+-- Toi uu hoa truy van cay gia pha theo Chi toc -> The he -> Con thu
+CREATE INDEX "idx_thanh_vien_cay_pha_he" 
+ON "THANH_VIEN" ("MaChiToc", "TheHe" ASC, "ConThu" ASC);
+
+-- Toi uu hoa bang tin dong ho: Loc theo pham vi va xep theo thoi gian dang
+CREATE INDEX "idx_bai_viet_feed" 
+ON "BAI_VIET" ("PhamViChiaSe", "ThoiGianDang" DESC);
+\end{lstlisting}
+
+\subsubsection{Tìm kiếm họ tên thành viên với tiện ích mở rộng \texttt{pg\_trgm}}
+Tần suất tìm kiếm thành viên theo họ và tên (\texttt{HoVaTen}) trên giao diện người dùng diễn ra rất cao. Để hỗ trợ tìm kiếm mờ (\textit{Fuzzy search}), tìm kiếm chứa chuỗi con không phụ thuộc ký tự đầu tiên (\texttt{ILIKE '\%tên\%'}), hệ thống sử dụng chỉ mục \textbf{GIN / GiST Trigram}:
+
+\begin{lstlisting}[language=SQL, caption={Chỉ mục tìm kiếm mở rộng với pg\_trgm}, label={lst:index_trgm}]
+-- Kich hoat extension trigram ho tro tim kiem mo
+CREATE EXTENSION IF NOT EXISTS "pg_trgm";
+
+-- Chi muc GIN Trigram tren cot HoVaTen cua thanh vien
+CREATE INDEX "idx_gin_thanh_vien_hovaten" 
+ON "THANH_VIEN" USING GIN ("HoVaTen" gin_trgm_ops);
+\end{lstlisting}
+
+\subsection{Chỉ mục một phần (Partial Indexes) \& Tối ưu hóa bộ nhớ}
+
+Chỉ mục một phần (\textit{Partial Index}) là tính năng ưu việt của PostgreSQL, chỉ đánh chỉ mục trên tập con các hàng thỏa mãn biểu thức điều kiện (\texttt{WHERE}). Giải pháp này giúp tiết kiệm tối đa dung lượng đĩa cứng và tăng tốc độ ghi (\texttt{INSERT / UPDATE}):
+
+\begin{lstlisting}[language=SQL, caption={Cài đặt các chỉ mục một phần (Partial Indexes)}, label={lst:index_partial}]
+-- 1. Chi muc thong bao chua doc cua nguoi dung (Loc DaDoc = false)
+-- Chi danh index tren cac thong bao moi, bo qua hang trieu thong bao da doc
+CREATE INDEX "idx_thong_bao_chua_doc" 
+ON "THONG_BAO" ("MaNguoiDung", "ThoiDiemTao" DESC) 
+WHERE "DaDoc" = false;
+
+-- 2. Chi muc cac bai viet da duoc phe duyet de xuat ban ra bang tin
+CREATE INDEX "idx_bai_viet_da_duyet" 
+ON "BAI_VIET" ("ThoiGianDang" DESC) 
+WHERE "TrangThaiDuyet" = 'Approved';
+
+-- 3. Chi muc thanh vien con song phuc vu cham soc hoi vien va mung tho
+CREATE INDEX "idx_thanh_vien_con_song" 
+ON "THANH_VIEN" ("MaChiToc", "TheHe") 
+WHERE "TinhTrang" = 'Con song';
+\end{lstlisting}
