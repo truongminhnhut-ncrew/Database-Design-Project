@@ -120,18 +120,16 @@
         rectangle split,
         rectangle split parts=2,
         rectangle split part fill={erdheader, white},
-        rounded corners=2pt,
         draw=erdnavy,
         line width=0.8pt,
         font=\footnotesize\sffamily,
         text width=3.8cm,
-        inner sep=4pt,
-        rectangle split part align={center, left}
+        inner sep=4pt
     },
     erd rel/.style={
         draw=erdline,
         line width=0.75pt,
-        -{Latex[length=2.2mm]}
+        -{Stealth[length=2.2mm]}
     },
     erd card/.style={
         font=\scriptsize\bfseries\sffamily,
@@ -150,7 +148,7 @@
         align=center,
         font=\bfseries\small,
         text=navy,
-        drop shadow={opacity=0.15, shadow xshift=1pt, shadow yshift=-1.5pt}
+        drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt}
     },
     weakentity/.style={
         rectangle,
@@ -165,7 +163,7 @@
         align=center,
         font=\bfseries\small,
         text=navy,
-        drop shadow={opacity=0.15, shadow xshift=1pt, shadow yshift=-1.5pt}
+        drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt}
     },
     relation/.style={
         diamond,
@@ -178,7 +176,7 @@
         align=center,
         font=\scriptsize\bfseries,
         text=navy,
-        drop shadow={opacity=0.12, shadow xshift=1pt, shadow yshift=-1pt}
+        drop shadow={shadow xshift=1pt, shadow yshift=-1pt}
     },
     weakrelation/.style={
         diamond,
@@ -193,7 +191,7 @@
         align=center,
         font=\scriptsize\bfseries,
         text=navy,
-        drop shadow={opacity=0.12, shadow xshift=1pt, shadow yshift=-1pt}
+        drop shadow={shadow xshift=1pt, shadow yshift=-1pt}
     },
     attribute/.style={
         ellipse,
@@ -217,7 +215,7 @@
         inner sep=4pt
     },
     connector/.style={
-        -{Latex[length=2.2mm, width=1.6mm]},
+        -{Stealth[length=2.2mm, width=1.6mm]},
         line width=1pt,
         draw=graytext!90
     },
@@ -309,6 +307,10 @@
     pdfkeywords={Database, ERD, Relational Model, Normalization, SQL}
 }
 
+% Thiết lập cấp độ đánh số và mục lục hiển thị đến subsubsection (cấp 3)
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+
 % ==============================================================================
 % BẮT ĐẦU TÀI LIỆU
 % ==============================================================================
@@ -358,10 +360,16 @@
 % MỤC LỤC VÀ DANH MỤC
 % ------------------------------------------------------------------------------
 \pagenumbering{roman}
+\phantomsection
+\pdfbookmark[0]{\contentsname}{toc}
 \tableofcontents
 \newpage
+\phantomsection
+\addcontentsline{toc}{chapter}{Danh sách hình vẽ}
 \listoffigures
 \newpage
+\phantomsection
+\addcontentsline{toc}{chapter}{Danh sách bảng}
 \listoftables
 \newpage
 
@@ -388,6 +396,8 @@
 % ------------------------------------------------------------------------------
 % TÀI LIỆU THAM KHẢO
 % ------------------------------------------------------------------------------
+\phantomsection
+\addcontentsline{toc}{chapter}{\bibname}
 \begin{thebibliography}{99}
 \bibitem{chen1976}
 Peter Pin-Shan Chen.

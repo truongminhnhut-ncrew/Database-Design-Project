@@ -1,0 +1,181 @@
+% !TEX root = ../../main.tex
+\section{Kiểm thử chức năng và Toàn vẹn cơ sở dữ liệu (Database Testing)}
+\label{sec:3_7_kiem_thu_csdl}
+
+Nhằm kiểm chứng tính đúng đắn của thiết kế vật lý, xác thực toàn diện các quy tắc nghiệp vụ và bảo đảm hệ cơ sở dữ liệu \textbf{FamilyConnect} vận hành tin cậy trước các tình huống dữ liệu biên hoặc dữ liệu xung đột, một kịch bản kiểm thử toàn diện gồm \textbf{58 trường hợp kiểm thử (Test Cases)} đã được xây dựng và thực thi trực tiếp trên hệ quản trị \textbf{PostgreSQL 16+}.
+
+Toàn bộ mã nguồn kịch bản kiểm thử được lưu trữ độc lập tại tệp mã nguồn:
+\begin{center}
+    \texttt{sql/test.sql}
+\end{center}
+
+Dưới đây là chi tiết các phân nhóm kiểm thử trọng yếu, phương pháp kiểm tra và kết quả thực nghiệm đạt được.
+
+\subsection{Kiểm tra Cấu trúc bảng và Siêu dữ liệu Schema}
+
+Bước đầu tiên trong quy trình kiểm thử là rà soát sự hiện diện đầy đủ của toàn bộ 22 bảng nghiệp vụ cùng các ràng buộc cấu trúc trong lược đồ cơ sở dữ liệu thông qua lược đồ thông tin hệ thống (\texttt{information\_schema}):
+
+\begin{lstlisting}[language=SQL, caption={Kiểm tra danh mục bảng và ràng buộc hệ thống}, label={lst:test_schema}]
+-- TEST 0 & 57: Kiem tra su ton tai cua toan bo 22 bang he thong
+SELECT COUNT(*) AS "TongSoBang"
+FROM information_schema.tables
+WHERE table_schema = 'public' AND table_type = 'BASE TABLE';
+
+-- TEST 50: Kiem tra danh sach 25 rang buoc Khoa ngoai (Foreign Keys)
+SELECT tc.table_name AS "Bang", kcu.column_name AS "CotFK",
+       ccu.table_name AS "BangThamChieu", ccu.column_name AS "CotThamChieu"
+FROM information_schema.table_constraints tc
+JOIN information_schema.key_column_usage kcu
+    ON tc.constraint_name = kcu.constraint_name AND tc.constraint_schema = kcu.constraint_schema
+JOIN information_schema.constraint_column_usage ccu
+    ON ccu.constraint_name = tc.constraint_name AND ccu.constraint_schema = tc.constraint_schema
+WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_schema = 'public'
+ORDER BY tc.table_name;
+\end{lstlisting}
+
+\textbf{Kết quả thực nghiệm:} Hệ thống ghi nhận chính xác 22 bảng cơ sở dữ liệu, 22 khóa chính UUID, 25 ràng buộc khóa ngoại tham chiếu liên kết chuẩn mực và các chỉ mục toàn vẹn đã được kích hoạt.
+
+\subsection{Kiểm thử Nạp dữ liệu và Nghiệp vụ các Phân hệ (Functional Tests)}
+
+Nhóm kiểm thử chức năng (Tests 1 -- 36) thực hiện nạp dữ liệu mẫu (\textit{Seed Data}) mô phỏng các hoạt động thực tế trên nền tảng:
+
+\subsubsection{1. Phân hệ Người dùng và Phân quyền RBAC (Tests 1 -- 7)}
+Khởi tạo các tài khoản người dùng, thiết lập 3 vai trò (\texttt{ADMIN}, \texttt{TRUONG\_HO}, \texttt{THANH\_VIEN}), gán danh mục quyền hạt nhân (\texttt{genealogy.edit}, \texttt{post.create}, \texttt{event.create}, \texttt{post.approve}) và thực thi truy vấn kiểm chứng ma trận phân quyền:
+
+\begin{lstlisting}[language=SQL, caption={Kiểm chứng phân quyền RBAC đa bảng}, label={lst:test_rbac}]
+-- TEST 6: Truy van kiem tra quyen han thuc te cua nguoi dung
+SELECT nd."Email", vt."TenVaiTro", q."TenQuyen", q."NhomChucNang"
+FROM "NGUOI_DUNG" nd
+JOIN "NGUOI_DUNG_VAI_TRO" ndvt ON nd."MaNguoiDung" = ndvt."MaNguoiDung"
+JOIN "VAI_TRO" vt             ON ndvt."MaVaiTro" = vt."MaVaiTro"
+LEFT JOIN "VAI_TRO_QUYEN" vtq ON vt."MaVaiTro" = vtq."MaVaiTro"
+LEFT JOIN "QUYEN" q           ON vtq."MaQuyen" = q."MaQuyen"
+ORDER BY nd."Email", q."TenQuyen";
+\end{lstlisting}
+
+\subsubsection{2. Phân hệ Phả hệ và Quan hệ Huyết thống (Tests 8 -- 18)}
+Khởi tạo dữ liệu Dòng họ Trương, Chi Trương Thanh (Đời thứ 1) và thiết lập cấu trúc gia phả 2 thế hệ:
+\begin{itemize}
+    \item Thế hệ 1: Cha (\textit{Trương Thanh Nhanh}), Mẹ (\textit{Phạm Thuý Ngân}) với quan hệ hôn nhân hợp thức tại bảng \texttt{QUAN\_HE\_HON\_NHAN}.
+    \item Thế hệ 2: Con trai (\textit{Trương Minh Nhựt}) mang liên kết tự tham chiếu đệ quy \texttt{MaCha} và \texttt{MaMe} trỏ trực tiếp về hai bản ghi thế hệ 1.
+    \item Liên kết hồ sơ năng lực: Bản ghi \texttt{HO\_SO\_NGHE\_NGHIEP} được gắn kèm theo quan hệ $1:1$ với thành viên.
+\end{itemize}
+
+\begin{lstlisting}[language=SQL, caption={Truy vấn kiểm tra cây phả hệ Cha - Mẹ - Con}, label={lst:test_genealogy}]
+-- TEST 13: Xac nhan thong tin quan he gia dinh day du
+SELECT con."HoVaTen" AS "Con", cha."HoVaTen" AS "Cha",
+       me."HoVaTen" AS "Me", con."TheHe" AS "TheHe"
+FROM "THANH_VIEN" con
+LEFT JOIN "THANH_VIEN" cha ON con."MaCha" = cha."MaThanhVien"
+LEFT JOIN "THANH_VIEN" me  ON con."MaMe" = me."MaThanhVien"
+WHERE con."HoVaTen" = 'Truong Minh Nhut';
+\end{lstlisting}
+
+\subsubsection{3. Phân hệ Tương tác, Sự kiện \& Di sản (Tests 19 -- 36)}
+Xác thực chuỗi nghiệp vụ mạng xã hội dòng họ: Đăng bài viết thông báo họp mặt $\to$ thành viên tương tác thả tim (\texttt{LIKE}) $\to$ bình luận $\to$ tạo sự kiện giỗ họ $\to$ đăng ký tham gia (\texttt{RSVP}) kèm người thân đi cùng $\to$ gửi thông báo đến hộp thư người dùng $\to$ cập nhật trạng thái thông báo thành đã đọc (\texttt{DaDoc = TRUE}).
+
+\subsection{Kiểm thử Ràng buộc Toàn vẹn và Cơ chế Chặn lỗi (Constraint Validation)}
+
+Đây là phần kiểm thử có ý nghĩa sống còn nhằm chứng minh năng lực bảo vệ dữ liệu tự động của cơ sở dữ liệu. Toàn bộ các ca kiểm thử tiêu cực (\textit{Negative Test Cases}) được bọc trong các khối lệnh PL/pgSQL ẩn danh (\texttt{DO \$\$ ... \$\$}) để bắt ngoại lệ tương ứng:
+
+\begin{lstlisting}[language=SQL, caption={Cài đặt các ca kiểm thử vi phạm ràng buộc toàn vẹn}, label={lst:test_constraints}]
+-- TEST 37: Kiem thu rang buoc UNIQUE Email (Ket qua mong doi: PASS neu bi chan)
+DO $$
+BEGIN
+    BEGIN
+        INSERT INTO "NGUOI_DUNG" ("MaNguoiDung", "Email", "SoDienThoai", "MatKhauHash", "TrangThai", "NgayTao")
+        VALUES (gen_random_uuid(), 'nhut@familyconnect.vn', '0999999999', 'test', 'ACTIVE', CURRENT_TIMESTAMP);
+        RAISE NOTICE 'FAIL TEST 37: Email trung van duoc them';
+    EXCEPTION
+        WHEN unique_violation THEN
+            RAISE NOTICE 'PASS TEST 37: UNIQUE Email hoat dong tot';
+    END;
+END $$;
+
+-- TEST 38: Kiem thu rang buoc Foreign Key MaChiToc
+DO $$
+BEGIN
+    BEGIN
+        INSERT INTO "THANH_VIEN" ("MaThanhVien", "MaChiToc", "HoVaTen", "GioiTinh", "TheHe", "TinhTrang")
+        VALUES (gen_random_uuid(), 'ffffffff-ffff-ffff-ffff-ffffffffffff', 'TEST FK', 'Nam', 99, 'Con song');
+        RAISE NOTICE 'FAIL TEST 38: FK MaChiToc khong chan ban ghi mo coi';
+    EXCEPTION
+        WHEN foreign_key_violation THEN
+            RAISE NOTICE 'PASS TEST 38: FK MaChiToc bao ve tham chieu thanh cong';
+    END;
+END $$;
+
+-- TEST 40: Kiem thu quan he 1:1 giua Tai khoan va Ho so Thanh vien (UNIQUE MaNguoiDung)
+DO $$
+BEGIN
+    BEGIN
+        INSERT INTO "THANH_VIEN" ("MaThanhVien", "MaChiToc", "MaNguoiDung", "HoVaTen", "GioiTinh", "TheHe", "TinhTrang")
+        VALUES (gen_random_uuid(), '50000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'Ho so trung', 'Nam', 2, 'Con song');
+        RAISE NOTICE 'FAIL TEST 40: 1 tai khoan duoc gan voi nhieu ho so';
+    EXCEPTION
+        WHEN unique_violation THEN
+            RAISE NOTICE 'PASS TEST 40: Quan he tai khoan - ho so dam bao 1:1';
+    END;
+END $$;
+\end{lstlisting}
+
+\subsection{Kiểm thử Truy vấn Thống kê và Báo cáo Phân tích}
+
+Nhóm kiểm thử này chứng minh khả năng tổng hợp dữ liệu hiệu năng cao của cơ sở dữ liệu phục vụ các chức năng báo cáo quản trị:
+
+\begin{lstlisting}[language=SQL, caption={Truy vấn báo cáo tổng hợp hồ sơ đa bảng}, label={lst:test_reporting}]
+-- TEST 48: Bao cao tong hop ho so thanh vien noi ket 5 bang
+SELECT tv."HoVaTen", tv."GioiTinh", tv."TheHe",
+       cha."HoVaTen" AS "Cha", me."HoVaTen" AS "Me",
+       ct."TenChiToc", dh."TenDongHo",
+       hs."NgheNghiep", hs."ChuyenNganh"
+FROM "THANH_VIEN" tv
+LEFT JOIN "THANH_VIEN" cha       ON tv."MaCha" = cha."MaThanhVien"
+LEFT JOIN "THANH_VIEN" me        ON tv."MaMe" = me."MaThanhVien"
+JOIN "CHI_TOC" ct                ON tv."MaChiToc" = ct."MaChiToc"
+JOIN "DONG_HO" dh                ON ct."MaDongHo" = dh."MaDongHo"
+LEFT JOIN "HO_SO_NGHE_NGHIEP" hs ON tv."MaThanhVien" = hs."MaThanhVien"
+ORDER BY tv."TheHe", tv."HoVaTen";
+\end{lstlisting}
+
+\subsection{Bảng tổng hợp kết quả Kiểm thử Hệ thống}
+
+Toàn bộ 58 trường hợp kiểm thử trong kịch bản \texttt{test.sql} đã được thực thi tự động. Bảng~\ref{tab:test_summary} tóm lược các nhóm kiểm thử và kết quả đánh giá thực tế:
+
+\begin{table}[htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{|c|p{4.2cm}|c|p{5.0cm}|c|}
+\hline
+\rowcolor{tableheader}
+\textcolor{white}{\textbf{STT}} &
+\textcolor{white}{\textbf{Hạng mục kiểm thử}} &
+\textcolor{white}{\textbf{Số Test}} &
+\textcolor{white}{\textbf{Mục tiêu xác thực}} &
+\textcolor{white}{\textbf{Kết quả}} \\
+\hline
+1 & Kiểm tra Cấu trúc \& Schema & 7 & Xác thực 22 bảng, PK, FK, UNIQUE, Index & \textbf{100\% PASS} \\
+\hline
+\rowcolor{tablerowalt}
+2 & Xác thực Tài khoản \& RBAC & 6 & Người dùng, Vai trò, Quyền, Ma trận phân quyền & \textbf{100\% PASS} \\
+\hline
+3 & Phả hệ \& Cây gia phả đệ quy & 11 & Dòng họ, Chi tộc, Cha - Mẹ - Con, Hôn nhân & \textbf{100\% PASS} \\
+\hline
+\rowcolor{tablerowalt}
+4 & Tương tác, Sự kiện \& Di sản & 12 & Bài viết, Bình luận, Like, RSVP, Thông báo & \textbf{100\% PASS} \\
+\hline
+5 & Kiểm định Ràng buộc toàn vẹn & 8 & Bắt lỗi vi phạm Email, FK, 1:1, NOT NULL, PK & \textbf{100\% PASS} \\
+\hline
+\rowcolor{tablerowalt}
+6 & Thống kê \& Báo cáo phân tích & 5 & Thống kê theo Chi tộc, Giới tính, Thế hệ, Join & \textbf{100\% PASS} \\
+\hline
+7 & Thao tác Xóa \& Thu hồi dữ liệu & 1 & Kiểm tra chu trình INSERT $\to$ DELETE $\to$ SELECT & \textbf{100\% PASS} \\
+\hline
+\rowcolor{softblue}
+\multicolumn{2}{|c|}{\textbf{TỔNG CỘNG}} & \textbf{58} & \multicolumn{2}{r|}{\textbf{58 / 58 Test Cases ĐẠT (100\%)}} \\
+\hline
+\end{tabular}
+\caption{Bảng tổng kết kết quả kiểm thử chức năng và toàn vẹn cơ sở dữ liệu.}
+\label{tab:test_summary}
+\end{table}

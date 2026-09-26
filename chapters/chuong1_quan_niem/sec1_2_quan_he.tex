@@ -1,248 +1,256 @@
 % !TEX root = ../../main.tex
 
-\section[Xác định các mối quan hệ và bản số (Cardinality)]{Xác định các mối quan hệ (Relationships) và bản số (Cardinality)}
+\section[Xác định các mối quan hệ và bản số (Cardinality)]{Xác định các mối quan hệ (Relationships)\\và bản số (Cardinality)}
 \label{sec:1_2_quan_he_cardinality}
 
-Trong quá trình thiết kế cơ sở dữ liệu cho hệ thống \textbf{FamilyConnect}, việc xác định các mối quan hệ giữa các thực thể đóng vai trò quan trọng nhằm mô tả chính xác cách thức các đối tượng nghiệp vụ liên kết và tương tác với nhau. Các mối quan hệ được xây dựng dựa trên yêu cầu quản lý thành viên gia đình, cấu trúc gia phả, bảo mật phân quyền, hoạt động cộng đồng và chia sẻ di sản số.
+Trong quá trình thiết kế cơ sở dữ liệu cho hệ thống \textbf{FamilyConnect}, việc xác định các mối quan hệ giữa các thực thể đóng vai trò then chốt nhằm mô tả chính xác cách thức các đối tượng nghiệp vụ liên kết và tương tác với nhau. Các mối quan hệ được xây dựng dựa trên yêu cầu quản lý thành viên gia đình, cấu trúc cây phả hệ, phân quyền truy cập RBAC, chia sẻ truyền thông, hoạt động sự kiện, thông báo và bảo tồn di sản số.
 
-Mỗi mối quan hệ cần được xác định rõ tên gọi, các thực thể tham gia, bản số (\textit{Cardinality}) và ràng buộc tham gia (\textit{Participation Constraint}). Việc phân tích này là cơ sở trực tiếp để chuyển đổi mô hình thực thể kết hợp (ER/EER Model) sang mô hình quan hệ ở các bước thiết kế tiếp theo.
-
-% ==============================================================================
-% 1. QUAN HỆ PHẢ HỆ CỐT LÕI
-% ==============================================================================
-\subsection{Quan hệ Cha/Mẹ -- Con (Quan hệ phụ mẫu)}
-
-Quan hệ Cha/Mẹ -- Con biểu diễn mối liên kết huyết thống trực tiếp giữa các thế hệ thành viên trong gia đình. Đây là một mối quan hệ đệ quy nhị phân (\textit{Binary Recursive Relationship}), trong đó cùng một thực thể \texttt{THANH\_VIEN} tham gia với hai vai trò khác nhau: Cha/Mẹ (\textit{Parent}) và Con (\textit{Child}).
-
-Mối quan hệ này cho phép hệ thống xây dựng và quản lý đồ thị cây gia phả có hướng, thể hiện dòng chảy thế hệ xuyên suốt lịch sử dòng họ.
-
-\paragraph{Đặc điểm của mối quan hệ:}
-\begin{itemize}[noitemsep,topsep=2pt]
-    \item \textbf{Loại quan hệ:} Quan hệ đệ quy nhị phân (Binary Recursive Relationship).
-    \item \textbf{Bản số (Cardinality):} Một Cha/Mẹ có thể có nhiều Con ($1:N$). Mỗi người con có tối đa một Cha ruột và tối đa một Mẹ ruột trong cơ sở dữ liệu.
-    \item \textbf{Ràng buộc tham gia (Participation Constraint):}
-    \begin{itemize}[noitemsep]
-        \item Thực thể Con tham gia một phần (\textit{Partial Participation}), do các cụ Tiền nhân/Thủy tổ chưa rõ thông tin phụ mẫu.
-        \item Thực thể Cha/Mẹ tham gia một phần (\textit{Partial Participation}), vì không phải mọi thành viên đều đã có con cái.
-    \end{itemize}
-\end{itemize}
-
-\paragraph{Biểu diễn trong mô hình quan hệ:}
-Có thể triển khai quan hệ này thông qua hai khóa ngoại đệ quy trực tiếp trong lược đồ quan hệ \texttt{THANH\_VIEN}:
-\[
-\textbf{THANH\_VIEN}(
-\underline{\texttt{MaThanhVien}},
-\texttt{HoVaTen},
-\texttt{GioiTinh},
-\texttt{MaCha},
-\texttt{MaMe},
-\dots)
-\]
-Trong đó, \texttt{MaCha} và \texttt{MaMe} là các khóa ngoại tự tham chiếu đến khóa chính \texttt{MaThanhVien} của chính bảng \texttt{THANH\_VIEN}.
+Mỗi mối quan hệ được xác định rõ: tên gọi nghiệp vụ, các thực thể tham gia, bản số (\textit{Cardinality Ratio}), ràng buộc tham gia (\textit{Participation Constraint} bao gồm Toàn bộ -- \textit{Total} hoặc Một phần -- \textit{Partial}) và thuộc tính riêng của mối liên kết (nếu có).
 
 % ==============================================================================
-% 2. QUAN HỆ HÔN PHỐI
+% BẢNG TỔNG HỢP MỐI QUAN HỆ VÀ BẢN SỐ
 % ==============================================================================
-\subsection{Quan hệ Hôn phối / Vợ chồng}
 
-Quan hệ Hôn phối thể hiện mối liên kết hợp pháp hoặc tập quán giữa hai thành viên trong cộng đồng gia tộc. Khác với quan hệ phụ mẫu cố định suốt đời, quan hệ hôn phối có tính lịch sử, trạng thái thay đổi theo thời gian và mang theo các thuộc tính riêng (ngày cưới, ngày ly hôn, tình trạng).
+Bảng~\ref{tab:cardinality_matrix} tổng hợp đầy đủ các mối quan hệ nghiệp vụ giữa 17 thực thể cốt lõi trong hệ thống:
 
-\paragraph{Đặc điểm của mối quan hệ:}
-\begin{itemize}[noitemsep,topsep=2pt]
-    \item \textbf{Loại quan hệ:} Quan hệ đệ quy giữa hai cá nhân thuộc thực thể \texttt{THANH\_VIEN}.
-    \item \textbf{Bản số (Cardinality):} Tại một thời điểm xác định, quan hệ hôn nhân là $1:1$. Tuy nhiên, xét trên toàn bộ dòng lịch sử, một cá nhân có thể trải qua nhiều cuộc hôn phối (\(N:M\)).
-    \item \textbf{Thuộc tính của mối quan hệ:} \texttt{NgayKetHon}, \texttt{NgayLyHon}, \texttt{TrangThaiHonNhan}.
-    \item \textbf{Ràng buộc tham gia:} Cả hai phía đều tham gia một phần, vì các thành viên chưa lập gia đình sẽ không xuất hiện trong quan hệ này.
-\end{itemize}
+\setlength{\arrayrulewidth}{0.6pt}
+\renewcommand{\arraystretch}{1.5}
 
-\paragraph{Biểu diễn trong mô hình quan hệ:}
-Do mối quan hệ có thuộc tính riêng và bản số lịch sử là \(N:M\), quan hệ này được tách thành thực thể liên kết \texttt{HON\_NHAN}:
-\[
-\textbf{HON\_NHAN}(
-\underline{\texttt{MaHonNhan}},
-\texttt{MaChong},
-\texttt{MaVo},
-\texttt{NgayKetHon},
-\texttt{NgayLyHon},
-\texttt{TrangThai})
-\]
-Các trường \texttt{MaChong}, \texttt{MaVo} là khóa ngoại tham chiếu đến \texttt{MaThanhVien} trong \texttt{THANH\_VIEN}.
+\begin{longtable}{|>{\raggedright\arraybackslash}p{3.5cm}
+                  |>{\centering\arraybackslash}p{2.6cm}
+                  |>{\centering\arraybackslash}p{2.8cm}
+                  |>{\raggedright\arraybackslash}p{5.2cm}|}
+    \caption{Tổng hợp các mối quan hệ và bản số trong hệ thống FamilyConnect}
+    \label{tab:cardinality_matrix} \\
+
+    % ---- Header lần đầu ----
+    \hline
+    \rowcolor{tableheader}
+    \centering\textcolor{white}{\textbf{Mối quan hệ \& Thực thể}} &
+    \centering\textcolor{white}{\textbf{Bản số \& Mức tham gia}} &
+    \centering\textcolor{white}{\textbf{Thuộc tính MQH}} &
+    \centering\textcolor{white}{\textbf{Mô tả nghiệp vụ}}\tabularnewline
+    \hline
+    \endfirsthead
+
+    % ---- Header lặp lại ở trang tiếp theo ----
+    \multicolumn{4}{l}{\small\textit{(tiếp theo Bảng~\ref{tab:cardinality_matrix})}} \\[2pt]
+    \hline
+    \rowcolor{tableheader}
+    \centering\textcolor{white}{\textbf{Mối quan hệ \& Thực thể}} &
+    \centering\textcolor{white}{\textbf{Bản số \& Mức tham gia}} &
+    \centering\textcolor{white}{\textbf{Thuộc tính MQH}} &
+    \centering\textcolor{white}{\textbf{Mô tả nghiệp vụ}}\tabularnewline
+    \hline
+    \endhead
+
+    % ---- Footer ----
+    \hline
+    \multicolumn{4}{r}{\small\textit{(xem tiếp trang sau)}} \\
+    \endfoot
+
+    \hline
+    \endlastfoot
+
+    % ==================== NHÓM 1: PHẢ HỆ ====================
+    \rowcolor{softblue}
+    \multicolumn{4}{|l|}{\textbf{\textcolor{navy}{Nhóm 1 — Quan hệ Phả hệ Cốt lõi}}} \\
+    \hline
+
+    \textbf{Phụ mẫu -- Con cái} \newline
+    {\footnotesize\texttt{THANH\_VIEN} $\rightarrow$ \texttt{THANH\_VIEN}} &
+    {\centering$1:N$} \newline {\footnotesize Partial -- Partial} &
+    {\footnotesize\texttt{ma\_cha}, \newline \texttt{ma\_me}} &
+    Quan hệ đệ quy huyết thống tự tham chiếu. Mỗi thành viên có tối đa một cha ruột ($0..1$) và một mẹ ruột ($0..1$); mỗi người cha/mẹ có thể có nhiều con ($0..N$). Tiền nhân thủy tổ không bắt buộc có cha/mẹ trong hệ thống. \\
+    \hline
+
+    \rowcolor{tablerowalt}
+    \textbf{Hôn phối / Vợ chồng} \newline
+    {\footnotesize\texttt{THANH\_VIEN} $\leftrightarrow$ \texttt{THANH\_VIEN}} &
+    {\centering$N:M$ (lịch sử)} \newline {\footnotesize Partial -- Partial} &
+    {\footnotesize\texttt{NgayKetHon} \newline \texttt{TrangThai}} &
+    Tại một thời điểm là quan hệ $1:1$, nhưng xét theo tiến trình lịch sử là $N:M$. Được thực thể hóa thành bảng \texttt{quan\_he\_hon\_nhan} để lưu trữ thông tin thời điểm và trạng thái hôn phối. \\
+    \hline
+
+    % ==================== NHÓM 2: TỔ CHỨC ====================
+    \rowcolor{softblue}
+    \multicolumn{4}{|l|}{\textbf{\textcolor{navy}{Nhóm 2 — Quan hệ Tổ chức Dòng tộc}}} \\
+    \hline
+
+    \textbf{Dòng họ -- Chi tộc} \newline
+    {\footnotesize\texttt{DONG\_HO} $\rightarrow$ \texttt{CHI\_TOC}} &
+    {\centering$1:N$} \newline {\footnotesize Partial -- \textbf{Total}} &
+    {\footnotesize ---} &
+    Phân cấp tổ chức gia tộc. Mỗi chi tộc \textbf{bắt buộc} trực thuộc một dòng họ xác định (\texttt{CHI\_TOC} tham gia toàn bộ). \\
+    \hline
+
+    \rowcolor{tablerowalt}
+    \textbf{Chi tộc -- Thành viên} \newline
+    {\footnotesize\texttt{CHI\_TOC} $\rightarrow$ \texttt{THANH\_VIEN}} &
+    {\centering$1:N$} \newline {\footnotesize Partial -- \textbf{Total}} &
+    {\footnotesize ---} &
+    Quản lý nhân khẩu theo chi phái. Mọi thành viên bắt buộc thuộc về một chi tộc cụ thể (\texttt{THANH\_VIEN} tham gia toàn bộ). \\
+    \hline
+
+    % ==================== NHÓM 3: BẢO MẬT & HỒ SƠ ====================
+    \rowcolor{softblue}
+    \multicolumn{4}{|l|}{\textbf{\textcolor{navy}{Nhóm 3 — Quan hệ Người dùng \& Bảo mật RBAC}}} \\
+    \hline
+
+    \textbf{Tài khoản -- Hồ sơ} \newline
+    {\footnotesize\texttt{NGUOI\_DUNG} $-$ \texttt{THANH\_VIEN}} &
+    {\centering$1:1$} \newline {\footnotesize Partial -- Partial} &
+    {\footnotesize ---} &
+    Liên kết tài khoản đăng nhập với hồ sơ gia phả cá nhân (\textit{Profile Claiming}). Tùy chọn cả hai đầu: người dùng quản trị chưa nhận hồ sơ, và tiền nhân lịch sử chưa có tài khoản. \\
+    \hline
+
+    \rowcolor{tablerowalt}
+    \textbf{Gán vai trò} \newline
+    {\footnotesize\texttt{NGUOI\_DUNG} $\leftrightarrow$ \texttt{VAI\_TRO}} &
+    {\centering$N:M$} \newline {\footnotesize Partial -- Partial} &
+    {\footnotesize\texttt{NgayCap}} &
+    Phân quyền RBAC. Một người dùng có thể giữ nhiều vai trò; một vai trò được gán cho nhiều người. Thực thể hóa thành \texttt{nguoi\_dung\_vai\_tro}. \\
+    \hline
+
+    \textbf{Vai trò -- Quyền hạn} \newline
+    {\footnotesize\texttt{VAI\_TRO} $\leftrightarrow$ \texttt{QUYEN}} &
+    {\centering$N:M$} \newline {\footnotesize Partial -- Partial} &
+    {\footnotesize ---} &
+    Ma trận quyền hạn hệ thống. Một vai trò tập hợp nhiều quyền; một quyền thuộc nhiều vai trò. Thực thể hóa thành \texttt{vai\_tro\_quyen}. \\
+    \hline
+
+    \rowcolor{tablerowalt}
+    \textbf{Hồ sơ chuyên môn} \newline
+    {\footnotesize\texttt{THANH\_VIEN} $\rightarrow$ \texttt{HO\_SO\_NGHE\_NGHIEP}} &
+    {\centering$1:1$} \newline {\footnotesize Partial -- \textbf{Total}} &
+    {\footnotesize ---} &
+    Mở rộng học vấn và nghề nghiệp phục vụ Danh bạ gia đình. Mỗi hồ sơ nghề nghiệp \textbf{bắt buộc} gắn duy nhất với một thành viên (\texttt{ma\_thanh\_vien} là Khóa ngoại mang ràng buộc \texttt{UNIQUE}). \\
+    \hline
+
+    % ==================== NHÓM 4: CỘNG ĐỒNG & TRUYỀN THÔNG ====================
+    \rowcolor{softblue}
+    \multicolumn{4}{|l|}{\textbf{\textcolor{navy}{Nhóm 4 — Quan hệ Tương tác Cộng đồng \& Thông báo}}} \\
+    \hline
+
+    \textbf{Tác giả bài viết} \newline
+    {\footnotesize\texttt{NGUOI\_DUNG} $\rightarrow$ \texttt{BAI\_VIET}} &
+    {\centering$1:N$} \newline {\footnotesize Partial -- \textbf{Total}} &
+    {\footnotesize ---} &
+    Mỗi bài viết bắt buộc do một tài khoản người dùng đăng tải (\texttt{ma\_nguoi\_tao}). \\
+    \hline
+
+    \rowcolor{tablerowalt}
+    \textbf{Bài viết -- Bình luận} \newline
+    {\footnotesize\texttt{BAI\_VIET} $\rightarrow$ \texttt{BINH\_LUAN}} &
+    {\centering$1:N$} \newline {\footnotesize Partial -- \textbf{Total}} &
+    {\footnotesize ---} &
+    Một bài viết có thể có nhiều bình luận phản hồi. Mỗi bình luận phụ thuộc tồn tại vào đúng một bài viết gốc. \\
+    \hline
+
+    \textbf{Tác giả bình luận} \newline
+    {\footnotesize\texttt{THANH\_VIEN} $\rightarrow$ \texttt{BINH\_LUAN}} &
+    {\centering$1:N$} \newline {\footnotesize Partial -- Partial} &
+    {\footnotesize ---} &
+    Thành viên tham gia đóng góp ý kiến. Trường hợp thành viên bị gỡ bỏ, bình luận được giữ lại dưới dạng ẩn danh (\texttt{SET NULL}). \\
+    \hline
+
+    \rowcolor{tablerowalt}
+    \textbf{Tương tác biểu cảm} \newline
+    {\footnotesize\texttt{THANH\_VIEN} $\leftrightarrow$ \texttt{BAI\_VIET}} &
+    {\centering$N:M$} \newline {\footnotesize Partial -- Partial} &
+    {\footnotesize\texttt{LoaiTuongTac} \newline \texttt{ThoiDiem}} &
+    Thành viên tương tác (Like, Love, Care, Chúc mừng) trên bài viết. Mỗi thành viên có thể tương tác nhiều bài; mỗi bài nhận nhiều tương tác. Thực thể hóa thành \texttt{tuong\_tac\_bai\_viet}. \\
+    \hline
+
+    \textbf{Sở hữu Album ảnh} \newline
+    {\footnotesize\texttt{THANH\_VIEN} $\rightarrow$ \texttt{ALBUM\_ANH}} &
+    {\centering$1:N$} \newline {\footnotesize Partial -- \textbf{Total}} &
+    {\footnotesize ---} &
+    Thành viên quản lý các bộ sưu tập hình ảnh, video kỷ niệm của gia đình và dòng họ. \\
+    \hline
+
+    \rowcolor{tablerowalt}
+    \textbf{Nhận thông báo} \newline
+    {\footnotesize\texttt{NGUOI\_DUNG} $\rightarrow$ \texttt{THONG\_BAO}} &
+    {\centering$1:N$} \newline {\footnotesize Partial -- \textbf{Total}} &
+    {\footnotesize ---} &
+    Hệ thống phát thông báo tới tài khoản người dùng. Mỗi thông báo gửi tới chính xác một tài khoản nhận. \\
+    \hline
+
+    % ==================== NHÓM 5: SỰ KIỆN ====================
+    \rowcolor{softblue}
+    \multicolumn{4}{|l|}{\textbf{\textcolor{navy}{Nhóm 5 — Quan hệ Sự kiện \& Điểm danh RSVP}}} \\
+    \hline
+
+    \textbf{Chủ trì sự kiện} \newline
+    {\footnotesize\texttt{NGUOI\_DUNG} $\rightarrow$ \texttt{SU\_KIEN}} &
+    {\centering$1:N$} \newline {\footnotesize Partial -- \textbf{Total}} &
+    {\footnotesize ---} &
+    Tài khoản quản trị/ban liên lạc tạo sự kiện lễ giỗ, đại hội họ. Mỗi sự kiện bắt buộc có người tạo (\texttt{ma\_nguoi\_tao}). \\
+    \hline
+
+    \rowcolor{tablerowalt}
+    \textbf{Đăng ký sự kiện} \newline
+    {\footnotesize\texttt{THANH\_VIEN} $\leftrightarrow$ \texttt{SU\_KIEN}} &
+    {\centering$N:M$} \newline {\footnotesize Partial -- Partial} &
+    {\footnotesize\texttt{TrangThaiThamGia} \newline \texttt{SoNguoiDiCung} \newline \texttt{GhiChu}} &
+    Thành viên xác nhận tham gia sự kiện. Mối quan hệ $N:M$ được thực thể hóa thành bảng \texttt{dang\_ky\_su\_kien}. \\
+    \hline
+
+    % ==================== NHÓM 6: DI SẢN ====================
+    \rowcolor{softblue}
+    \multicolumn{4}{|l|}{\textbf{\textcolor{navy}{Nhóm 6 — Quan hệ Di sản số \& Vinh danh}}} \\
+    \hline
+
+    \textbf{Đóng góp di sản} \newline
+    {\footnotesize\texttt{THANH\_VIEN} $\rightarrow$ \texttt{DI\_SAN\_LICH\_SU}} &
+    {\centering$1:N$} \newline {\footnotesize Partial -- \textbf{Total}} &
+    {\footnotesize ---} &
+    Mỗi tài liệu di sản (sắc phong, văn tự cổ) do một thành viên đại diện đóng góp, tải lên và bảo quản. \\
+    \hline
+
+    \rowcolor{tablerowalt}
+    \textbf{Tôn vinh danh nhân} \newline
+    {\footnotesize\texttt{THANH\_VIEN} $\rightarrow$ \texttt{NHAN\_VAT\_}\allowbreak\texttt{TIEU\_BIEU}} &
+    {\centering$1:1$} \newline {\footnotesize Partial -- \textbf{Total}} &
+    {\footnotesize ---} &
+    Mỗi hồ sơ danh nhân tôn vinh chính xác một tiền nhân tiêu biểu trong cây phả hệ (\texttt{ma\_thanh\_vien} mang ràng buộc \texttt{UNIQUE}). \\
+    \hline
+
+    % ==================== NHÓM 7: HỆ THỐNG ====================
+    \rowcolor{softblue}
+    \multicolumn{4}{|l|}{\textbf{\textcolor{navy}{Nhóm 7 — Quan hệ Nhật ký \& Kiểm toán}}} \\
+    \hline
+
+    \textbf{Ghi nhật ký hệ thống} \newline
+    {\footnotesize\texttt{NGUOI\_DUNG} $\rightarrow$ \texttt{NHAT\_KY\_HE\_THONG}} &
+    {\centering$1:N$} \newline {\footnotesize Partial -- \textbf{Total}} &
+    {\footnotesize ---} &
+    Audit log hệ thống. Mọi bản ghi nhật ký thao tác đều phụ thuộc tồn tại vào một tài khoản người dùng thực hiện. \\
+    \hline
+
+\end{longtable}
+
+\renewcommand{\arraystretch}{1.0}
+\setlength{\arrayrulewidth}{0.4pt}
 
 % ==============================================================================
-% 3. QUAN HỆ DÒNG HỌ - CHI TỘC - THÀNH VIÊN
+% NHẬN XÉT
 % ==============================================================================
-\subsection{Quan hệ Dòng họ -- Chi tộc -- Thành viên}
+\subsection{Nhận xét và Đánh giá Bản số}
 
-Mối quan hệ này biểu diễn cơ cấu tổ chức phân cấp hành chính trong dòng họ truyền thống Việt Nam: một đại Dòng họ (\texttt{DONG\_HO}) gồm nhiều Chi tộc (\texttt{CHI\_TOC}), và mỗi Chi tộc quản lý nhiều Thành viên (\texttt{THANH\_VIEN}).
-
-\paragraph{Đặc điểm của mối quan hệ:}
-\begin{itemize}[noitemsep,topsep=2pt]
-    \item \textbf{Quan hệ Dòng họ -- Chi tộc:}
-    \begin{itemize}[noitemsep]
-        \item Bản số: $1:N$. Một Dòng họ có nhiều Chi tộc; mỗi Chi tộc trực thuộc duy nhất một Dòng họ.
-        \item Ràng buộc tham gia: Thực thể \texttt{CHI\_TOC} tham gia toàn bộ (\textit{Total}); \texttt{DONG\_HO} tham gia một phần (\textit{Partial}).
-    \end{itemize}
-    \item \textbf{Quan hệ Chi tộc -- Thành viên:}
-    \begin{itemize}[noitemsep]
-        \item Bản số: $1:N$. Một Chi tộc bao gồm nhiều Thành viên; mỗi Thành viên sinh ra hoặc nhập tịch vào một Chi tộc xác định.
-        \item Ràng buộc tham gia: Thực thể \texttt{THANH\_VIEN} tham gia toàn bộ (\textit{Total}) để đảm bảo tính phân cấp; \texttt{CHI\_TOC} tham gia một phần.
-    \end{itemize}
-\end{itemize}
-
-\paragraph{Biểu diễn trong mô hình quan hệ:}
-Khóa ngoại \texttt{MaDongHo} được đặt trong bảng \texttt{CHI\_TOC}, và khóa ngoại \texttt{MaChiToc} được đặt trong bảng \texttt{THANH\_VIEN}:
-\[
-\textbf{CHI\_TOC}(
-\underline{\texttt{MaChiToc}},
-\texttt{TenChiToc},
-\texttt{DoiThu},
-\texttt{MaDongHo})
-\]
-\[
-\textbf{THANH\_VIEN}(
-\underline{\texttt{MaThanhVien}},
-\texttt{HoVaTen},
-\texttt{MaChiToc},
-\dots)
-\]
-
-% ==============================================================================
-% 4. QUAN HỆ NGƯỜI DÙNG, BẢO MẬT & HỒ SƠ
-% ==============================================================================
-\subsection{Quan hệ Người dùng, Phân quyền và Hồ sơ chuyên môn}
-
-Hệ thống kết hợp giữa tài khoản trực tuyến (\texttt{NGUOI\_DUNG}) và hồ sơ phả hệ (\texttt{THANH\_VIEN}), đồng thời kiểm soát quyền hạn theo mô hình RBAC:
-
-\begin{itemize}[noitemsep,topsep=2pt]
-    \item \textbf{Liên kết Tài khoản -- Hồ sơ (\textit{Profile Claiming}):} Mối quan hệ $1:1$ tùy chọn giữa \texttt{NGUOI\_DUNG} và \texttt{THANH\_VIEN}. Một người dùng có thể liên kết tối đa với một hồ sơ thành viên trong gia phả và ngược lại.
-    \item \textbf{Gắn Vai trò \& Phân quyền (\texttt{NGUOI\_DUNG} -- \texttt{VAI\_TRO}):} Bản số \(N:M\). Một tài khoản đảm nhiệm nhiều vai trò (Quản trị dòng họ, Trưởng chi tộc, Thành viên thường). Quan hệ được thực thể hóa qua bảng trung gian \texttt{NGUOI\_DUNG\_VAI\_TRO}.
-    \item \textbf{Ma trận Quyền hạn (\texttt{VAI\_TRO} -- \texttt{QUYEN}):} Bản số \(N:M\), xác định tập hành động nghiệp vụ được phép cho từng vai trò. Quan hệ được thực thể hóa qua bảng trung gian \texttt{VAI\_TRO\_QUYEN}:
-\end{itemize}
-\[
-\textbf{VAI\_TRO\_QUYEN}(
-\underline{\texttt{MaVaiTro}},
-\underline{\texttt{MaQuyen}})
-\]
-\begin{itemize}[noitemsep,topsep=2pt]
-    \item \textbf{Hồ sơ Nghề nghiệp (\texttt{THANH\_VIEN} -- \texttt{HO\_SO\_NGHE\_NGHIEP}):} Quan hệ $1:1$, mở rộng thông tin học vấn, chuyên môn và nghề nghiệp của thành viên phục vụ Danh bạ gia tộc.
-\end{itemize}
-
-% ==============================================================================
-% 5. QUAN HỆ BÀI VIẾT & TƯƠNG TÁC CỘNG ĐỒNG
-% ==============================================================================
-\subsection{Quan hệ Bài viết và Tương tác Cộng đồng}
-
-Phân hệ mạng xã hội nội bộ cho phép thành viên chia sẻ thông tin, lưu giữ khoảnh khắc và thảo luận:
-
-\begin{itemize}[noitemsep,topsep=2pt]
-    \item \textbf{Thành viên tạo Bài viết (\texttt{THANH\_VIEN} -- \texttt{BAI\_VIET}):} Bản số $1:N$. Mỗi bài viết bắt buộc phải có một tác giả khởi tạo (\texttt{MaNguoiTao}), do đó \texttt{BAI\_VIET} tham gia toàn bộ.
-    \item \textbf{Bài viết và Bình luận (\texttt{BAI\_VIET} -- \texttt{BINH\_LUAN}):} Bản số $1:N$. Mỗi bình luận gắn với đúng một bài viết.
-    \item \textbf{Thành viên gửi Bình luận (\texttt{THANH\_VIEN} -- \texttt{BINH\_LUAN}):} Bản số $1:N$. Thành viên gửi ý kiến trao đổi dưới các bài đăng.
-    \item \textbf{Thành viên tạo Album ảnh (\texttt{THANH\_VIEN} -- \texttt{ALBUM\_ANH}):} Bản số $1:N$. Lưu trữ các bộ sưu tập hình ảnh sự kiện và tư liệu gia đình.
-\end{itemize}
-
-% ==============================================================================
-% 6. QUAN HỆ SỰ KIỆN & ĐĂNG KÝ THAM GIA (RSVP)
-% ==============================================================================
-\subsection{Quan hệ Sự kiện và Đăng ký Tham gia}
-
-Nhằm điều phối các buổi lễ giỗ tổ, họp họ, mừng thọ và đại hội thường niên:
-
-\begin{itemize}[noitemsep,topsep=2pt]
-    \item \textbf{Tổ chức Sự kiện (\texttt{THANH\_VIEN} -- \texttt{SU\_KIEN}):} Bản số $1:N$. Một thành viên (Ban tổ chức/Trưởng tộc) đứng ra tạo và quản lý sự kiện.
-    \item \textbf{Đăng ký Tham gia (\texttt{THANH\_VIEN} -- \texttt{SU\_KIEN}):} Bản số \(N:M\). Một sự kiện có nhiều thành viên tham gia, và một thành viên có thể tham dự nhiều sự kiện. Mối quan hệ được thực thể hóa qua thực thể liên kết \texttt{DANG\_KY\_SU\_KIEN} (RSVP) chứa các thông tin như số lượng người đi kèm, trạng thái phản hồi và ghi chú hậu cần:
-\end{itemize}
-\[
-\begin{aligned}
-\textbf{DANG\_KY\_SU\_KIEN}(
-&\underline{\texttt{MaDangKy}},
-\texttt{MaThanhVien},
-\texttt{MaSuKien}, \\
-&\texttt{TrangThaiThamGia},
-\texttt{SoNguoiDiCung})
-\end{aligned}
-\]
-
-% ==============================================================================
-% 7. QUAN HỆ DI SẢN & TÔN VINH NHÂN VẬT
-% ==============================================================================
-\subsection{Quan hệ Di sản số và Tôn vinh Nhân vật tiêu biểu}
-
-Phân hệ văn hóa di sản lưu trữ và số hóa các giá trị tinh thần của gia tộc:
-
-\begin{itemize}[noitemsep,topsep=2pt]
-    \item \textbf{Đóng góp Di sản (\texttt{THANH\_VIEN} -- \texttt{DI\_SAN\_LICH\_SU}):} Bản số $1:N$ (hoặc \(N:M\) khi nhiều thành viên cùng đóng góp/số hóa). Mỗi tài liệu, sắc phong, văn tự cổ được bảo trợ hoặc đăng tải bởi thành viên dòng họ.
-    \item \textbf{Tôn vinh Nhân vật tiêu biểu (\texttt{THANH\_VIEN} -- \texttt{NHAN\_VAT\_TIEU\_BIEU}):} Bản số $1:1$ (hoặc $1:N$ theo thời kỳ vinh danh). Mỗi hồ sơ danh nhân tôn vinh chính xác một tiền nhân hoặc cá nhân kiệt xuất trong cây gia phả.
-\end{itemize}
-
-% ==============================================================================
-% 8. QUAN HỆ NGƯỜI DÙNG & NHẬT KÝ HỆ THỐNG
-% ==============================================================================
-\subsection{Quan hệ Người dùng và Nhật ký Hệ thống}
-
-Mọi thao tác nhạy cảm trên dữ liệu (thêm/sửa/xóa phả hệ, duyệt bài viết, phân quyền) đều được ghi lại tự động bởi hệ thống:
-
-\begin{itemize}[noitemsep,topsep=2pt]
-    \item \textbf{Người dùng tạo Nhật ký (\texttt{NGUOI\_DUNG} -- \texttt{NHAT\_KY\_HE\_THONG}):} Bản số $1:N$. Một tài khoản có thể phát sinh nhiều bản ghi nhật ký; mỗi bản ghi nhật ký gắn liền với đúng một người dùng thực hiện thao tác. Thực thể \texttt{NHAT\_KY\_HE\_THONG} tham gia toàn bộ -- mọi bản ghi đều có chủ thể tác động.
-    \item \textbf{Phạm vi theo dõi:} Nhật ký theo dõi tất cả các thực thể cốt lõi: \texttt{THANH\_VIEN}, \texttt{BAI\_VIET}, \texttt{SU\_KIEN}, \texttt{DI\_SAN\_LICH\_SU} và cấu hình phân quyền. Trường \texttt{DoiTuongTacDong} lưu tên thực thể bị tác động, \texttt{DuLieuCu}/\texttt{DuLieuMoi} lưu snapshot trạng thái trước/sau.
-\end{itemize}
-
-% ==============================================================================
-% 9. MA TRẬN TỔNG HỢP BẢN SỐ (CARDINALITY MATRIX)
-% ==============================================================================
-\subsection{Bảng tổng hợp bản số (Cardinality Matrix)}
-
-Bảng~\ref{tab:cardinality_matrix} tổng hợp toàn diện các mối quan hệ nghiệp vụ chính giữa 15 thực thể cốt lõi trong hệ thống \textbf{FamilyConnect}:
-
-\begin{table}[H]
-    \centering
-    \small
-    \renewcommand{\arraystretch}{1.25}
-    \begin{tabularx}{\textwidth}{p{3.8cm} p{4.2cm} c X}
-        \toprule
-        \rowcolor{tableheader}\textcolor{white}{\textbf{Mối quan hệ}} & \textcolor{white}{\textbf{Các thực thể tham gia}} & \textcolor{white}{\textbf{Bản số}} & \textcolor{white}{\textbf{Mô tả \& Ràng buộc tham gia}} \\
-        \midrule
-        \rowcolor{tablerowalt}
-        Phụ mẫu -- Con cái & \texttt{THANH\_VIEN} -- \texttt{THANH\_VIEN} & $1:N$ & Quan hệ đệ quy huyết thống (Cha/Mẹ ruột). Con tham gia một phần. \\
-        Hôn phối / Vợ chồng & \texttt{THANH\_VIEN} -- \texttt{THANH\_VIEN} & \(N:M\) & Thực thể hóa qua \texttt{HON\_NHAN}. Lưu lịch sử và tình trạng hôn nhân. \\
-        \rowcolor{tablerowalt}
-        Dòng họ -- Chi tộc & \texttt{DONG\_HO} -- \texttt{CHI\_TOC} & $1:N$ & Phân cấp dòng họ. \texttt{CHI\_TOC} tham gia toàn bộ. \\
-        Chi tộc -- Thành viên & \texttt{CHI\_TOC} -- \texttt{THANH\_VIEN} & $1:N$ & Quản lý nhân khẩu. \texttt{THANH\_VIEN} tham gia toàn bộ. \\
-        \rowcolor{tablerowalt}
-        Tài khoản -- Hồ sơ & \texttt{NGUOI\_DUNG} -- \texttt{THANH\_VIEN} & $1:1$ & Liên kết tài khoản đăng nhập với hồ sơ gia phả (Tùy chọn). \\
-        Phân quyền vai trò & \texttt{NGUOI\_DUNG} -- \texttt{VAI\_TRO} & \(N:M\) & Thực thể hóa qua \texttt{NGUOI\_DUNG\_VAI\_TRO}. Gắn vai trò cho người dùng. \\
-        \rowcolor{tablerowalt}
-        Vai trò -- Quyền hạn & \texttt{VAI\_TRO} -- \texttt{QUYEN} & \(N:M\) & Thực thể hóa qua \texttt{VAI\_TRO\_QUYEN}. Ma trận phân quyền nghiệp vụ. \\
-        Hồ sơ chuyên môn & \texttt{THANH\_VIEN} -- \texttt{HO\_SO\_NGHE\_NGHIEP} & $1:1$ & Mở rộng thông tin học vấn và nghề nghiệp thành viên. \\
-        \rowcolor{tablerowalt}
-        Tác giả bài viết & \texttt{THANH\_VIEN} -- \texttt{BAI\_VIET} & $1:N$ & Thành viên đăng tải tin tức, bài viết gia tộc. \\
-        Bài viết -- Bình luận & \texttt{BAI\_VIET} -- \texttt{BINH\_LUAN} & $1:N$ & Một bài viết có nhiều bình luận tương tác. \\
-        \rowcolor{tablerowalt}
-        Tác giả bình luận & \texttt{THANH\_VIEN} -- \texttt{BINH\_LUAN} & $1:N$ & Thành viên gửi ý kiến thảo luận. \\
-        Tạo Album tư liệu & \texttt{THANH\_VIEN} -- \texttt{ALBUM\_ANH} & $1:N$ & Thành viên lưu trữ bộ sưu tập hình ảnh, tư liệu gia đình. \\
-        \rowcolor{tablerowalt}
-        Chủ trì sự kiện & \texttt{THANH\_VIEN} -- \texttt{SU\_KIEN} & $1:N$ & Ban tổ chức tạo lịch sự kiện, lễ giỗ họ. \\
-        Đăng ký sự kiện & \texttt{THANH\_VIEN} -- \texttt{SU\_KIEN} & \(N:M\) & Thực thể hóa qua \texttt{DANG\_KY\_SU\_KIEN} (RSVP). \\
-        \rowcolor{tablerowalt}
-        Đóng góp di sản & \texttt{THANH\_VIEN} -- \texttt{DI\_SAN\_LICH\_SU} & $1:N$ & Thành viên đóng góp, số hóa tài liệu di sản. \\
-        Tôn vinh danh nhân & \texttt{THANH\_VIEN} -- \texttt{NHAN\_VAT\_TIEU\_BIEU} & $1:1$ & Vinh danh nhân vật kiệt xuất trong dòng tộc. \\
-        \rowcolor{tablerowalt}
-        Ghi nhật ký & \texttt{NGUOI\_DUNG} -- \texttt{NHAT\_KY\_HE\_THONG} & $1:N$ & Audit trail tự động. Mỗi bản ghi nhật ký có chủ thể tác động. \\
-        \bottomrule
-    \end{tabularx}
-    \caption{Ma trận tổng hợp các mối quan hệ và bản số (Cardinality Matrix)}
-    \label{tab:cardinality_matrix}
-\end{table}
-
-% ==============================================================================
-% 10. NHẬN XÉT
-% ==============================================================================
-\subsection{Nhận xét và Đánh giá}
-
-Qua quá trình phân tích và chuẩn hóa, mô hình quan niệm của nền tảng \textbf{FamilyConnect} phản ánh đầy đủ các đặc trưng cấu trúc sau:
+Qua quá trình phân tích và chuẩn hóa nghiệp vụ, mô hình quan niệm của nền tảng \textbf{FamilyConnect} thể hiện các đặc trưng cấu trúc nổi bật:
 \begin{enumerate}[noitemsep,topsep=2pt]
-    \item \textbf{Sự đa dạng về bản số:} Hệ thống bao quát đầy đủ các dạng bản số: $1:N$, $1:1$ và \(N:M\). Tổng cộng 17 mối quan hệ nghiệp vụ được xác định, trong đó 5 quan hệ \(N:M\) (Hôn phối, Phân quyền vai trò, Ma trận quyền hạn, Đăng ký sự kiện, Đóng góp di sản mở rộng) đều được thực thể hóa thành các bảng liên kết riêng.
-    \item \textbf{Tính chất đệ quy đặc thù:} Quan hệ phụ mẫu (Cha/Mẹ -- Con) là trung tâm của cây phả hệ, đòi hỏi xử lý đệ quy chặt chẽ và tuân thủ các ràng buộc cấu trúc đồ thị không chu trình (DAG) theo RB03.
-    \item \textbf{Tính toàn vẹn và phân cấp:} Ràng buộc tham gia toàn bộ của thành viên đối với chi tộc và dòng họ đảm bảo không tồn tại dữ liệu mồ côi (\textit{orphan records}), tạo nền tảng vững chắc cho việc thiết kế lược đồ vật lý và chuẩn hóa dữ liệu ở các chương tiếp theo.
-    \item \textbf{Tính truy vết và kiểm toán:} Quan hệ Người dùng -- Nhật ký hệ thống đảm bảo mọi thao tác nghiệp vụ nhạy cảm đều có dấu vết truy xuất, hỗ trợ kiểm toán và khôi phục sự cố.
+    \item \textbf{Cơ cấu các mối quan hệ $N:M$:} Hệ thống xác định chính xác \textbf{5 mối quan hệ $N:M$} thực sự, bao gồm:
+    \begin{itemize}[noitemsep]
+        \item Quan hệ đệ quy hôn phối lịch sử (\texttt{quan\_he\_hon\_nhan});
+        \item Quan hệ gán vai trò người dùng (\texttt{nguoi\_dung\_vai\_tro});
+        \item Quan hệ ma trận phân quyền (\texttt{vai\_tro\_quyen});
+        \item Quan hệ đăng ký tham gia sự kiện (\texttt{dang\_ky\_su\_kien});
+        \item Quan hệ tương tác biểu cảm bài viết (\texttt{tuong\_tac\_bai\_viet}).
+    \end{itemize}
+    Cả 5 mối quan hệ này đều được thực thể hóa thành các bảng quan hệ độc lập chứa khóa ngoại kép hoặc thuộc tính nghiệp vụ riêng.
+    \item \textbf{Xác định đúng bản số quan hệ Di sản ($1:N$):} Khác với các quan hệ liên kết $N:M$, mối quan hệ đóng góp di sản giữa \texttt{THANH\_VIEN} và \texttt{DI\_SAN\_LICH\_SU} tuân thủ chặt chẽ bản số $1:N$ (một thành viên có thể bảo trợ nhiều di sản; mỗi di sản do một thành viên chịu trách nhiệm lưu trữ), tránh làm phức tạp hóa mô hình dữ liệu.
+    \item \textbf{Tối ưu hóa quan hệ huyết thống phụ mẫu:} Quan hệ Cha/Mẹ -- Con được mô hình hóa dưới dạng quan hệ đệ quy $1:N$ trực tiếp thông qua hai thuộc tính tự tham chiếu \texttt{ma\_cha} và \texttt{ma\_me} trong bảng \texttt{THANH\_VIEN}. Cách tiếp cận này phản ánh trực diện bản chất sinh học truyền thống (mỗi cá nhân có tối đa một cha ruột và một mẹ ruột) và tối ưu hóa các câu lệnh truy vấn cây phả hệ bằng CTE đệ quy.
+    \item \textbf{Ràng buộc chặt chẽ quan hệ $1:1$:} Các quan hệ một--một như \texttt{HO\_SO\_NGHE\_NGHIEP} và \texttt{NHAN\_VAT\_TIEU\_BIEU} với \texttt{THANH\_VIEN} được thiết lập với ràng buộc \texttt{UNIQUE} trên khóa ngoại để ngăn chặn dị thường nhân bản hồ sơ.
 \end{enumerate}
