@@ -38,21 +38,21 @@ Cây phả hệ là một đồ thị quan hệ huyết thống có hướng. C�
 \begin{itemize}
     \item \textbf{Nội dung nghiệp vụ:}
     \begin{enumerate}[label=(\alph*),noitemsep]
-        \item Con cái phải sinh sau cha/mẹ ít nhất 15 năm (độ tuổi sinh sản tối thiểu).
-        \item Người mẹ không thể sinh con sau ngày mất của chính mình.
-        \item Người cha không thể có con sinh sau ngày mất của mình quá 300 ngày (giới hạn y học).
+        \item Con cái phải sinh sau cha/mẹ ít nhất 15 năm (độ tuổi sinh sản tối thiểu phù hợp sinh học).
+        \item Người mẹ không thể sinh con sau thời điểm qua đời của chính mình.
+        \item Trường hợp người cha qua đời trước khi con chào đời, khoảng cách từ ngày mất của cha đến ngày sinh của con không vượt quá thời gian mang thai tối đa theo quy chuẩn y học (300 ngày). Đối với các bản ghi gia phả cổ chỉ có năm ước tính, hệ thống đưa ra cảnh báo nghiệp vụ thay vì chặn cứng.
     \end{enumerate}
     \item \textbf{Biểu diễn toán học:} Viết tắt $\text{ns}(x) = x.\text{NgaySinh}$, $\text{nm}(x) = x.\text{NgayMat}$:
     \begin{alignat}{2}
         &\forall c, p \in TV, \quad
-        &&\text{ChaMe}(p, c) \implies \text{ns}(c) \ge \text{ns}(p) + 15\text{ n\u0103m} \\[3pt]
+        &&\text{ChaMe}(p, c) \implies \text{ns}(c) \ge \text{ns}(p) + 15\text{ năm} \\[3pt]
         &\forall c, m \in TV, \quad
         &&\text{MeRuot}(m, c) \land \text{nm}(m) \ne \emptyset \implies \text{ns}(c) \le \text{nm}(m) \\[3pt]
         &\forall c, f \in TV, \quad
-        &&\text{ChaRuot}(f, c) \land \text{nm}(f) \ne \emptyset \implies \text{ns}(c) \le \text{nm}(f) + 300\text{ ng\u00e0y}
+        &&\text{ChaRuot}(f, c) \land \text{nm}(f) \ne \emptyset \implies \text{ns}(c) \le \text{nm}(f) + 300\text{ ngày}
     \end{alignat}
     \item \textbf{Bối cảnh:} Thực thể \texttt{THANH\_VIEN}, thuộc tính \texttt{NgaySinh\-DuongLich}, \texttt{NgayMat}, \texttt{GioiTinh}.
-    \item \textbf{Quy tắc toàn vẹn:} Mọi bộ dữ liệu $(c, p)$ có quan hệ phụ mẫu đều phải thỏa mãn đồng thời cả ba điều kiện thời gian trên.
+    \item \textbf{Quy tắc toàn vẹn:} Mọi thao tác cập nhật liên kết phụ mẫu đều được kiểm tra tính hợp lệ sinh học; bản ghi có mốc thời gian xung đột sẽ bị từ chối hoặc yêu cầu xác nhận kiểm duyệt.
 \end{itemize}
 
 % --- RB03 ---

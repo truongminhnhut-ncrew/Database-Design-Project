@@ -1,21 +1,17 @@
-% !TEX root = ../../main.tex
-\section{Kịch bản DDL tạo bảng (Physical Database Scripts)}
-\label{sec:3_5_ddl_scripts}
+-- ==============================================================================
+-- HỆ CƠ SỞ DỮ LIỆU NỀN TẢNG QUẢN LÝ GIA PHẢ & DÒNG HỌ SỐ FAMILYCONNECT
+-- HỆ QUẢN TRỊ CSDL: PostgreSQL 16+
+-- KỊCH BẢN DDL TẠO 22 BẢNG QUAN HỆ & RÀNG BUỘC KHÓA NGOẠI (FOREIGN KEYS)
+-- ==============================================================================
 
-Kịch bản ngôn ngữ định nghĩa dữ liệu (Data Definition Language -- DDL) dưới đây được thiết kế và thực thi tương thích hoàn toàn trên hệ quản trị cơ sở dữ liệu \textbf{PostgreSQL 16+}. Toàn bộ 22 bảng được chuẩn hóa khóa chính dưới dạng kiểu \texttt{uuid}, kết hợp các ràng buộc khóa ngoại \texttt{DEFERRABLE INITIALLY IMMEDIATE} nhằm đảm bảo tính toàn vẹn tham chiếu trong các thao tác nạp và đồng bộ dữ liệu giao dịch phức tạp.
+-- 1. Kích hoạt tiện ích mở rộng pgcrypto
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-Toàn bộ mã nguồn kịch bản DDL được lưu trữ độc lập tại tệp mã nguồn:
-\begin{center}
-    \texttt{sql/schema\_postgresql.sql}
-\end{center}
-Dưới đây là nội dung chi tiết theo từng phân hệ chức năng:
+-- ==============================================================================
+-- 2. TẠO CÁC BẢNG DỮ LIỆU (22 TABLES)
+-- ==============================================================================
 
-\subsection{Phân hệ Người dùng \& Bảo mật}
-
-Phân hệ này thiết lập 6 bảng phục vụ xác thực người dùng, ủy quyền vai trò (RBAC) cùng nhật ký kiểm toán hệ thống.
-
-\begin{lstlisting}[language=SQL, caption={Kịch bản DDL - Phân hệ Người dùng và Bảo mật}, label={lst:ddl_user_security}]
--- 1. Bang NGUOI_DUNG
+-- 2.1. Phân hệ 1: Người dùng & Bảo mật (User & Security)
 CREATE TABLE "NGUOI_DUNG" (
   "MaNguoiDung" uuid PRIMARY KEY,
   "Email" varchar UNIQUE NOT NULL,
@@ -26,21 +22,18 @@ CREATE TABLE "NGUOI_DUNG" (
   "NgayTao" timestamp NOT NULL
 );
 
--- 2. Bang VAI_TRO
 CREATE TABLE "VAI_TRO" (
   "MaVaiTro" uuid PRIMARY KEY,
   "TenVaiTro" varchar NOT NULL,
   "MoTa" varchar
 );
 
--- 3. Bang QUYEN
 CREATE TABLE "QUYEN" (
   "MaQuyen" uuid PRIMARY KEY,
   "TenQuyen" varchar NOT NULL,
   "NhomChucNang" varchar NOT NULL
 );
 
--- 4. Bang NGUOI_DUNG_VAI_TRO
 CREATE TABLE "NGUOI_DUNG_VAI_TRO" (
   "MaNguoiDung" uuid,
   "MaVaiTro" uuid,
@@ -48,14 +41,12 @@ CREATE TABLE "NGUOI_DUNG_VAI_TRO" (
   PRIMARY KEY ("MaNguoiDung", "MaVaiTro")
 );
 
--- 5. Bang VAI_TRO_QUYEN
 CREATE TABLE "VAI_TRO_QUYEN" (
   "MaVaiTro" uuid,
   "MaQuyen" uuid,
   PRIMARY KEY ("MaVaiTro", "MaQuyen")
 );
 
--- 6. Bang NHAT_KY_HE_THONG
 CREATE TABLE "NHAT_KY_HE_THONG" (
   "MaNhatKy" uuid PRIMARY KEY,
   "MaNguoiDung" uuid NOT NULL,
@@ -66,14 +57,8 @@ CREATE TABLE "NHAT_KY_HE_THONG" (
   "DuLieuMoi" text,
   "DiaChiIP" varchar
 );
-\end{lstlisting}
 
-\subsection{Phân hệ Phả hệ, Dòng họ \& Thành viên}
-
-Phân hệ phả hệ là hạt nhân của hệ thống FamilyConnect, bao gồm 7 bảng quản lý thông tin dòng họ, các chi phái, thông tin thành viên (kèm liên kết cha -- mẹ đệ quy), hồ sơ sự nghiệp, quan hệ hôn nhân và các thực thể chuyên biệt (nội tộc / dâu rể).
-
-\begin{lstlisting}[language=SQL, caption={Kịch bản DDL - Phân hệ Phả hệ, Dòng họ và Thành viên}, label={lst:ddl_genealogy}]
--- 7. Bang DONG_HO
+-- 2.2. Phân hệ 2: Phả hệ & Gia tộc (Family & Genealogy)
 CREATE TABLE "DONG_HO" (
   "MaDongHo" uuid PRIMARY KEY,
   "TenDongHo" varchar NOT NULL,
@@ -84,7 +69,6 @@ CREATE TABLE "DONG_HO" (
   "LichSuHinhThanh" text
 );
 
--- 8. Bang CHI_TOC
 CREATE TABLE "CHI_TOC" (
   "MaChiToc" uuid PRIMARY KEY,
   "MaDongHo" uuid NOT NULL,
@@ -94,7 +78,6 @@ CREATE TABLE "CHI_TOC" (
   "GhiChu" varchar
 );
 
--- 9. Bang THANH_VIEN
 CREATE TABLE "THANH_VIEN" (
   "MaThanhVien" uuid PRIMARY KEY,
   "MaChiToc" uuid NOT NULL,
@@ -115,7 +98,6 @@ CREATE TABLE "THANH_VIEN" (
   "AnhDaiDien" varchar
 );
 
--- 10. Bang HO_SO_NGHE_NGHIEP
 CREATE TABLE "HO_SO_NGHE_NGHIEP" (
   "MaHoSo" uuid PRIMARY KEY,
   "MaThanhVien" uuid UNIQUE NOT NULL,
@@ -127,7 +109,6 @@ CREATE TABLE "HO_SO_NGHE_NGHIEP" (
   "KhaNangHoTro" varchar
 );
 
--- 11. Bang QUAN_HE_HON_NHAN
 CREATE TABLE "QUAN_HE_HON_NHAN" (
   "MaHonNhan" uuid PRIMARY KEY,
   "MaNguoi1" uuid NOT NULL,
@@ -136,27 +117,19 @@ CREATE TABLE "QUAN_HE_HON_NHAN" (
   "TrangThai" varchar NOT NULL
 );
 
--- 12. Bang THANH_VIEN_NOI_TOC
 CREATE TABLE "THANH_VIEN_NOI_TOC" (
   "MaThanhVien" uuid PRIMARY KEY,
   "DoiThu" int,
   "ThuocChi" varchar
 );
 
--- 13. Bang THANH_VIEN_DAU_RE
 CREATE TABLE "THANH_VIEN_DAU_RE" (
   "MaThanhVien" uuid PRIMARY KEY,
   "GiaTocGoc" varchar,
   "NgayVeLamDauRe" date
 );
-\end{lstlisting}
 
-\subsection{Phân hệ Tương tác, Sự kiện \& Truyền thông dòng họ}
-
-Bao gồm 7 bảng phục vụ mạng xã hội nội bộ dòng họ, tổ chức sự kiện, đăng ký tham dự, album ảnh gia đình và hệ thống gửi nhận thông báo.
-
-\begin{lstlisting}[language=SQL, caption={Kịch bản DDL - Phân hệ Mạng xã hội, Sự kiện và Truyền thông}, label={lst:ddl_social_events}]
--- 14. Bang BAI_VIET
+-- 2.3. Phân hệ 3: Mạng xã hội, Sự kiện & Truyền thông (Community & Events)
 CREATE TABLE "BAI_VIET" (
   "MaBaiViet" uuid PRIMARY KEY,
   "MaNguoiTao" uuid NOT NULL,
@@ -168,7 +141,6 @@ CREATE TABLE "BAI_VIET" (
   "TrangThaiDuyet" varchar NOT NULL
 );
 
--- 15. Bang BINH_LUAN
 CREATE TABLE "BINH_LUAN" (
   "MaBinhLuan" uuid PRIMARY KEY,
   "MaBaiViet" uuid NOT NULL,
@@ -178,7 +150,6 @@ CREATE TABLE "BINH_LUAN" (
   "TrangThai" varchar NOT NULL
 );
 
--- 16. Bang TUONG_TAC
 CREATE TABLE "TUONG_TAC" (
   "MaTuongTac" uuid PRIMARY KEY,
   "MaBaiViet" uuid NOT NULL,
@@ -187,7 +158,6 @@ CREATE TABLE "TUONG_TAC" (
   "ThoiDiem" timestamp NOT NULL
 );
 
--- 17. Bang ALBUM_ANH
 CREATE TABLE "ALBUM_ANH" (
   "MaAlbum" uuid PRIMARY KEY,
   "MaThanhVien" uuid NOT NULL,
@@ -196,7 +166,6 @@ CREATE TABLE "ALBUM_ANH" (
   "NgayTao" timestamp NOT NULL
 );
 
--- 18. Bang SU_KIEN
 CREATE TABLE "SU_KIEN" (
   "MaSuKien" uuid PRIMARY KEY,
   "MaNguoiTao" uuid NOT NULL,
@@ -209,7 +178,6 @@ CREATE TABLE "SU_KIEN" (
   "TrangThai" varchar NOT NULL
 );
 
--- 19. Bang DANG_KY_SU_KIEN
 CREATE TABLE "DANG_KY_SU_KIEN" (
   "MaDangKy" uuid PRIMARY KEY,
   "MaThanhVien" uuid NOT NULL,
@@ -220,7 +188,6 @@ CREATE TABLE "DANG_KY_SU_KIEN" (
   "ThoiDiemPhanHoi" timestamp NOT NULL
 );
 
--- 20. Bang THONG_BAO
 CREATE TABLE "THONG_BAO" (
   "MaThongBao" uuid PRIMARY KEY,
   "MaNguoiDung" uuid NOT NULL,
@@ -231,14 +198,8 @@ CREATE TABLE "THONG_BAO" (
   "ThoiDiemTao" timestamp NOT NULL,
   "LienKetDieuHuong" varchar
 );
-\end{lstlisting}
 
-\subsection{Phân hệ Di sản lịch sử \& Danh nhân tiêu biểu}
-
-Gồm 2 bảng số hóa các tư liệu văn hiến, sắc phong, văn tự cổ kèm tóm tắt ngữ nghĩa AI và ghi danh công đức những nhân vật tiêu biểu có đóng góp lớn cho dòng tộc và xã hội.
-
-\begin{lstlisting}[language=SQL, caption={Kịch bản DDL - Phân hệ Di sản số và Danh nhân tiêu biểu}, label={lst:ddl_heritage}]
--- 21. Bang DI_SAN_LICH_SU
+-- 2.4. Phân hệ 4: Di sản số & Danh nhân (Heritage & Notable Figures)
 CREATE TABLE "DI_SAN_LICH_SU" (
   "MaDiSan" uuid PRIMARY KEY,
   "MaThanhVien" uuid NOT NULL,
@@ -251,7 +212,6 @@ CREATE TABLE "DI_SAN_LICH_SU" (
   "GiaTriLichSu" text
 );
 
--- 22. Bang NHAN_VAT_TIEU_BIEU
 CREATE TABLE "NHAN_VAT_TIEU_BIEU" (
   "MaNhanVat" uuid PRIMARY KEY,
   "MaThanhVien" uuid UNIQUE NOT NULL,
@@ -261,51 +221,48 @@ CREATE TABLE "NHAN_VAT_TIEU_BIEU" (
   "CongHienXaHoi" text,
   "TaiLieuThamKhao" text
 );
-\end{lstlisting}
 
-\subsection{Khai báo ràng buộc toàn vẹn khóa ngoại (Foreign Keys)}
+-- ==============================================================================
+-- 3. KHAI BÁO RÀNG BUỘC KHÓA NGOẠI (FOREIGN KEY CONSTRAINTS)
+-- ==============================================================================
 
-Để độc lập hóa thứ tự tạo bảng và thuận lợi cho quá trình kiểm tra, toàn bộ 25 liên kết khóa ngoại được khai báo thông qua lệnh \texttt{ALTER TABLE ... ADD FOREIGN KEY} với tùy chọn \texttt{DEFERRABLE INITIALLY IMMEDIATE}:
-
-\begin{lstlisting}[language=SQL, caption={Kịch bản DDL - Ràng buộc khóa ngoại toàn cục}, label={lst:ddl_foreign_keys}]
--- Lien ket Dong ho - Chi toc - Thanh vien
+-- Liên kết Dòng họ - Chi tộc - Thành viên
 ALTER TABLE "CHI_TOC" ADD FOREIGN KEY ("MaDongHo") REFERENCES "DONG_HO" ("MaDongHo") DEFERRABLE INITIALLY IMMEDIATE;
 ALTER TABLE "THANH_VIEN" ADD FOREIGN KEY ("MaChiToc") REFERENCES "CHI_TOC" ("MaChiToc") DEFERRABLE INITIALLY IMMEDIATE;
 ALTER TABLE "THANH_VIEN" ADD FOREIGN KEY ("MaNguoiDung") REFERENCES "NGUOI_DUNG" ("MaNguoiDung") DEFERRABLE INITIALLY IMMEDIATE;
 ALTER TABLE "THANH_VIEN" ADD FOREIGN KEY ("MaCha") REFERENCES "THANH_VIEN" ("MaThanhVien") DEFERRABLE INITIALLY IMMEDIATE;
 ALTER TABLE "THANH_VIEN" ADD FOREIGN KEY ("MaMe") REFERENCES "THANH_VIEN" ("MaThanhVien") DEFERRABLE INITIALLY IMMEDIATE;
 
--- Ho so nghe nghiep va Ke thua thuc the con
+-- Liên kết Hồ sơ nghề nghiệp & Kế thừa thực thể con
 ALTER TABLE "HO_SO_NGHE_NGHIEP" ADD FOREIGN KEY ("MaThanhVien") REFERENCES "THANH_VIEN" ("MaThanhVien") DEFERRABLE INITIALLY IMMEDIATE;
 ALTER TABLE "THANH_VIEN_NOI_TOC" ADD FOREIGN KEY ("MaThanhVien") REFERENCES "THANH_VIEN" ("MaThanhVien") DEFERRABLE INITIALLY IMMEDIATE;
 ALTER TABLE "THANH_VIEN_DAU_RE" ADD FOREIGN KEY ("MaThanhVien") REFERENCES "THANH_VIEN" ("MaThanhVien") DEFERRABLE INITIALLY IMMEDIATE;
 
--- Quan he hon phoi de quy
+-- Quan hệ hôn phối đệ quy
 ALTER TABLE "QUAN_HE_HON_NHAN" ADD FOREIGN KEY ("MaNguoi1") REFERENCES "THANH_VIEN" ("MaThanhVien") DEFERRABLE INITIALLY IMMEDIATE;
 ALTER TABLE "QUAN_HE_HON_NHAN" ADD FOREIGN KEY ("MaNguoi2") REFERENCES "THANH_VIEN" ("MaThanhVien") DEFERRABLE INITIALLY IMMEDIATE;
 
--- Phan quyen RBAC va Nhat ky
+-- Phân quyền RBAC & Nhật ký
 ALTER TABLE "NGUOI_DUNG_VAI_TRO" ADD FOREIGN KEY ("MaNguoiDung") REFERENCES "NGUOI_DUNG" ("MaNguoiDung") DEFERRABLE INITIALLY IMMEDIATE;
 ALTER TABLE "NGUOI_DUNG_VAI_TRO" ADD FOREIGN KEY ("MaVaiTro") REFERENCES "VAI_TRO" ("MaVaiTro") DEFERRABLE INITIALLY IMMEDIATE;
 ALTER TABLE "VAI_TRO_QUYEN" ADD FOREIGN KEY ("MaVaiTro") REFERENCES "VAI_TRO" ("MaVaiTro") DEFERRABLE INITIALLY IMMEDIATE;
 ALTER TABLE "VAI_TRO_QUYEN" ADD FOREIGN KEY ("MaQuyen") REFERENCES "QUYEN" ("MaQuyen") DEFERRABLE INITIALLY IMMEDIATE;
 ALTER TABLE "NHAT_KY_HE_THONG" ADD FOREIGN KEY ("MaNguoiDung") REFERENCES "NGUOI_DUNG" ("MaNguoiDung") DEFERRABLE INITIALLY IMMEDIATE;
 
--- Mang xa hoi va Tuong tac
+-- Mạng xã hội & Tương tác
 ALTER TABLE "BAI_VIET" ADD FOREIGN KEY ("MaNguoiTao") REFERENCES "NGUOI_DUNG" ("MaNguoiDung") DEFERRABLE INITIALLY IMMEDIATE;
 ALTER TABLE "BINH_LUAN" ADD FOREIGN KEY ("MaBaiViet") REFERENCES "BAI_VIET" ("MaBaiViet") DEFERRABLE INITIALLY IMMEDIATE;
 ALTER TABLE "BINH_LUAN" ADD FOREIGN KEY ("MaThanhVien") REFERENCES "THANH_VIEN" ("MaThanhVien") DEFERRABLE INITIALLY IMMEDIATE;
 ALTER TABLE "TUONG_TAC" ADD FOREIGN KEY ("MaBaiViet") REFERENCES "BAI_VIET" ("MaBaiViet") DEFERRABLE INITIALLY IMMEDIATE;
 ALTER TABLE "TUONG_TAC" ADD FOREIGN KEY ("MaThanhVien") REFERENCES "THANH_VIEN" ("MaThanhVien") DEFERRABLE INITIALLY IMMEDIATE;
 
--- Album, Su kien va Thong bao
+-- Album, Sự kiện & Thông báo
 ALTER TABLE "ALBUM_ANH" ADD FOREIGN KEY ("MaThanhVien") REFERENCES "THANH_VIEN" ("MaThanhVien") DEFERRABLE INITIALLY IMMEDIATE;
 ALTER TABLE "SU_KIEN" ADD FOREIGN KEY ("MaNguoiTao") REFERENCES "NGUOI_DUNG" ("MaNguoiDung") DEFERRABLE INITIALLY IMMEDIATE;
 ALTER TABLE "DANG_KY_SU_KIEN" ADD FOREIGN KEY ("MaSuKien") REFERENCES "SU_KIEN" ("MaSuKien") DEFERRABLE INITIALLY IMMEDIATE;
 ALTER TABLE "DANG_KY_SU_KIEN" ADD FOREIGN KEY ("MaThanhVien") REFERENCES "THANH_VIEN" ("MaThanhVien") DEFERRABLE INITIALLY IMMEDIATE;
 ALTER TABLE "THONG_BAO" ADD FOREIGN KEY ("MaNguoiDung") REFERENCES "NGUOI_DUNG" ("MaNguoiDung") DEFERRABLE INITIALLY IMMEDIATE;
 
--- Di san so va Danh nhan
+-- Di sản số & Danh nhân
 ALTER TABLE "DI_SAN_LICH_SU" ADD FOREIGN KEY ("MaThanhVien") REFERENCES "THANH_VIEN" ("MaThanhVien") DEFERRABLE INITIALLY IMMEDIATE;
 ALTER TABLE "NHAN_VAT_TIEU_BIEU" ADD FOREIGN KEY ("MaThanhVien") REFERENCES "THANH_VIEN" ("MaThanhVien") DEFERRABLE INITIALLY IMMEDIATE;
-\end{lstlisting}

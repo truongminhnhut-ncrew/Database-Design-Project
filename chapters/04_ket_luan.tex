@@ -4,17 +4,99 @@
 \addcontentsline{toc}{chapter}{ĐÁNH GIÁ VÀ KẾT LUẬN}
 \label{chap:danh_gia_ket_luan}
 
+Trải qua quá trình nghiên cứu, khảo sát nghiệp vụ và triển khai kỹ thuật, đồ án kết thúc học phần môn học \textbf{Thiết kế Cơ sở Dữ liệu} với đề tài \textbf{``FamilyConnect --- Nền tảng Cộng đồng Gia đình số tích hợp Trí tuệ Nhân tạo''} đã hoàn thành toàn diện quy trình thiết kế cơ sở dữ liệu chuẩn mực theo 3 giai đoạn nền tảng: Thiết kế Quan niệm (\textit{Conceptual Design}), Thiết kế Logic (\textit{Logical Design}) và Thiết kế Vật lý (\textit{Physical Design}). 
+
+Dưới đây là phần tổng kết chi tiết về các kết quả nghiên cứu đã đạt được, thẳng thắn nhìn nhận những hạn chế còn tồn tại và đề xuất các định hướng phát triển mở rộng trong tương lai.
+
+% ==============================================================================
+% 1. KẾT QUẢ ĐẠT ĐƯỢC
+% ==============================================================================
 \section*{1. Kết quả đạt được}
 \phantomsection
 \addcontentsline{toc}{section}{1. Kết quả đạt được}
-% Nội dung kết quả đạt được
 
+Đồ án đã bám sát các mục tiêu đề ra ban đầu và đạt được những kết quả cụ thể trên các phương diện lý thuyết và ứng dụng thực tiễn:
+
+\subsection*{1.1. Về phương pháp luận và Thiết kế Quan niệm (Conceptual Design)}
+\phantomsection
+\addcontentsline{toc}{subsection}{1.1. Về phương pháp luận và Thiết kế Quan niệm}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Mô hình hóa nghiệp vụ chuyên sâu:} Phân tích toàn diện bài toán kết nối gia tộc hiện đại, chia tách hệ thống thành 4 phân hệ chức năng mạch lạc: Phân hệ Người dùng \& Bảo mật (User \& Security); Phân hệ Gia tộc \& Gia phả (Family \& Genealogy); Phân hệ Mạng xã hội gia đình, Sự kiện \& Truyền thông (Community \& Events); và Phân hệ Di sản số (Family Heritage).
+    \item \textbf{Xây dựng Mô hình Thực thể -- Liên kết mở rộng (EERD):} Thiết lập danh mục các thực thể mạnh, thực thể yếu, thuộc tính đa trị/dẫn xuất và xác định chính xác các bản số liên kết ($1:1$, $1:N$, $M:N$, liên kết đệ quy huyết thống và kế thừa chuyên biệt hóa).
+    \item \textbf{Chuẩn hóa hệ thống 10 Ràng buộc toàn vẹn quan niệm (RB01 -- RB10):} Mô hình hóa toán học chặt chẽ các quy tắc thế giới thực, bao gồm: tính duy nhất của phụ mẫu ruột, mốc thời gian sinh học phù hợp y học (độ tuổi tối thiểu 15 năm, thời gian mang thai tối đa 300 ngày), cấu trúc đồ thị phả hệ có hướng không chu trình (DAG Acyclicity), kiểm soát kết hôn chống cận huyết trong phạm vi ba đời, và tính xác thực song ánh khi nhận hồ sơ gia phả cá nhân (\textit{Profile Claiming}).
+\end{itemize}
+
+\subsection*{1.2. Về Thiết kế Logic và Chuẩn hóa dữ liệu (Logical Design)}
+\phantomsection
+\addcontentsline{toc}{subsection}{1.2. Về Thiết kế Logic và Chuẩn hóa dữ liệu}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Chuyển đổi lược đồ quan hệ chuẩn tắc:} Áp dụng chính xác các quy tắc ánh xạ mô hình ER sang mô hình quan hệ, chuyển hóa toàn bộ thực thể và mối quan hệ thành hệ thống \textbf{22 bảng dữ liệu logic} với các cặp Khóa chính (PK) và Khóa ngoại (FK) rõ ràng.
+    \item \textbf{Chuẩn hóa dữ liệu đạt mức tối ưu (3NF và BCNF):} Tiến hành phân tích các phụ thuộc hàm (FDs) và phụ thuộc đa trị (MVDs); thực hiện phân rã thành công lược đồ thành viên nhằm triệt tiêu hoàn toàn các dị thường dữ liệu khi thêm (\textit{Insertion Anomaly}), sửa (\textit{Update Anomaly}) và xóa (\textit{Deletion Anomaly}), đồng thời bảo toàn thuộc tính và bảo toàn phụ thuộc hàm.
+    \item \textbf{Trực quan hóa toàn cảnh kiến trúc CSDL:} Xây dựng sơ đồ ERD Logic hoàn chỉnh ở mức trường dữ liệu chi tiết, chuẩn hóa quy ước đặt tên \texttt{snake\_case}, và xuất bản liên kết trực tuyến tương tác độ nét cao trên nền tảng \textit{dbdiagram.io}.
+\end{itemize}
+
+\subsection*{1.3. Về Thiết kế Vật lý và Khai thác DBMS (Physical Design)}
+\phantomsection
+\addcontentsline{toc}{subsection}{1.3. Về Thiết kế Vật lý và Khai thác DBMS}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Hiện thực hóa trên Hệ quản trị CSDL tiên tiến (PostgreSQL 16+):} Khai thác tối đa thế mạnh của PostgreSQL với kiểu dữ liệu UUID nguyên bản (128-bit) đảm bảo an toàn định danh và chống đoán mã khóa; kiểu dữ liệu thời gian có múi giờ (\texttt{TIMESTAMPTZ}); và kiểu dữ liệu bán cấu trúc \texttt{JSONB} tối ưu cho nhật ký kiểm toán biến động.
+    \item \textbf{Xây dựng Từ điển dữ liệu toàn diện:} Soạn thảo chi tiết từ điển dữ liệu cho toàn bộ 22 bảng, định nghĩa rõ kiểu dữ liệu vật lý, ràng buộc \texttt{NOT NULL}, \texttt{UNIQUE}, \texttt{CHECK} và giá trị mặc định cho từng trường thông tin.
+    \item \textbf{Chiến lược đánh chỉ mục (Indexing Strategy) đa tầng:} Thiết lập hệ thống chỉ mục B-Tree trên các cột khóa chính, khóa ngoại; xây dựng chỉ mục từng phần (\textit{Partial Index}) tối ưu hóa truy vấn thành viên còn sống hoặc trưởng họ đang đương nhiệm; và chỉ mục nghịch đảo \textbf{GIN} cho các trường văn bản và tài liệu JSONB.
+    \item \textbf{Kiểm thử toàn diện và xác thực chức năng CSDL (Database Function Testing):} Xây dựng và thực thi thành công kịch bản kiểm thử toàn diện gồm \textbf{58 trường hợp kiểm thử (Test Cases)}, bao gồm kiểm tra cấu trúc lược đồ, xác thực nghiệp vụ 4 phân hệ, kiểm định các ràng buộc toàn vẹn (\texttt{PRIMARY KEY}, \texttt{FOREIGN KEY}, \texttt{UNIQUE}, \texttt{NOT NULL}) và các truy vấn thống kê, tổng hợp dữ liệu phả hệ đa bảng.
+    \item \textbf{Hoạch định an toàn và bảo mật dữ liệu:} Thiết kế quy trình sao lưu tự động (Backup \& Recovery) với giải pháp sao lưu định kỳ \texttt{pg\_dump} và lưu trữ nhật ký ghi trước (\textit{WAL Archiving / PITR}), kết hợp cơ chế phân quyền bảo mật cấp cơ sở dữ liệu theo các vai trò quản trị viên, chuyên viên ứng dụng và dịch vụ sao lưu.
+\end{itemize}
+
+% ==============================================================================
+% 2. HẠN CHẾ CÒN TỒN TẠI
+% ==============================================================================
 \section*{2. Hạn chế còn tồn tại}
 \phantomsection
 \addcontentsline{toc}{section}{2. Hạn chế còn tồn tại}
-% Nội dung hạn chế còn tồn tại
 
+Mặc dù đã đạt được nhiều kết quả quan trọng trong việc thiết kế cơ sở dữ liệu, đề tài vẫn còn một số điểm hạn chế do giới hạn về mặt thời gian và phạm vi môn học:
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Quy mô dữ liệu thử nghiệm còn giới hạn:} Việc đánh giá hiệu năng truy vấn và kiểm thử các ràng buộc toàn vẹn mới chủ yếu được thực hiện trên tập dữ liệu mẫu (\textit{Seed/Mock Data}) ở quy mô nhỏ và vừa. Hệ thống chưa được thử nghiệm thực tế với tải truy cập đồng thời lớn (\textit{Stress Testing / Benchmark}) đối với các dòng họ có quy mô hàng chục nghìn thành viên và lịch sử trải dài hàng chục đời.
+    \item \textbf{Độ phức tạp tính toán trên đồ thị phả hệ đan xen:} Mặc dù kỹ thuật Recursive CTE trong PostgreSQL xử lý rất tốt các truy vấn duyệt cây huyết thống trực hệ (cha mẹ $\to$ con cái), nhưng đối với các bài toán tính toán quan hệ họ hàng phức tạp (ví dụ: xác định mối liên hệ bà con xa thông qua nhiều nhánh hôn phối chéo, tính toán hệ số quan hệ huyết thống Wright) thì việc xử lý thuần túy bằng SQL có thể gặp giới hạn về mặt hiệu năng khi cây phả hệ mở rộng quá lớn.
+    \item \textbf{Mức độ tích hợp Trí tuệ nhân tạo (AI) mới ở giai đoạn kiến trúc:} Đề tài đã thiết kế sẵn các cấu trúc bảng và định hướng sử dụng tiện ích \texttt{pgvector} của PostgreSQL để lưu trữ vector nhúng, tuy nhiên chưa xây dựng hoàn thiện pipeline huấn luyện mô hình ngôn ngữ lớn (LLM) và hệ thống sinh embedding tự động cho tài liệu di sản.
+    \item \textbf{Chưa phát triển ứng dụng đầu cuối hoàn chỉnh:} Đồ án tập trung chuyên sâu vào phân tích và thiết kế cơ sở dữ liệu đóng vai trò hạt nhân nền tảng, chưa xây dựng trọn vẹn lớp giao diện người dùng (Frontend Web/Mobile) và hệ thống API dịch vụ phụ trợ để người dùng đại chúng trải nghiệm trực tiếp.
+\end{itemize}
+
+% ==============================================================================
+% 3. HƯỚNG PHÁT TRIỂN TIẾP THEO
+% ==============================================================================
 \section*{3. Hướng phát triển tiếp theo}
 \phantomsection
 \addcontentsline{toc}{section}{3. Hướng phát triển tiếp theo}
-% Nội dung hướng phát triển tiếp theo
+
+Từ các kết quả nền tảng và những hạn chế đã được nhận diện, nhóm đề xuất các hướng phát triển và hoàn thiện đề tài trong tương lai như sau:
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Nghiên cứu kiến trúc cơ sở dữ liệu lai (Hybrid Relational -- Graph Database):}
+    \begin{itemize}
+        \item Khảo sát việc tích hợp mở rộng \textbf{Apache AGE} (Graph Extension cho PostgreSQL) hoặc kết hợp cơ sở dữ liệu đồ thị chuyên dụng (\textbf{Neo4j}) cùng với PostgreSQL.
+        \item Sử dụng đồ thị để tăng tốc độ truy vấn đường đi ngắn nhất giữa hai cá nhân bất kỳ, phân tích mạng lưới kết nối dòng tộc và tự động phát hiện các rủi ro kết hôn cận huyết tức thời.
+    \end{itemize}
+
+    \item \textbf{Hiện thực hóa hệ thống Trợ lý ảo AI và Di sản số (RAG \& Generative AI):}
+    \begin{itemize}
+        \item Kích hoạt thực tế tiện ích \texttt{pgvector} trên PostgreSQL để lưu trữ các biểu diễn vector (Vector Embeddings) của các tài liệu gia phả cổ, sắc phong và câu chuyện truyền thống.
+        \item Xây dựng hệ thống tìm kiếm ngữ nghĩa nâng cao (Retrieval-Augmented Generation --- RAG) kết hợp với các mô hình ngôn ngữ lớn nhằm xây dựng trợ lý AI có khả năng trò chuyện, giải đáp thắc mắc về cội nguồn và tự động soạn thảo tiểu sử phả ký cho tiền nhân.
+    \end{itemize}
+
+    \item \textbf{Tăng cường các chuẩn mực bảo mật dữ liệu nâng cao:}
+    \begin{itemize}
+        \item Triển khai cơ chế bảo mật cấp hàng (\textbf{Row-Level Security --- RLS}) trên PostgreSQL nhằm đảm bảo người dùng thuộc chi họ nào chỉ được xem và tương tác với dữ liệu riêng tư của chi họ đó.
+        \item Ứng dụng kỹ thuật mã hóa dữ liệu tĩnh (\textit{Data-at-Rest Encryption}) và mã hóa cột nhạy cảm (\texttt{pgcrypto}) cho thông tin định danh cá nhân (CCCD, số điện thoại, tài khoản ngân hàng quỹ họ), tuân thủ chặt chẽ Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân tại Việt Nam.
+    \end{itemize}
+
+    \item \textbf{Triển khai sản phẩm hoàn chỉnh và thử nghiệm thực tế:}
+    \begin{itemize}
+        \item Xây dựng hệ thống Backend API (RESTful / GraphQL) kết hợp giao diện Web và ứng dụng di động (Flutter / React Native) thân thiện, dễ sử dụng cho mọi lứa tuổi trong gia đình.
+        \item Thử nghiệm áp dụng thực tế tại một số chi tộc và hội đồng hương để tiếp nhận phản hồi từ người dùng thực tế, từ đó tinh chỉnh cấu trúc dữ liệu và tối ưu hóa hệ thống ngày càng hoàn thiện hơn.
+    \end{itemize}
+\end{enumerate}
+
+\bigskip
+\noindent
+\textbf{Tóm lại}, đồ án đã giải quyết thấu đáo và toàn diện bài toán thiết kế cơ sở dữ liệu cho nền tảng \textbf{FamilyConnect}. Bản thiết kế không chỉ đáp ứng nghiêm ngặt các tiêu chuẩn lý thuyết về chuẩn hóa dữ liệu và tính toàn vẹn quan hệ, mà còn có tính ứng dụng thực tiễn cao, đóng vai trò là một bệ phóng vững chắc cho việc phát triển và triển khai hệ thống phần mềm hoàn chỉnh trong tương lai.
