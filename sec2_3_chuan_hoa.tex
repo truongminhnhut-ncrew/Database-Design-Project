@@ -1,0 +1,140 @@
+% !TEX root = ../../main.tex
+\section{Chuẩn hóa dữ liệu (Normalization)}
+\label{sec:2_3_chuan_hoa_du_lieu}
+
+Chuẩn hóa là quá trình tổ chức lại các lược đồ quan hệ nhằm loại bỏ tối đa sự dư thừa dữ liệu và ngăn ngừa các dị thường cập nhật (thêm, sửa, xóa). Trong phần này, chúng ta áp dụng lý thuyết \textbf{Phụ thuộc hàm (Functional Dependency -- FD)} để phân tích các quan hệ trọng yếu của hệ thống \textbf{FamilyConnect}, xác định các khóa ứng viên và đánh giá mức độ chuẩn hóa đạt chuẩn Boyce-Codd (BCNF).
+
+\subsection{Phân tích Phụ thuộc hàm (Functional Dependencies)}
+\label{subsec:2_3_1_phu_thuoc_ham}
+
+\subsubsection{Quan hệ Thành viên (thanh\_vien)}
+
+\begin{example}[Phân tích FD cho \texttt{thanh\_vien} trước khi phân rã]
+Xét lược đồ \emph{trước khi tách} quan hệ \texttt{chi\_toc}: \\
+$\text{thanh\_vien\_raw}(M, U, E, C, TC, D)$, trong đó:
+\begin{itemize}[noitemsep]
+    \item $M$ = \texttt{ma\_thanh\_vien}, $U$ = \texttt{ma\_nguoi\_dung}, $E$ = \texttt{email} (từ \texttt{nguoi\_dung})
+    \item $C$ = \texttt{ma\_chi\_toc}, $TC$ = \texttt{ten\_chi\_toc}, $D$ = \texttt{doi\_thu}
+\end{itemize}
+Tập phụ thuộc hàm $F_1$:
+\begin{align*}
+    f_1: & \quad M \rightarrow \{U, C, TC, D\} \\
+    f_2: & \quad U \rightarrow E \\
+    f_3: & \quad C \rightarrow \{TC, D\}
+\end{align*}
+
+\textbf{Tính bao đóng khóa:} $\{M\}^+ = \{M\} \xrightarrow{f_1} \{M,U,C,TC,D\} \xrightarrow{f_2} \{M,U,C,TC,D,E\} = U_{\text{all}}$. \\
+Do đó $K_1 = \{M\}$ là \textbf{Khóa ứng viên duy nhất}.
+
+\textbf{Vi phạm BCNF:} $f_3: C \rightarrow \{TC, D\}$ nhưng $C$ không phải siêu khóa của $\text{thanh\_vien\_raw}$. \\
+$\implies$ Tồn tại phụ thuộc bắc cầu $M \rightarrow C \rightarrow \{TC, D\}$, vi phạm \textbf{3NF và BCNF}.
+\end{example}
+
+\subsubsection{Quan hệ Người dùng (nguoi\_dung)}
+
+\begin{example}[Phân tích FD cho \texttt{nguoi\_dung}]
+$\text{nguoi\_dung}(U, EM, SDT, MK, TT, CA)$, trong đó $U$ = \texttt{ma\_nguoi\_dung}, $EM$ = \texttt{email}, $SDT$ = \texttt{so\_dien\_thoai}, $MK$ = \texttt{mat\_khau\_hash}, $TT$ = \texttt{trang\_thai}, $CA$ = \texttt{ngay\_tao}.
+
+Tập phụ thuộc hàm $F_2$:
+\begin{align*}
+    g_1: & \quad U \rightarrow \{EM, SDT, MK, TT, CA\} \\
+    g_2: & \quad EM \rightarrow U \quad (\text{ràng buộc duy nhất UNIQUE}) \\
+    g_3: & \quad SDT \rightarrow U \quad (\text{ràng buộc duy nhất UNIQUE})
+\end{align*}
+
+\textbf{Khóa ứng viên:} $K = \{U\}$, $K' = \{EM\}$, $K'' = \{SDT\}$. \\
+Vì mọi phụ thuộc hàm đều xuất phát từ một siêu khóa (vế trái là siêu khóa), lược đồ quan hệ này \textbf{đạt chuẩn BCNF}.
+\end{example}
+
+\subsubsection{Quan hệ Hôn nhân (quan\_he\_hon\_nhan)}
+
+\begin{example}[Phân tích FD cho \texttt{quan\_he\_hon\_nhan}]
+$\text{quan\_he\_hon\_nhan}(HN, MC, MV, NK, TT)$, trong đó $HN$ = \texttt{ma\_hon\_nhan}, $MC$ = \texttt{ma\_chong}, $MV$ = \texttt{ma\_vo}, $NK$ = \texttt{ngay\_ket\_hon}, $TT$ = \texttt{trang\_thai}.
+
+Tập phụ thuộc hàm $F_3$:
+\begin{align*}
+    h_1: & \quad HN \rightarrow \{MC, MV, NK, TT\} \\
+    h_2: & \quad (MC, MV, NK) \rightarrow HN
+\end{align*}
+
+\textbf{Khóa ứng viên:} $K = \{HN\}$ và $K' = \{MC, MV, NK\}$. \\
+Không tồn tại phụ thuộc hàm một phần hay phụ thuộc bắc cầu, lược đồ \textbf{đạt chuẩn BCNF}.
+\end{example}
+
+\subsection{Đánh giá các Dạng chuẩn (1NF, 2NF, 3NF, BCNF)}
+\label{subsec:2_3_2_danh_gia_dang_chuan}
+
+\subsubsection{Tiêu chí từng dạng chuẩn}
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Tiêu chí đánh giá các dạng chuẩn quan hệ.}
+\label{tab:dang_chuan_tieu_chi}
+\begin{tabularx}{\textwidth}{|l|X|X|}
+\hline
+\textbf{Dạng chuẩn} & \textbf{Yêu cầu kỹ thuật} & \textbf{Loại bỏ khuyết tật} \\ \hline
+1NF & Mọi thuộc tính là nguyên tử (atomic), không chứa nhóm lặp hay thuộc tính đa trị & Thuộc tính đa trị / hợp thành \\ \hline
+2NF & Đạt 1NF và mọi thuộc tính không khóa phụ thuộc hàm đầy đủ vào khóa chính & Phụ thuộc một phần (partial FD) \\ \hline
+3NF & Đạt 2NF và không có thuộc tính không khóa nào phụ thuộc bắc cầu vào khóa chính & Phụ thuộc bắc cầu (transitive FD) \\ \hline
+BCNF & Mọi vế trái $X$ của một phụ thuộc hàm không tầm thường $X \rightarrow Y$ đều là siêu khóa & Dư thừa dữ liệu còn sót lại sau 3NF \\ \hline
+\end{tabularx}
+\end{table}
+
+\subsubsection{Kết quả đánh giá các lược đồ FamilyConnect}
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Đánh giá mức độ chuẩn hóa các lược đồ quan hệ của FamilyConnect.}
+\label{tab:so_sanh_dang_chuan}
+\begin{tabularx}{\textwidth}{|l|c|c|c|c|X|}
+\hline
+\textbf{Lược đồ} & \textbf{1NF} & \textbf{2NF} & \textbf{3NF} & \textbf{BCNF} & \textbf{Ghi chú} \\ \hline
+\texttt{nguoi\_dung}         & \checkmark & \checkmark & \checkmark & \checkmark & Đạt BCNF \\ \hline
+\texttt{vai\_tro}            & \checkmark & \checkmark & \checkmark & \checkmark & Đạt BCNF \\ \hline
+\texttt{quyen}               & \checkmark & \checkmark & \checkmark & \checkmark & Đạt BCNF \\ \hline
+\texttt{nguoi\_dung\_vai\_tro}& \checkmark & \checkmark & \checkmark & \checkmark & Khóa hợp phần, đạt BCNF \\ \hline
+\texttt{vai\_tro\_quyen}     & \checkmark & \checkmark & \checkmark & \checkmark & Khóa hợp phần, đạt BCNF \\ \hline
+\texttt{nhat\_ky\_he\_thong} & \checkmark & \checkmark & \checkmark & \checkmark & Đạt BCNF \\ \hline
+\texttt{dong\_ho}            & \checkmark & \checkmark & \checkmark & \checkmark & Đạt BCNF \\ \hline
+\texttt{chi\_toc}            & \checkmark & \checkmark & \checkmark & \checkmark & Đạt BCNF \\ \hline
+\texttt{thanh\_vien}         & \checkmark & \checkmark & \checkmark & \checkmark & Đạt BCNF sau phân rã \\ \hline
+\texttt{ho\_so\_nghe\_nghiep}& \checkmark & \checkmark & \checkmark & \checkmark & Đạt BCNF \\ \hline
+\texttt{quan\_he\_hon\_nhan} & \checkmark & \checkmark & \checkmark & \checkmark & 2 khóa ứng viên, đạt BCNF \\ \hline
+\texttt{thanh\_vien\_noi\_toc}& \checkmark & \checkmark & \checkmark & \checkmark & Đạt BCNF \\ \hline
+\texttt{thanh\_vien\_dau\_re}& \checkmark & \checkmark & \checkmark & \checkmark & Đạt BCNF \\ \hline
+\texttt{bai\_viet}           & \checkmark & \checkmark & \checkmark & \checkmark & Đạt BCNF \\ \hline
+\texttt{binh\_luan}          & \checkmark & \checkmark & \checkmark & \checkmark & Đạt BCNF \\ \hline
+\texttt{album\_anh}          & \checkmark & \checkmark & \checkmark & \checkmark & Đạt BCNF \\ \hline
+\texttt{su\_kien}            & \checkmark & \checkmark & \checkmark & \checkmark & Đạt BCNF \\ \hline
+\texttt{dang\_ky\_su\_kien}  & \checkmark & \checkmark & \checkmark & \checkmark & Đạt BCNF \\ \hline
+\texttt{tuong\_tac\_bai\_viet}& \checkmark & \checkmark & \checkmark & \checkmark & Đạt BCNF \\ \hline
+\texttt{thong\_bao}          & \checkmark & \checkmark & \checkmark & \checkmark & Đạt BCNF \\ \hline
+\texttt{di\_san\_lich\_su}   & \checkmark & \checkmark & \checkmark & \checkmark & Đạt BCNF \\ \hline
+\texttt{nhan\_vat\_tieu\_bieu}& \checkmark & \checkmark & \checkmark & \checkmark & Đạt BCNF \\ \hline
+\end{tabularx}
+\end{table}
+
+\subsubsection{Phân rã lược đồ thanh\_vien đạt BCNF}
+
+Lược đồ \texttt{thanh\_vien\_raw} ban đầu vi phạm BCNF do phụ thuộc hàm $f_3: C \rightarrow \{TC, D\}$ với $C$ (\texttt{ma\_chi\_toc}) không phải là siêu khóa. Áp dụng \textbf{thuật toán phân rã BCNF bảo toàn thông tin (Lossless-Join Decomposition)}:
+
+\begin{enumerate}[label=\arabic*.]
+    \item Tách phụ thuộc vi phạm $f_3$ ra thành một quan hệ độc lập:
+    \begin{align*}
+    &\textbf{chi\_toc}(\underline{\texttt{ma\_chi\_toc}}, \texttt{ten\_chi\_toc}, \texttt{doi\_thu}, \dots) \\
+    &\text{với } F_C = \{C \rightarrow \{TC, D\}\} \quad \text{đạt chuẩn BCNF}
+    \end{align*}
+    \item Lược đồ còn lại sau khi tách:
+    \begin{align*}
+    &\textbf{thanh\_vien}(\underline{\texttt{ma\_thanh\_vien}}, \texttt{ma\_chi\_toc}^{FK}, \texttt{ma\_nguoi\_dung}^{FK}, \dots) \\
+    &\text{với } F_M = \{M \rightarrow \{U, C\},\; U \rightarrow E\} \quad \text{đạt chuẩn BCNF}
+    \end{align*}
+\end{enumerate}
+
+\textbf{Kiểm tra tính chất bảo toàn:}
+\begin{itemize}[noitemsep]
+    \item \textbf{Kết nối không mất thông tin (Lossless-join):} $\text{chi\_toc} \bowtie \text{thanh\_vien}$ khôi phục đầy đủ dữ liệu ban đầu vì giao giữa hai quan hệ là $\text{chi\_toc} \cap \text{thanh\_vien} = \{\texttt{ma\_chi\_toc}\}$ chính là Khóa chính (siêu khóa) của \texttt{chi\_toc}. $\checkmark$
+    \item \textbf{Bảo toàn phụ thuộc hàm (Dependency preservation):} Hợp các tập phụ thuộc hàm $F_C \cup F_M$ bao phủ trọn vẹn tập phụ thuộc ban đầu $F_1$. $\checkmark$
+\end{itemize}
